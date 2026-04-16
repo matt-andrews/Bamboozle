@@ -16,6 +16,10 @@
 	</ItemGroup>
 
 	<ItemGroup>
+	  <ProjectReference Include="..\Bamboozle\Bamboozle.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
 		<Using Include="Xunit" />
 	</ItemGroup>
 
