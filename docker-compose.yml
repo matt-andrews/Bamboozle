@@ -1,0 +1,6 @@
+services:
+  bamboozle:
+    image: ${DOCKER_REGISTRY-}bamboozle
+    build:
+      context: .
+      dockerfile: Bamboozle/Dockerfile

@@ -1,0 +1,7 @@
+<Solution>
+  <Project Path="Bamboozle.Tests/Bamboozle.Tests.csproj" />
+  <Project Path="Bamboozle/Bamboozle.csproj" />
+  <Project Path="docker-compose.dcproj">
+    <Build />
+  </Project>
+</Solution>

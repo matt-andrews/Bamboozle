@@ -1,0 +1,11 @@
+@Bamboozle_HostAddress = http://localhost:5148
+
+GET {{Bamboozle_HostAddress}}/todos/
+Accept: application/json
+
+###
+
+GET {{Bamboozle_HostAddress}}/todos/1
+Accept: application/json
+
+###
