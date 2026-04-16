@@ -65,4 +65,10 @@ public class ControlController : ControllerBase
     {
         throw new NotImplementedException();
     }
+
+    [HttpGet("version")]
+    public Task<IActionResult> Version()
+    {
+        return Task.FromResult<IActionResult>(Ok(typeof(ControlController).Assembly.GetName().Version?.ToString() ?? "0.0.0"));
+    }
 }

@@ -1,0 +1,37 @@
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    assignees:
+      - "matt-andrews"
+    commit-message:
+      prefix: "chore"
+    groups:
+      github-actions:
+        patterns:
+          - "*"
+
+  - package-ecosystem: "nuget"
+    directories:
+      - "/src/Bamboozle"
+      - "/src/Bamboozle.Tests"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    assignees:
+      - "matt-andrews"
+    commit-message:
+      prefix: "chore"
+    groups:
+      nuget-test-tooling:
+        patterns:
+          - "xunit*"
+          - "coverlet*"
+          - "Microsoft.NET.Test.Sdk"
+          - "GitHubActionsTestLogger"
+      nuget-dependencies:
+        patterns:
+          - "*"
