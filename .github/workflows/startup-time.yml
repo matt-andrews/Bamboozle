@@ -1,0 +1,20 @@
+name: Startup Time
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+  workflow_dispatch:
+
+jobs:
+  startup-time:
+    name: Docker Startup Time
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Build image
+        run: docker build -f src/Bamboozle/Dockerfile -t bamboozle:ci src/
+
+      - name: Run startup time test
+        run: bash scripts/test-startup.sh bamboozle:ci 5
