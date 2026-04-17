@@ -1,7 +1,8 @@
 ﻿using Bamboozle.Models;
+using Bamboozle.Models.Requests;
 using Bamboozle.Services;
+using Bamboozle.Utilities.JsonConverters;
 using Microsoft.AspNetCore.Mvc;
-using System.Text.Json;
 
 namespace Bamboozle.Controllers;
 
@@ -9,76 +10,87 @@ namespace Bamboozle.Controllers;
 [Route("[controller]")]
 public class ControlController(RouteManagementService routeManagementService) : ControllerBase
 {
-    private readonly RouteManagementService _routeManagementService = routeManagementService;
+	private readonly RouteManagementService _routeManagementService = routeManagementService;
 
-    [HttpPost("routes")]
-    public async Task<RouteDefinition> PostRoutes([FromBody] RouteDefinition route)
-    {
-        await _routeManagementService.SetRoute(route);
-        return route;
-    }
+	[HttpPost("routes")]
+	public async Task<RouteDefinition> PostRoutes([FromBody] RouteDefinition route)
+	{
+		await _routeManagementService.SetRoute(route);
+		return route;
+	}
 
-    [HttpPut("routes")]
-    public async Task<RouteDefinition> PutRoutes([FromBody] RouteDefinition route)
-    {
-        await _routeManagementService.DeleteRoute(route.Match);
-        await _routeManagementService.SetRoute(route);
-        return route;
-    }
+	[HttpPut("routes")]
+	public async Task<RouteDefinition> PutRoutes([FromBody] RouteDefinition route)
+	{
+		await _routeManagementService.DeleteRoute(route.Match);
+		await _routeManagementService.SetRoute(route);
+		return route;
+	}
 
-    [HttpDelete("routes/{verb}/{pattern}")]
-    public async Task<IActionResult> DeleteRoutes([FromRoute] string verb, [FromRoute] string pattern)
-    {
-        await _routeManagementService.DeleteRoute(new(verb, pattern));
-        return Ok();
-    }
+	[HttpDelete("routes/{verb}/{pattern}")]
+	public async Task<IActionResult> DeleteRoutes([FromRoute] string verb, [FromRoute] string pattern)
+	{
+		await _routeManagementService.DeleteRoute(new(verb, pattern));
+		return Ok();
+	}
 
-    [HttpGet("routes")]
-    public IAsyncEnumerable<RouteDefinition> GetRoutes()
-    {
-        return _routeManagementService.GetAllRoutes();
-    }
+	[HttpGet("routes")]
+	public IAsyncEnumerable<RouteDefinition> GetRoutes()
+	{
+		return _routeManagementService.GetAllRoutes();
+	}
 
-    [HttpGet("routes/{verb}/{pattern}/calls")]
-    public Task<IEnumerable<ContextModel>> GetRouteCalls([FromRoute] string verb, [FromRoute] string pattern)
-    {
-        return Task.FromResult(_routeManagementService.GetRouteCalls(new(verb, pattern)));
-    }
+	[HttpGet("routes/{verb}/{pattern}/calls")]
+	public Task<IEnumerable<ContextModel>> GetRouteCalls([FromRoute] string verb, [FromRoute] string pattern)
+	{
+		return Task.FromResult(_routeManagementService.GetRouteCalls(new(verb, pattern)));
+	}
 
-    [HttpDelete("routes/{verb}/{pattern}/calls")]
-    public Task<IActionResult> DeleteRouteCalls([FromRoute] string verb, [FromRoute] string pattern)
-    {
-        _routeManagementService.DeleteRouteCalls(new(verb, pattern));
-        return Task.FromResult<IActionResult>(Ok());
-    }
+	[HttpDelete("routes/{verb}/{pattern}/calls")]
+	public Task<IActionResult> DeleteRouteCalls([FromRoute] string verb, [FromRoute] string pattern)
+	{
+		_routeManagementService.DeleteRouteCalls(new(verb, pattern));
+		return Task.FromResult<IActionResult>(Ok());
+	}
 
-    [HttpPost("routes/{verb}/{pattern}/assert")]
-    public IActionResult Assert([FromRoute] string verb, [FromRoute] string pattern)
-    {
-        throw new NotImplementedException();
-    }
+	[HttpPost("routes/{verb}/{pattern}/assert")]
+	public Task<IActionResult> Assert(
+		[FromRoute] string verb,
+		[FromRoute] string pattern,
+		[FromBody] AssertRequest req,
+		[FromQuery] int expect = -1)
+	{
+		if (!FilterParser.TryParse<ContextModel>(req.Expression, out var expression, out var error))
+			return Task.FromResult<IActionResult>(BadRequest(error));
+		return Task.FromResult<IActionResult>(
+				_routeManagementService.Assert(new(verb, pattern), expression, expect)
+				? Ok()
+				: StatusCode(StatusCodes.Status418ImATeapot)
+			);
+	}
 
-    [HttpGet("unmatched")]
-    public IActionResult GetUnmatched()
-    {
-        throw new NotImplementedException();
-    }
+	[HttpGet("unmatched")]
+	public Task<IEnumerable<MatchKey>> GetUnmatched()
+	{
+		return Task.FromResult(_routeManagementService.GetUnmatchedRouteCalls());
+	}
 
-    [HttpPost("reset")]
-    public IActionResult Reset()
-    {
-        throw new NotImplementedException();
-    }
+	[HttpPost("reset")]
+	public async Task<IActionResult> Reset()
+	{
+		await _routeManagementService.Reset();
+		return Ok();
+	}
 
-    [HttpGet("health")]
-    public Task<IActionResult> Health()
-    {
-        return Task.FromResult<IActionResult>(Ok());
-    }
+	[HttpGet("health")]
+	public Task<IActionResult> Health()
+	{
+		return Task.FromResult<IActionResult>(Ok());
+	}
 
-    [HttpGet("version")]
-    public Task<IActionResult> Version()
-    {
-        return Task.FromResult<IActionResult>(Ok(typeof(ControlController).Assembly.GetName().Version?.ToString() ?? "0.0.0"));
-    }
+	[HttpGet("version")]
+	public Task<IActionResult> Version()
+	{
+		return Task.FromResult<IActionResult>(Ok(typeof(ControlController).Assembly.GetName().Version?.ToString() ?? "0.0.0"));
+	}
 }

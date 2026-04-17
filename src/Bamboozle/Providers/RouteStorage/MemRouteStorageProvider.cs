@@ -53,6 +53,12 @@ namespace Bamboozle.Providers.RouteStorage
                 yield return value;
         }
 
+        public Task Reset()
+        {
+            _keyLookup.Clear();
+            return Task.CompletedTask;
+        }
+
         private ConcurrentDictionary<MatchKey, RouteDefinition> GetVerbDict(MatchKey key)
         {
             return _keyLookup.GetOrAdd(key.Verb, static _ => []);
