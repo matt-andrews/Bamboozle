@@ -1,16 +1,15 @@
 routes:
-#http://localhost:18080/test/hello?status=200
-#http://localhost:18080/test/hello?status=200&hello=world
+#http://localhost:18080/multi-route/item1/item2/item3
   - match:
       verb: GET
-      pattern: test/hello
+      pattern: multi-route/{part1?}/{part2?}/{part3?}
     response:
-      status: "{{queryParams.status}}"
+      status: "{% if routeValues.part1 != blank %}200{% else %}400{% endif %}"
       headers:
         Content-Type: "application/json"
       content: |
         [
-          {% for kvp in queryParams %} 
+          {% for kvp in routeValues %} 
             "{{kvp[0]}}={{kvp[1]}}"{% unless forloop.last %}, {% endunless %}
           {% endfor %}
         ]
