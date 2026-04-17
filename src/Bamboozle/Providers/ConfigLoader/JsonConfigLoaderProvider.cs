@@ -1,4 +1,4 @@
-﻿using Bamboozle.Services;
+﻿using Bamboozle.Models;
 using System.Text.Json;
 
 namespace Bamboozle.Providers.ConfigLoader
@@ -12,9 +12,9 @@ namespace Bamboozle.Providers.ConfigLoader
 			PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
 		};
 
-		public InitializationModel? LoadFromString(string path)
+		public ConfigLoaderModel? LoadFromString(string path)
 		{
-			return JsonSerializer.Deserialize<InitializationModel>(path, _jsonOptions);
+			return JsonSerializer.Deserialize<ConfigLoaderModel>(path, _jsonOptions);
 		}
 	}
 }

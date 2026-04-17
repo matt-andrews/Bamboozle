@@ -3,15 +3,15 @@ using Bamboozle.Providers.ConfigLoader;
 
 namespace Bamboozle.Services
 {
-	public class InitializationService(
+	public class ConfigLoaderService(
 		IConfiguration config,
-		ILogger<InitializationService> logger,
+		ILogger<ConfigLoaderService> logger,
 		RouteManagementService routeManagementService,
 		IEnumerable<IConfigLoaderProvider> configProviders
 		) : IHostedService
 	{
 		private readonly IConfiguration _config = config;
-		private readonly ILogger<InitializationService> _logger = logger;
+		private readonly ILogger<ConfigLoaderService> _logger = logger;
 		private readonly RouteManagementService _routeManagementService = routeManagementService;
 		private readonly IEnumerable<IConfigLoaderProvider> _configProviders = configProviders;
 		private readonly bool _throwOnError
@@ -27,6 +27,8 @@ namespace Bamboozle.Services
 				if (!Directory.Exists(folder))
 				{
 					_logger.LogWarning("Cannot find given directory on the file system: {folder}", folder);
+					if (_throwOnError)
+						throw new InvalidOperationException($"Cannot find given directory on the file system: {folder}");
 					continue;
 				}
 
@@ -46,7 +48,7 @@ namespace Bamboozle.Services
 				{
 					try
 					{
-						InitializationModel? obj = provider.LoadFromString(await File.ReadAllTextAsync(file));
+						ConfigLoaderModel? obj = provider.LoadFromString(await File.ReadAllTextAsync(file));
 
 						if (obj is null) continue;
 
@@ -78,12 +80,7 @@ namespace Bamboozle.Services
 		}
 	}
 
-	public record InitializationModel
-	{
-		public RouteDefinition[] Routes { get; set; } = [];
-	}
-
-	public static class InitializationExt
+	public static class ConfigLoaderServiceExt
 	{
 		public static IServiceCollection AddConfigLoaderProvider<TConcrete>(this IServiceCollection services)
 			where TConcrete : class, IConfigLoaderProvider

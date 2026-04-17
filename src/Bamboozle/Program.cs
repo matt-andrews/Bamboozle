@@ -11,10 +11,10 @@ builder.Services.AddSingleton<RouteManagementService>();
 builder.Services.AddSingleton<IRouteStorageProvider, MemRouteStorageProvider>();
 builder.Services.AddSingleton<IRouteTrackingProvider, RouteTrackingProvider>();
 
-builder.Services.AddSingleton<InitializationService>()
+builder.Services.AddSingleton<ConfigLoaderService>()
 	.AddConfigLoaderProvider<JsonConfigLoaderProvider>()
 	.AddConfigLoaderProvider<YamlConfigLoaderProvider>()
-	.AddHostedService(provider => provider.GetRequiredService<InitializationService>());
+	.AddHostedService(provider => provider.GetRequiredService<ConfigLoaderService>());
 
 builder.Services.AddControllers();
 

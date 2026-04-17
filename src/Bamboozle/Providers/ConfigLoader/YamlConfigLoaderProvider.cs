@@ -1,4 +1,4 @@
-﻿using Bamboozle.Services;
+﻿using Bamboozle.Models;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
 
@@ -12,9 +12,9 @@ namespace Bamboozle.Providers.ConfigLoader
 						.WithNamingConvention(CamelCaseNamingConvention.Instance)
 						.Build();
 
-		public InitializationModel? LoadFromString(string path)
+		public ConfigLoaderModel? LoadFromString(string path)
 		{
-			return _yamlDeserializer.Deserialize<InitializationModel>(path);
+			return _yamlDeserializer.Deserialize<ConfigLoaderModel>(path);
 		}
 	}
 }
