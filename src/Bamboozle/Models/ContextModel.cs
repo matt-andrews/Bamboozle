@@ -5,8 +5,8 @@
 		public IReadOnlyDictionary<string, string>? QueryParams { get; private set; }
 		public IReadOnlyDictionary<string, string>? Headers { get; private set; }
 		public IReadOnlyDictionary<string, string>? RouteValues { get; }
-		public RouteModel RouteModel { get; }
-		public ContextModel(RouteModel route, IReadOnlyDictionary<string, string> routeValues)
+		public RouteDefinition RouteModel { get; }
+		public ContextModel(RouteDefinition route, IReadOnlyDictionary<string, string> routeValues)
 		{
 			RouteModel = route;
 			RouteValues = routeValues;

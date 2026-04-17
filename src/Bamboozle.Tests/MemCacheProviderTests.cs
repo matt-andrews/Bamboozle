@@ -1,5 +1,5 @@
 ﻿using Bamboozle.Models;
-using Bamboozle.Providers;
+using Bamboozle.Providers.RouteStorage;
 using Microsoft.Extensions.Caching.Memory;
 using System;
 using System.Collections.Generic;
@@ -7,25 +7,21 @@ using System.Text;
 
 namespace Bamboozle.Tests
 {
-	public class MemCacheProviderTests : IDisposable
+	public class MemCacheProviderTests
 	{
-		private readonly IMemoryCache _memoryCache;
-		private readonly MemCacheProvider _sut;
+		private readonly MemRouteStorageProvider _sut;
 
 		public MemCacheProviderTests()
 		{
-			_memoryCache = new MemoryCache(new MemoryCacheOptions());
-			_sut = new MemCacheProvider(_memoryCache);
+			_sut = new MemRouteStorageProvider();
 		}
-
-		public void Dispose() => _memoryCache.Dispose();
 
 		// -------------------------------------------------------------------------
 		// Helpers
 		// -------------------------------------------------------------------------
 
-		private static RouteModel MakeRoute(string verb, string pattern) =>
-			new() { Match = new MatchModel { Verb = verb, Pattern = pattern } };
+		private static RouteDefinition MakeRoute(string verb, string pattern) =>
+			new() { Verb = verb, Pattern = pattern };
 
 		// -------------------------------------------------------------------------
 		// SetRoute
@@ -50,12 +46,12 @@ namespace Bamboozle.Tests
 			}
 
 			[Fact]
-			public async Task Calling_set_twice_with_same_key_does_not_throw()
+			public async Task Calling_set_twice_with_same_key_does_throw()
 			{
 				var route = MakeRoute("GET", "/users");
 				await _sut.SetRoute(route);
 				var ex = await Record.ExceptionAsync(() => _sut.SetRoute(route));
-				Assert.Null(ex);
+				Assert.NotNull(ex);
 			}
 
 			[Fact]
