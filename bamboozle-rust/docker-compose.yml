@@ -7,7 +7,7 @@ services:
       - "18080:8080"
       - "19090:9090"
     volumes:
-      - ./testConfigs:/testConfigs
+      - ./test-configs:/test-configs
     environment:
       - ROUTE_CONFIG_THROW_ON_ERROR=true
-      - ROUTE_CONFIG_FOLDERS=["/testConfigs"]
+      - ROUTE_CONFIG_FOLDERS=["/test-configs"]
