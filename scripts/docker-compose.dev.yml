@@ -1,7 +1,9 @@
+name: bamboozle
 services:
   bamboozle:
+    image: bamboozle:dev
     build:
-      context: .
+      context: ../bamboozle/
       dockerfile: Dockerfile
     ports:
       - "18080:8080"
