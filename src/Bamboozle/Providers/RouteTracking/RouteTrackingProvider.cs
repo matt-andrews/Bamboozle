@@ -5,50 +5,54 @@ namespace Bamboozle.Providers.RouteTracking;
 
 public class RouteTrackingProvider : IRouteTrackingProvider
 {
-	private readonly ConcurrentDictionary<Guid, ContextModel> _matchedRoutes = [];
-	private readonly ConcurrentDictionary<Guid, ContextModel> _unmatchedRoutes = [];
-	public void UnmatchedContext(ContextModel context)
-	{
-		_unmatchedRoutes.TryAdd(Guid.NewGuid(), context);
-	}
+    private readonly ConcurrentDictionary<Guid, ContextModel> _matchedRoutes = [];
+    private readonly ConcurrentDictionary<Guid, ContextModel> _unmatchedRoutes = [];
+    public Task UnmatchedContext(ContextModel context)
+    {
+        _unmatchedRoutes.TryAdd(Guid.NewGuid(), context);
+        return Task.CompletedTask;
+    }
 
-	public void MatchContext(ContextModel context)
-	{
-		_matchedRoutes.TryAdd(Guid.NewGuid(), context);
-	}
+    public Task MatchContext(ContextModel context)
+    {
+        _matchedRoutes.TryAdd(Guid.NewGuid(), context);
+        return Task.CompletedTask;
+    }
 
-	public IEnumerable<ContextModel> GetAllMatchedContexts()
-	{
-		return _matchedRoutes.Values;
-	}
+    public IAsyncEnumerable<ContextModel> GetAllMatchedContexts()
+    {
+        return _matchedRoutes.Values.ToAsyncEnumerable();
+    }
 
-	public IEnumerable<ContextModel> GetAllUnmatchedContexts()
-	{
-		return _unmatchedRoutes.Values;
-	}
+    public IAsyncEnumerable<ContextModel> GetAllUnmatchedContexts()
+    {
+        return _unmatchedRoutes.Values.ToAsyncEnumerable();
+    }
 
-	public void Delete(MatchKey matchKey)
-	{
-		foreach (var (key, value) in _matchedRoutes.ToDictionary())
-		{
-			if (value.RouteModel.Match == matchKey)
-			{
-				_matchedRoutes.TryRemove(key, out _);
-			}
-		}
+    public Task Delete(MatchKey matchKey)
+    {
+        foreach (var (key, value) in _matchedRoutes.ToDictionary())
+        {
+            if (value.RouteModel.Match == matchKey)
+            {
+                _matchedRoutes.TryRemove(key, out _);
+            }
+        }
 
-		foreach (var (key, value) in _unmatchedRoutes.ToDictionary())
-		{
-			if (value.RouteModel.Match == matchKey)
-			{
-				_matchedRoutes.TryRemove(key, out _);
-			}
-		}
-	}
+        foreach (var (key, value) in _unmatchedRoutes.ToDictionary())
+        {
+            if (value.RouteModel.Match == matchKey)
+            {
+                _matchedRoutes.TryRemove(key, out _);
+            }
+        }
+        return Task.CompletedTask;
+    }
 
-	public void Reset()
-	{
-		_matchedRoutes.Clear();
-		_unmatchedRoutes.Clear();
-	}
+    public Task Reset()
+    {
+        _matchedRoutes.Clear();
+        _unmatchedRoutes.Clear();
+        return Task.CompletedTask;
+    }
 }

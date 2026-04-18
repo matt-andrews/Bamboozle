@@ -3,9 +3,15 @@ using Bamboozle.Providers.ConfigLoader;
 using Bamboozle.Providers.RouteStorage;
 using Bamboozle.Providers.RouteTracking;
 using Bamboozle.Services;
+using Serilog;
 using System.Text.Json;
 
 var builder = WebApplication.CreateSlimBuilder(args);
+
+builder.Host.UseSerilog((context, configuration) =>
+	configuration
+		.ReadFrom.Configuration(context.Configuration) // Read from appsettings.json
+		.WriteTo.Console());
 
 builder.Services.AddSingleton<RouteManagementService>();
 builder.Services.AddSingleton<IRouteStorageProvider, MemRouteStorageProvider>();
