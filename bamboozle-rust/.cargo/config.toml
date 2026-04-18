@@ -1,0 +1,5 @@
+# Set Windows SDK + MSVC library paths so cargo can link without a VS Developer
+# Command Prompt. Uses VS 2022 Community instead of VS 18 Insiders (which has a
+# broken SDK layout on this machine).
+[env]
+LIB = "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.43.34808\\lib\\x64;C:\\Program Files (x86)\\Windows Kits\\10\\Lib\\10.0.22621.0\\ucrt\\x64;C:\\Program Files (x86)\\Windows Kits\\10\\Lib\\10.0.22621.0\\um\\x64"
