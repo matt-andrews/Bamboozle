@@ -1,0 +1,17 @@
+{
+    "routes": [
+        {
+            "match": {
+                "verb": "GET",
+                "pattern": "/secrets/{secretName}/{secretVersion}"
+            },
+            "response": {
+                "status": "200",
+                "headers": {
+                    "Content-Type": "application/json"
+                },
+                "content": "{\"id\":\"{{routeValues.secretName}}\", \"value\":\"test-value-{{routeValues.secretName}}\"}"
+            }
+        }
+    ]
+}

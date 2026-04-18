@@ -1,0 +1,13 @@
+services:
+  bamboozle:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "18080:8080"
+      - "19090:9090"
+    volumes:
+      - ./testConfigs:/testConfigs
+    environment:
+      - ROUTE_CONFIG_THROW_ON_ERROR=true
+      - ROUTE_CONFIG_FOLDERS=["/testConfigs"]
