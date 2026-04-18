@@ -129,6 +129,7 @@ dependencies = [
  "anyhow",
  "axum",
  "dashmap",
+ "evalexpr",
  "form_urlencoded",
  "liquid",
  "regex",
@@ -294,6 +295,12 @@ dependencies = [
  "libc",
  "windows-sys",
 ]
+
+[[package]]
+name = "evalexpr"
+version = "13.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "25929004897f2bbab309121a60400d36992f6d911d09baa6c172f6cc55706601"
 
 [[package]]
 name = "flate2"

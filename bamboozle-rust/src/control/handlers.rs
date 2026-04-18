@@ -9,7 +9,8 @@ use utoipa::ToSchema;
 
 use crate::{
     app_state::AppState,
-    error::{AppError, RouteError},
+    error::AppError,
+    expression,
     models::{context::ContextModel, match_key::MatchKey, route::RouteDefinition},
 };
 
@@ -141,7 +142,13 @@ pub async fn delete_route_calls(
 
 #[derive(Deserialize, ToSchema)]
 pub struct AssertRequest {
-    /// LINQ-style filter expression (not yet evaluated — reserved for future use).
+    /// Boolean expression evaluated against each recorded call.
+    ///
+    /// Variables: `verb`, `pattern`
+    /// Functions: `query("key")`, `header("key")`, `route("key")`,
+    ///   `contains(s, sub)`, `starts_with(s, prefix)`, `ends_with(s, suffix)`
+    ///
+    /// Example: `query("status") == "active" && verb == "POST"`
     pub expression: Option<String>,
 }
 
@@ -161,12 +168,13 @@ fn default_expect() -> i64 {
     params(
         ("verb" = String, Path, description = "HTTP verb"),
         ("pattern" = String, Path, description = "Route pattern (URL-encode slashes as %2F)"),
-        ("expect" = Option<i64>, Query, description = "Expected call count. -1 (default) accepts any count."),
+        ("expect" = Option<i64>, Query, description = "Expected call count after filtering. -1 (default) accepts any count ≥ 1 when an expression is given, or any count otherwise."),
     ),
     request_body = AssertRequest,
     responses(
         (status = 200, description = "Assertion passed"),
-        (status = 418, description = "Assertion failed — call count did not match expect"),
+        (status = 400, description = "Invalid expression syntax"),
+        (status = 418, description = "Assertion failed — filtered call count did not match expect"),
     ),
     tag = "Calls"
 )]
@@ -174,15 +182,39 @@ pub async fn assert_route(
     State(state): State<AppState>,
     Path((verb, pattern)): Path<(String, String)>,
     Query(q): Query<AssertQuery>,
-    Json(_body): Json<AssertRequest>,
-) -> StatusCode {
+    Json(body): Json<AssertRequest>,
+) -> Result<StatusCode, AppError> {
     let calls = state.tracker.get_calls_for_route(&MatchKey::new(verb, pattern));
-    let count = calls.len() as i64;
 
-    if q.expect < 0 || count == q.expect {
-        StatusCode::OK
+    let filtered: Vec<_> = if let Some(ref expr) = body.expression {
+        let mut result = Vec::with_capacity(calls.len());
+        for ctx in &calls {
+            match expression::eval_expression(expr, ctx) {
+                Ok(true) => result.push(ctx),
+                Ok(false) => {}
+                Err(e) => {
+                    return Err(AppError::BadRequest(format!("Invalid expression: {e}")));
+                }
+            }
+        }
+        result
     } else {
-        StatusCode::IM_A_TEAPOT
+        calls.iter().collect()
+    };
+
+    let count = filtered.len() as i64;
+    let passed = if q.expect >= 0 {
+        count == q.expect
+    } else if body.expression.is_some() {
+        // expression given but no explicit expect → require at least one match
+        count >= 1
+    } else {
+        true
+    };
+    if passed {
+        Ok(StatusCode::OK)
+    } else {
+        Ok(StatusCode::IM_A_TEAPOT)
     }
 }
 

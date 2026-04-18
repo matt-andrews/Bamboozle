@@ -3,6 +3,7 @@ mod config;
 mod config_loader;
 mod control;
 mod error;
+mod expression;
 mod liquid_render;
 mod mock_server;
 mod models;

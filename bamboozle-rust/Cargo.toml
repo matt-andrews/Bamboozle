@@ -25,6 +25,7 @@ tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt"] }
 utoipa = { version = "5", features = ["axum_extras"] }
 utoipa-swagger-ui = { version = "8", features = ["axum"] }
 form_urlencoded = "1"
+evalexpr = "13"
 
 [dev-dependencies]
 tokio = { version = "1", features = ["full"] }
