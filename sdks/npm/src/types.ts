@@ -18,10 +18,10 @@ export interface RouteDefinition {
 }
 
 export interface ContextModel {
-  query_params: Record<string, string>;
+  queryParams: Record<string, string>;
   headers: Record<string, string>;
-  route_values: Record<string, string>;
-  route_model: RouteDefinition;
+  routeValues: Record<string, string>;
+  routeModel: RouteDefinition;
 }
 
 export interface AssertOptions {

@@ -2,21 +2,19 @@ import { test, expect, APIRequestContext } from '@playwright/test';
 import { BamboozleClient, MatchKey, BamboozleAssertBuilder } from '@bamboozle/sdk';
 
 const bamboozleClient: BamboozleClient = new BamboozleClient({ baseUrl: "http://localhost:19090" });
-let deleteState: MatchKey[] = [];
-
-
-test.afterEach(async () => {
-    for (let key of deleteState) {
-        try {
-            await bamboozleClient.clearCalls(key.verb, key.pattern);
-            await bamboozleClient.deleteRoute(key.verb, key.pattern);
-        }
-        catch { }
-    }
-    deleteState = [];
-})
 
 test.describe('request body can do complex json', () => {
+    let deleteState: MatchKey[] = [];
+    test.afterEach(async () => {
+        for (let key of deleteState) {
+            try {
+                await bamboozleClient.clearCalls(key.verb, key.pattern);
+                await bamboozleClient.deleteRoute(key.verb, key.pattern);
+            }
+            catch { }
+        }
+        deleteState = [];
+    });
     const verbs: string[] = ['PUT', 'POST', 'PATCH'];
     for (let verb of verbs) {
         test(verb, async ({ request }) => {
@@ -50,6 +48,17 @@ test.describe('request body can do complex json', () => {
 });
 
 test.describe('request body loopback should match original', () => {
+    let deleteState: MatchKey[] = [];
+    test.afterEach(async () => {
+        for (let key of deleteState) {
+            try {
+                await bamboozleClient.clearCalls(key.verb, key.pattern);
+                await bamboozleClient.deleteRoute(key.verb, key.pattern);
+            }
+            catch { }
+        }
+        deleteState = [];
+    });
     const verbs: string[] = ['PUT', 'POST', 'PATCH'];
     for (let verb of verbs) {
         test(verb, async ({ request }) => {

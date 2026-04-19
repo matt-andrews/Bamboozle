@@ -2,21 +2,21 @@ import { test, expect, APIRequestContext } from '@playwright/test';
 import { BamboozleClient, MatchKey, BamboozleAssertBuilder } from '@bamboozle/sdk';
 
 const bamboozleClient: BamboozleClient = new BamboozleClient({ baseUrl: "http://localhost:19090" });
-let deleteState: MatchKey[] = [];
 
 
-test.afterEach(async () => {
-  for (let key of deleteState) {
-    try {
-      await bamboozleClient.clearCalls(key.verb, key.pattern);
-      await bamboozleClient.deleteRoute(key.verb, key.pattern);
-    }
-    catch { }
-  }
-  deleteState = [];
-})
 
 test.describe('assert header query match', () => {
+  let deleteState: MatchKey[] = [];
+  test.afterEach(async () => {
+    for (let key of deleteState) {
+      try {
+        await bamboozleClient.clearCalls(key.verb, key.pattern);
+        await bamboozleClient.deleteRoute(key.verb, key.pattern);
+      }
+      catch { }
+    }
+    deleteState = [];
+  });
   const verbs: string[] = ['GET', 'PUT', 'POST', 'PATCH', 'DELETE'];
   for (let verb of verbs) {
     test(verb, async ({ request }) => {
@@ -39,6 +39,17 @@ test.describe('assert header query match', () => {
 });
 
 test.describe('assert header query nonmatch', () => {
+  let deleteState: MatchKey[] = [];
+  test.afterEach(async () => {
+    for (let key of deleteState) {
+      try {
+        await bamboozleClient.clearCalls(key.verb, key.pattern);
+        await bamboozleClient.deleteRoute(key.verb, key.pattern);
+      }
+      catch { }
+    }
+    deleteState = [];
+  });
   const verbs: string[] = ['GET', 'PUT', 'POST', 'PATCH', 'DELETE'];
   for (let verb of verbs) {
     test(verb, async ({ request }) => {
@@ -61,6 +72,17 @@ test.describe('assert header query nonmatch', () => {
 });
 
 test.describe('assert route match', () => {
+  let deleteState: MatchKey[] = [];
+  test.afterEach(async () => {
+    for (let key of deleteState) {
+      try {
+        await bamboozleClient.clearCalls(key.verb, key.pattern);
+        await bamboozleClient.deleteRoute(key.verb, key.pattern);
+      }
+      catch { }
+    }
+    deleteState = [];
+  });
   const verbs: string[] = ['GET', 'PUT', 'POST', 'PATCH', 'DELETE'];
   for (let verb of verbs) {
     test(verb, async ({ request }) => {
@@ -82,6 +104,17 @@ test.describe('assert route match', () => {
 });
 
 test.describe('assert route nonmatch', () => {
+  let deleteState: MatchKey[] = [];
+  test.afterEach(async () => {
+    for (let key of deleteState) {
+      try {
+        await bamboozleClient.clearCalls(key.verb, key.pattern);
+        await bamboozleClient.deleteRoute(key.verb, key.pattern);
+      }
+      catch { }
+    }
+    deleteState = [];
+  });
   const verbs: string[] = ['GET', 'PUT', 'POST', 'PATCH', 'DELETE'];
   for (let verb of verbs) {
     test(verb, async ({ request }) => {
@@ -103,6 +136,17 @@ test.describe('assert route nonmatch', () => {
 });
 
 test.describe('assert route header query match', () => {
+  let deleteState: MatchKey[] = [];
+  test.afterEach(async () => {
+    for (let key of deleteState) {
+      try {
+        await bamboozleClient.clearCalls(key.verb, key.pattern);
+        await bamboozleClient.deleteRoute(key.verb, key.pattern);
+      }
+      catch { }
+    }
+    deleteState = [];
+  });
   const verbs: string[] = ['GET', 'PUT', 'POST', 'PATCH', 'DELETE'];
   for (let verb of verbs) {
     test(verb, async ({ request }) => {
@@ -132,6 +176,17 @@ test.describe('assert route header query match', () => {
 });
 
 test.describe('assert match verb nonmatch pattern', () => {
+  let deleteState: MatchKey[] = [];
+  test.afterEach(async () => {
+    for (let key of deleteState) {
+      try {
+        await bamboozleClient.clearCalls(key.verb, key.pattern);
+        await bamboozleClient.deleteRoute(key.verb, key.pattern);
+      }
+      catch { }
+    }
+    deleteState = [];
+  });
   const verbs: string[] = ['GET', 'PUT', 'POST', 'PATCH', 'DELETE'];
   for (let verb of verbs) {
     test(verb, async ({ request }) => {
@@ -154,6 +209,17 @@ test.describe('assert match verb nonmatch pattern', () => {
 });
 
 test.describe('assert nonmatch verb match pattern', () => {
+  let deleteState: MatchKey[] = [];
+  test.afterEach(async () => {
+    for (let key of deleteState) {
+      try {
+        await bamboozleClient.clearCalls(key.verb, key.pattern);
+        await bamboozleClient.deleteRoute(key.verb, key.pattern);
+      }
+      catch { }
+    }
+    deleteState = [];
+  });
   const verbs: string[] = ['GET', 'PUT', 'POST', 'PATCH', 'DELETE'];
   for (let verb of verbs) {
     test(verb, async ({ request }) => {
@@ -176,6 +242,17 @@ test.describe('assert nonmatch verb match pattern', () => {
 });
 
 test.describe('assert match with no expression', () => {
+  let deleteState: MatchKey[] = [];
+  test.afterEach(async () => {
+    for (let key of deleteState) {
+      try {
+        await bamboozleClient.clearCalls(key.verb, key.pattern);
+        await bamboozleClient.deleteRoute(key.verb, key.pattern);
+      }
+      catch { }
+    }
+    deleteState = [];
+  });
   const verbs: string[] = ['GET', 'PUT', 'POST', 'PATCH', 'DELETE'];
   for (let verb of verbs) {
     test(verb, async ({ request }) => {
@@ -193,6 +270,17 @@ test.describe('assert match with no expression', () => {
 });
 
 test.describe('assert match complex body', () => {
+  let deleteState: MatchKey[] = [];
+  test.afterEach(async () => {
+    for (let key of deleteState) {
+      try {
+        await bamboozleClient.clearCalls(key.verb, key.pattern);
+        await bamboozleClient.deleteRoute(key.verb, key.pattern);
+      }
+      catch { }
+    }
+    deleteState = [];
+  });
   const verbs: string[] = ['PUT', 'POST', 'PATCH'];
   for (let verb of verbs) {
     test(verb, async ({ request }) => {

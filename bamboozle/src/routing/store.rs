@@ -27,12 +27,13 @@ impl RouteStore {
         }
     }
 
-    pub fn set_route(&self, def: RouteDefinition) -> Result<(), AppError> {
-        let verb = def.match_key.verb.clone();
-        let key_str = def.match_key.to_string();
+    pub fn set_route(&self, mut def: RouteDefinition) -> Result<(), AppError> {
+        let verb = def.match_key.verb.trim().to_ascii_uppercase();
         let normalized = normalize_url(&def.match_key.pattern);
-
-        let compiled = match compile_pattern(&def.match_key.pattern) {
+        def.match_key.verb = verb.clone();
+        def.match_key.pattern = normalized.clone();
+        let key_str = def.match_key.to_string();
+        let compiled = match compile_pattern(&normalized) {
             Ok(c) => c,
             Err(e) => {
                 error!(route = %key_str, error = %e, "Failed to compile route pattern");

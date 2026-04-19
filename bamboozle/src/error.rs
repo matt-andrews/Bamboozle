@@ -27,7 +27,7 @@ pub enum AppError {
 impl IntoResponse for AppError {
     fn into_response(self) -> Response {
         let (status, message) = match &self {
-            AppError::AlreadyExists(msg) => (StatusCode::BAD_REQUEST, msg.clone()),
+            AppError::AlreadyExists(msg) => (StatusCode::CONFLICT, msg.clone()),
             AppError::Route(RouteError::NotFound(_)) => (StatusCode::NOT_FOUND, self.to_string()),
             AppError::BadRequest(msg) => (StatusCode::BAD_REQUEST, msg.clone()),
             AppError::Internal(e) => {
