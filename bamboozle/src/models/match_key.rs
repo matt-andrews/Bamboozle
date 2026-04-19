@@ -11,8 +11,8 @@ pub struct MatchKey {
 impl MatchKey {
     pub fn new(verb: impl Into<String>, pattern: impl Into<String>) -> Self {
         Self {
-            verb: verb.into(),
-            pattern: pattern.into(),
+            verb: verb.into().to_uppercase(),
+            pattern: pattern.into().to_lowercase(),
         }
     }
 }

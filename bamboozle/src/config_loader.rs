@@ -44,8 +44,8 @@ pub async fn load(config: &AppConfig, state: &AppState) -> anyhow::Result<()> {
                 .to_ascii_lowercase();
 
             let result = match ext.as_str() {
-                "json" => load_file(&file_path, state, parse_json).await,
-                "yml" | "yaml" => load_file(&file_path, state, parse_yaml).await,
+                "json" => load_file(&file_path, state, parse_json, config.throw_on_error).await,
+                "yml" | "yaml" => load_file(&file_path, state, parse_yaml, config.throw_on_error).await,
                 _ => continue,
             };
 
@@ -64,12 +64,18 @@ async fn load_file(
     path: &Path,
     state: &AppState,
     parser: fn(&str) -> anyhow::Result<ConfigLoaderModel>,
+    throw_on_error: bool,
 ) -> anyhow::Result<()> {
     let content = fs::read_to_string(path).await?;
     let model = parser(&content)?;
 
     for route in model.routes {
-        let _ = state.store.set_route(route);
+        if let Err(err) = state.store.set_route(route) {
+            error!(error = %err, "Failed to insert route");
+            if throw_on_error {
+                return Err(err.into());
+            }
+        }
     }
 
     Ok(())

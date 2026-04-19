@@ -110,7 +110,9 @@ pub async fn get_route_calls(
     State(state): State<AppState>,
     Path((verb, pattern)): Path<(String, String)>,
 ) -> impl IntoResponse {
-    let calls = state.tracker.get_calls_for_route(&MatchKey::new(verb, pattern));
+    let calls = state
+        .tracker
+        .get_calls_for_route(&MatchKey::new(verb, pattern));
     Json(calls)
 }
 
@@ -184,9 +186,15 @@ pub async fn assert_route(
     Query(q): Query<AssertQuery>,
     Json(body): Json<AssertRequest>,
 ) -> Result<StatusCode, AppError> {
-    let calls = state.tracker.get_calls_for_route(&MatchKey::new(verb, pattern));
-
-    let filtered: Vec<_> = if let Some(ref expr) = body.expression {
+    let calls = state
+        .tracker
+        .get_calls_for_route(&MatchKey::new(verb, pattern));
+    let expr = body
+        .expression
+        .as_deref()
+        .map(str::trim)
+        .filter(|s| !s.is_empty());
+    let filtered: Vec<_> = if let Some(expr) = expr {
         let mut result = Vec::with_capacity(calls.len());
         for ctx in &calls {
             match expression::eval_expression(expr, ctx) {
@@ -205,7 +213,7 @@ pub async fn assert_route(
     let count = filtered.len() as i64;
     let passed = if q.expect >= 0 {
         count == q.expect
-    } else if body.expression.is_some() {
+    } else if expr.is_some() {
         // expression given but no explicit expect → require at least one match
         count >= 1
     } else {

@@ -4,7 +4,7 @@ use std::collections::HashMap;
 use tracing::{debug, error, info, warn};
 
 use crate::{
-    error::RouteError,
+    error::{AppError, RouteError},
     models::{match_key::MatchKey, route::RouteDefinition},
     routing::regex_gen::{compile_pattern, normalize_url, try_match_route},
 };
@@ -27,7 +27,7 @@ impl RouteStore {
         }
     }
 
-    pub fn set_route(&self, def: RouteDefinition) -> Result<(), RouteError> {
+    pub fn set_route(&self, def: RouteDefinition) -> Result<(), AppError> {
         let verb = def.match_key.verb.clone();
         let key_str = def.match_key.to_string();
         let normalized = normalize_url(&def.match_key.pattern);
@@ -36,7 +36,7 @@ impl RouteStore {
             Ok(c) => c,
             Err(e) => {
                 error!(route = %key_str, error = %e, "Failed to compile route pattern");
-                return Err(RouteError::AlreadyExists(format!(
+                return Err(AppError::BadRequest(format!(
                     "Invalid pattern '{}': {}",
                     normalized, e
                 )));
@@ -52,7 +52,7 @@ impl RouteStore {
 
         if verb_map.contains_key(&normalized) {
             warn!(route = %key_str, "Route already exists, skipping");
-            return Err(RouteError::AlreadyExists(key_str));
+            return Err(AppError::AlreadyExists(key_str));
         }
 
         verb_map.insert(
@@ -162,7 +162,7 @@ mod tests {
         let err = store
             .set_route(make_route("GET", "/api/users"))
             .unwrap_err();
-        assert!(matches!(err, RouteError::AlreadyExists(_)));
+        assert!(matches!(err, AppError::AlreadyExists(_)));
     }
 
     #[test]
