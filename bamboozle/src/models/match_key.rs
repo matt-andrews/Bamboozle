@@ -12,8 +12,21 @@ impl MatchKey {
     pub fn new(verb: impl Into<String>, pattern: impl Into<String>) -> Self {
         Self {
             verb: verb.into().to_uppercase(),
-            pattern: pattern.into().to_lowercase(),
+            pattern: Self::normalize_pattern(pattern),
         }
+    }
+
+    fn normalize_pattern(pattern: impl Into<String>) -> String {
+        let pattern = pattern.into().to_ascii_lowercase();
+        let trimmed = pattern.trim_matches('/');
+        if trimmed.is_empty() {
+            return String::new();
+        }
+        trimmed
+            .split('/')
+            .filter(|segment| !segment.is_empty())
+            .collect::<Vec<_>>()
+            .join("/")
     }
 }
 

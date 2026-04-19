@@ -17,9 +17,7 @@ use crate::{
 };
 
 pub fn router(state: AppState) -> Router {
-    Router::new()
-        .fallback(catch_all)
-        .with_state(state)
+    Router::new().fallback(catch_all).with_state(state)
 }
 
 async fn catch_all(
@@ -43,12 +41,7 @@ async fn catch_all(
 
     let header_map: HashMap<String, String> = headers
         .iter()
-        .map(|(k, v)| {
-            (
-                k.as_str().to_string(),
-                v.to_str().unwrap_or("").to_string(),
-            )
-        })
+        .map(|(k, v)| (k.as_str().to_string(), v.to_str().unwrap_or("").to_string()))
         .collect();
 
     let body_raw = String::from_utf8_lossy(&body_bytes).into_owned();
@@ -66,11 +59,11 @@ async fn catch_all(
     match state.store.match_route(&verb, &path) {
         None => {
             let ctx = ContextModel {
-                query_params: HashMap::new(),
-                headers: HashMap::new(),
+                query_params,
+                headers: header_map,
                 route_values: HashMap::new(),
-                body: serde_json::Value::Null,
-                body_raw: String::new(),
+                body,
+                body_raw,
                 route_model: RouteDefinition {
                     match_key: MatchKey::new(verb, path),
                     response: ResponseDefinition::default(),
@@ -91,9 +84,10 @@ async fn catch_all(
             };
             state.tracker.record_matched(ctx.clone());
 
-            let status_str = state
-                .renderer
-                .render_or_fallback(&route_def.response.status, &ctx, "200");
+            let status_str =
+                state
+                    .renderer
+                    .render_or_fallback(&route_def.response.status, &ctx, "200");
             let status_code: u16 = status_str.trim().parse().unwrap_or(200);
 
             let body = if route_def.response.loopback == Some(true) {
@@ -134,7 +128,12 @@ mod tests {
     use axum::{body::Body, http::Request};
     use tower::ServiceExt;
 
-    fn make_route(verb: &str, pattern: &str, content: Option<&str>, status: &str) -> RouteDefinition {
+    fn make_route(
+        verb: &str,
+        pattern: &str,
+        content: Option<&str>,
+        status: &str,
+    ) -> RouteDefinition {
         RouteDefinition {
             match_key: MatchKey::new(verb, pattern),
             response: ResponseDefinition {
@@ -154,7 +153,12 @@ mod tests {
     async fn unmatched_route_returns_404() {
         let app = router(AppState::new());
         let response = app
-            .oneshot(Request::builder().uri("/nonexistent").body(Body::empty()).unwrap())
+            .oneshot(
+                Request::builder()
+                    .uri("/nonexistent")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
             .await
             .unwrap();
         assert_eq!(response.status(), StatusCode::NOT_FOUND);
@@ -163,9 +167,17 @@ mod tests {
     #[tokio::test]
     async fn matched_static_route_returns_200() {
         let state = AppState::new();
-        state.store.set_route(make_route("GET", "/hello", Some("world"), "200")).unwrap();
+        state
+            .store
+            .set_route(make_route("GET", "/hello", Some("world"), "200"))
+            .unwrap();
         let response = router(state)
-            .oneshot(Request::builder().uri("/hello").body(Body::empty()).unwrap())
+            .oneshot(
+                Request::builder()
+                    .uri("/hello")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
             .await
             .unwrap();
         assert_eq!(response.status(), StatusCode::OK);
@@ -174,9 +186,17 @@ mod tests {
     #[tokio::test]
     async fn response_body_matches_configured_content() {
         let state = AppState::new();
-        state.store.set_route(make_route("GET", "/greet", Some("hello there"), "200")).unwrap();
+        state
+            .store
+            .set_route(make_route("GET", "/greet", Some("hello there"), "200"))
+            .unwrap();
         let response = router(state)
-            .oneshot(Request::builder().uri("/greet").body(Body::empty()).unwrap())
+            .oneshot(
+                Request::builder()
+                    .uri("/greet")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
             .await
             .unwrap();
         assert_eq!(body_string(response.into_body()).await, "hello there");
@@ -185,7 +205,10 @@ mod tests {
     #[tokio::test]
     async fn custom_status_code_is_returned() {
         let state = AppState::new();
-        state.store.set_route(make_route("POST", "/things", None, "201")).unwrap();
+        state
+            .store
+            .set_route(make_route("POST", "/things", None, "201"))
+            .unwrap();
         let response = router(state)
             .oneshot(
                 Request::builder()
@@ -202,14 +225,17 @@ mod tests {
     #[tokio::test]
     async fn loopback_echoes_request_body() {
         let state = AppState::new();
-        state.store.set_route(RouteDefinition {
-            match_key: MatchKey::new("POST", "/echo"),
-            response: ResponseDefinition {
-                status: "200".to_string(),
-                loopback: Some(true),
-                ..Default::default()
-            },
-        }).unwrap();
+        state
+            .store
+            .set_route(RouteDefinition {
+                match_key: MatchKey::new("POST", "/echo"),
+                response: ResponseDefinition {
+                    status: "200".to_string(),
+                    loopback: Some(true),
+                    ..Default::default()
+                },
+            })
+            .unwrap();
         let response = router(state)
             .oneshot(
                 Request::builder()
@@ -228,10 +254,20 @@ mod tests {
         let state = AppState::new();
         state
             .store
-            .set_route(make_route("GET", "/greet/{name}", Some("Hello {{ routeValues.name }}"), "200"))
+            .set_route(make_route(
+                "GET",
+                "/greet/{name}",
+                Some("Hello {{ routeValues.name }}"),
+                "200",
+            ))
             .unwrap();
         let response = router(state)
-            .oneshot(Request::builder().uri("/greet/Alice").body(Body::empty()).unwrap())
+            .oneshot(
+                Request::builder()
+                    .uri("/greet/Alice")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
             .await
             .unwrap();
         assert_eq!(body_string(response.into_body()).await, "Hello Alice");
@@ -242,7 +278,12 @@ mod tests {
         let state = AppState::new();
         let tracker = state.tracker.clone();
         router(state)
-            .oneshot(Request::builder().uri("/missing").body(Body::empty()).unwrap())
+            .oneshot(
+                Request::builder()
+                    .uri("/missing")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
             .await
             .unwrap();
         assert_eq!(tracker.get_unmatched().len(), 1);
@@ -251,12 +292,25 @@ mod tests {
     #[tokio::test]
     async fn matched_request_is_tracked() {
         let state = AppState::new();
-        state.store.set_route(make_route("GET", "/tracked", Some("ok"), "200")).unwrap();
+        state
+            .store
+            .set_route(make_route("GET", "/tracked", Some("ok"), "200"))
+            .unwrap();
         let tracker = state.tracker.clone();
         router(state)
-            .oneshot(Request::builder().uri("/tracked").body(Body::empty()).unwrap())
+            .oneshot(
+                Request::builder()
+                    .uri("/tracked")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
             .await
             .unwrap();
-        assert_eq!(tracker.get_calls_for_route(&MatchKey::new("GET", "/tracked")).len(), 1);
+        assert_eq!(
+            tracker
+                .get_calls_for_route(&MatchKey::new("GET", "/tracked"))
+                .len(),
+            1
+        );
     }
 }

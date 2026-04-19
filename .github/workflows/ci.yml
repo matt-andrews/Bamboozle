@@ -9,12 +9,21 @@ jobs:
   rust-test:
     name: Rust Test
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./bamboozle
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
 
+      - name: Add Clippy
+        run: rustup component add clippy
+
+      - name: Cargo Check
+        run: cargo clippy --all-targets --all-features -- -D warnings
+
       - name: Test
-        run: RUSTFLAGS="-D warnings" cargo test --manifest-path bamboozle/Cargo.toml
+        run: cargo test

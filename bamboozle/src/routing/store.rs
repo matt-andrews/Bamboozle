@@ -29,7 +29,7 @@ impl RouteStore {
 
     pub fn set_route(&self, mut def: RouteDefinition) -> Result<(), AppError> {
         let verb = def.match_key.verb.trim().to_ascii_uppercase();
-        let normalized = normalize_url(&def.match_key.pattern);
+        let normalized = normalize_url(&def.match_key.pattern).to_ascii_lowercase();
         def.match_key.verb = verb.clone();
         def.match_key.pattern = normalized.clone();
         let key_str = def.match_key.to_string();
@@ -45,7 +45,7 @@ impl RouteStore {
         };
 
         // Ensure the verb bucket exists, then drop the entry ref before borrowing again.
-        self.routes.entry(verb.clone()).or_insert_with(DashMap::new);
+        self.routes.entry(verb.clone()).or_default();
 
         // Now borrow the inner map via get() — separate from the entry above.
         let verb_ref = self.routes.get(&verb).unwrap();
