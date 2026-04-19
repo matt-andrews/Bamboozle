@@ -15,4 +15,6 @@ pub struct ContextModel {
     #[serde(rename = "routeModel")]
     pub route_model: RouteDefinition,
     pub body: JsonValue,
+    #[serde(rename = "bodyRaw")]
+    pub body_raw: String,
 }

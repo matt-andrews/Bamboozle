@@ -51,16 +51,16 @@ async fn catch_all(
         })
         .collect();
 
-    let body_str = String::from_utf8_lossy(&body_bytes).into_owned();
+    let body_raw = String::from_utf8_lossy(&body_bytes).into_owned();
     let is_json = headers
         .get("content-type")
         .and_then(|v| v.to_str().ok())
         .map(|v| v.contains("application/json"))
         .unwrap_or(false);
     let body: serde_json::Value = if is_json {
-        serde_json::from_str(&body_str).unwrap_or(serde_json::Value::String(body_str))
+        serde_json::from_str(&body_raw).unwrap_or(serde_json::Value::String(body_raw.clone()))
     } else {
-        serde_json::Value::String(body_str)
+        serde_json::Value::String(body_raw.clone())
     };
 
     match state.store.match_route(&verb, &path) {
@@ -70,6 +70,7 @@ async fn catch_all(
                 headers: HashMap::new(),
                 route_values: HashMap::new(),
                 body: serde_json::Value::Null,
+                body_raw: String::new(),
                 route_model: RouteDefinition {
                     match_key: MatchKey::new(verb, path),
                     response: ResponseDefinition::default(),
@@ -85,6 +86,7 @@ async fn catch_all(
                 headers: header_map,
                 route_values,
                 body,
+                body_raw: body_raw.clone(),
                 route_model: route_def.clone(),
             };
             state.tracker.record_matched(ctx.clone());
@@ -94,12 +96,16 @@ async fn catch_all(
                 .render_or_fallback(&route_def.response.status, &ctx, "200");
             let status_code: u16 = status_str.trim().parse().unwrap_or(200);
 
-            let body = route_def
-                .response
-                .content
-                .as_deref()
-                .map(|t| state.renderer.render_or_fallback(t, &ctx, ""))
-                .unwrap_or_default();
+            let body = if route_def.response.loopback == Some(true) {
+                body_raw
+            } else {
+                route_def
+                    .response
+                    .content
+                    .as_deref()
+                    .map(|t| state.renderer.render_or_fallback(t, &ctx, ""))
+                    .unwrap_or_default()
+            };
 
             let mut builder = Response::builder().status(status_code);
 

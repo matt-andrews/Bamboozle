@@ -179,7 +179,7 @@ test.describe('assert match with no expression', () => {
   const verbs: string[] = ['GET', 'PUT', 'POST', 'PATCH', 'DELETE'];
   for (let verb of verbs) {
     test(verb, async ({ request }) => {
-      const key: MatchKey = { verb: verb, pattern: 'playwright/assert/nonmatch/verb/match/pattern' };
+      const key: MatchKey = { verb: verb, pattern: 'playwright/assert/match/with/no/expression' };
       deleteState.push(key);
       await addRoute(key);
       const initReq = await reqFactory(verb, `http://localhost:18080/${key.pattern}`, request);
@@ -192,28 +192,13 @@ test.describe('assert match with no expression', () => {
   }
 });
 
-test.describe('assert match complext body', () => {
+test.describe('assert match complex body', () => {
   const verbs: string[] = ['PUT', 'POST', 'PATCH'];
   for (let verb of verbs) {
     test(verb, async ({ request }) => {
       const key: MatchKey = { verb: verb, pattern: 'playwright/assert/match/complex/body' };
       deleteState.push(key);
-      await bamboozleClient.addRoute({
-        match: key,
-        response: {
-          status: "200",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          content: `
-            [
-              {% for kvp in queryParams %} 
-                "{{kvp[0]}}={{kvp[1]}}"{% unless forloop.last %}, {% endunless %}
-              {% endfor %}
-            ]
-          `
-        }
-      });
+      await addRoute(key);
       const initReq = await reqFactory(verb, `http://localhost:18080/${key.pattern}`, request, {
         hello: "world",
         number: 24

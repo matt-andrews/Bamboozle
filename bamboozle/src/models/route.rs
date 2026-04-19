@@ -19,6 +19,7 @@ pub struct ResponseDefinition {
     #[serde(default)]
     pub headers: HashMap<String, String>,
     pub content: Option<String>,
+    pub loopback: Option<bool>,
 }
 
 fn default_status() -> String {

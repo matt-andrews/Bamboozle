@@ -49,6 +49,7 @@ fn build_globals(ctx: &ContextModel) -> liquid::Object {
     globals.insert("headers".into(), map_to_value(&ctx.headers));
     globals.insert("routeValues".into(), map_to_value(&ctx.route_values));
     globals.insert("body".into(), json_to_liquid(&ctx.body));
+    globals.insert("bodyRaw".into(), Value::scalar(ctx.body_raw.clone()));
     globals
 }
 

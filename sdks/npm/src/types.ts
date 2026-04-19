@@ -9,6 +9,7 @@ export interface ResponseDefinition {
   status?: string;
   headers?: Record<string, string>;
   content?: string;
+  loopback?: boolean;
 }
 
 export interface RouteDefinition {

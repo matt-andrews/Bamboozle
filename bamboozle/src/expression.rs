@@ -31,9 +31,10 @@ pub fn eval_expression(expr: &str, ctx: &ContextModel) -> Result<bool, EvalexprE
     };
 
     let mut context: HashMapContext = context_map! {
-        "verb"    => Value::String(ctx.route_model.match_key.verb.clone()),
-        "pattern" => Value::String(ctx.route_model.match_key.pattern.clone()),
-        "body"    => Value::String(body_str),
+        "verb"     => Value::String(ctx.route_model.match_key.verb.clone()),
+        "pattern"  => Value::String(ctx.route_model.match_key.pattern.clone()),
+        "body"     => Value::String(body_str),
+        "body_raw" => Value::String(ctx.body_raw.clone()),
     }?;
 
     context.set_function(
