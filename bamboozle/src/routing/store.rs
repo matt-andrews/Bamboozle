@@ -6,7 +6,7 @@ use tracing::{debug, error, info, warn};
 use crate::{
     error::{AppError, RouteError},
     models::{match_key::MatchKey, route::RouteDefinition},
-    routing::regex_gen::{compile_pattern, normalize_url, try_match_route},
+    routing::regex_gen::{compile_pattern, try_match_route},
 };
 
 struct StoredRoute {
@@ -29,7 +29,11 @@ impl RouteStore {
 
     pub fn set_route(&self, mut def: RouteDefinition) -> Result<RouteDefinition, AppError> {
         let verb = def.match_key.verb.trim().to_ascii_uppercase();
-        let normalized = normalize_url(&def.match_key.pattern).to_ascii_lowercase();
+        // Normalise: lowercase literal segments but preserve case inside {braces} so
+        // param names match Liquid template access ({{routeValues.thingName}}).
+        // The storage key is fully lowercase for case-insensitive deduplication.
+        let normalized = MatchKey::normalize_pattern(&def.match_key.pattern);
+        let storage_key = normalized.to_ascii_lowercase();
         def.match_key.verb = verb.clone();
         def.match_key.pattern = normalized.clone();
         let key_str = def.match_key.to_string();
@@ -51,13 +55,13 @@ impl RouteStore {
         let verb_ref = self.routes.get(&verb).unwrap();
         let verb_map = verb_ref.value();
 
-        if verb_map.contains_key(&normalized) {
+        if verb_map.contains_key(&storage_key) {
             warn!(route = %key_str, "Route already exists, skipping");
             return Err(AppError::AlreadyExists(key_str));
         }
 
         verb_map.insert(
-            normalized.clone(),
+            storage_key,
             StoredRoute {
                 definition: def.clone(),
                 compiled_regex: compiled,
@@ -71,7 +75,7 @@ impl RouteStore {
 
     pub fn delete_route(&self, key: &MatchKey) -> Result<(), RouteError> {
         let key_str = key.to_string();
-        let normalized = normalize_url(&key.pattern);
+        let normalized = MatchKey::normalize_pattern(&key.pattern).to_ascii_lowercase();
 
         let verb_map = match self.routes.get(&key.verb) {
             Some(m) => m,

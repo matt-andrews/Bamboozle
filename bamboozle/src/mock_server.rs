@@ -274,6 +274,38 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn camel_case_route_param_rendered_in_response_body() {
+        // Construct via MatchKey fields directly (not MatchKey::new) to simulate the
+        // serde deserialization path used by config file loading, where param names
+        // retain their original case.
+        let state = AppState::new();
+        state
+            .store
+            .set_route(RouteDefinition {
+                match_key: MatchKey {
+                    verb: "GET".to_string(),
+                    pattern: "/thing/{thingName}/{thingVersion}".to_string(),
+                },
+                response: ResponseDefinition {
+                    status: "200".to_string(),
+                    content: Some(r#"{"id":"{{ routeValues.thingName }}"}"#.to_string()),
+                    ..Default::default()
+                },
+            })
+            .unwrap();
+        let response = router(state)
+            .oneshot(
+                Request::builder()
+                    .uri("/thing/widget/v1")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(body_string(response.into_body()).await, r#"{"id":"widget"}"#);
+    }
+
+    #[tokio::test]
     async fn unmatched_request_is_tracked() {
         let state = AppState::new();
         let tracker = state.tracker.clone();

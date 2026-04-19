@@ -16,15 +16,29 @@ impl MatchKey {
         }
     }
 
-    fn normalize_pattern(pattern: impl Into<String>) -> String {
-        let pattern = pattern.into().to_ascii_lowercase();
+    /// Normalises a route pattern for canonical storage and comparison.
+    /// Literal URL segments are lowercased (case-insensitive routing), but the
+    /// content inside `{braces}` is preserved so param names match what callers
+    /// use in Liquid templates (e.g. `{{routeValues.thingName}}`).
+    pub(crate) fn normalize_pattern(pattern: impl Into<String>) -> String {
+        let pattern = pattern.into();
         let trimmed = pattern.trim_matches('/');
         if trimmed.is_empty() {
             return String::new();
         }
-        trimmed
+        let mut result = String::with_capacity(trimmed.len());
+        let mut in_braces = false;
+        for c in trimmed.chars() {
+            match c {
+                '{' => { in_braces = true; result.push(c); }
+                '}' => { in_braces = false; result.push(c); }
+                _ if in_braces => result.push(c),
+                _ => result.push(c.to_ascii_lowercase()),
+            }
+        }
+        result
             .split('/')
-            .filter(|segment| !segment.is_empty())
+            .filter(|s| !s.is_empty())
             .collect::<Vec<_>>()
             .join("/")
     }

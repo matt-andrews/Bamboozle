@@ -3,6 +3,13 @@ import { BamboozleClient, MatchKey, BamboozleAssertBuilder } from '@bamboozle/sd
 
 const bamboozleClient: BamboozleClient = new BamboozleClient({ baseUrl: "http://localhost:19090" });
 
+test('response json is real json', async ({ request }) => {
+    const response = await request.get('http://localhost:18080/something/something/darkside');
+    const json = await response.json();
+    expect(json.id).toEqual("something");
+    expect(json.value).toEqual("test-value-something")
+})
+
 test.describe('request body can do complex json', () => {
     let deleteState: MatchKey[] = [];
     test.afterEach(async () => {
@@ -84,6 +91,7 @@ test.describe('request body loopback should match original', () => {
             expect(init).toBeDefined();
             expect(init.hello).toEqual("world");
             expect(init.number).toEqual(24);
+            console.log(await bamboozleClient.getCalls(key.verb, key.pattern));
             expect(await bamboozleClient.assert(key.verb, key.pattern, { expect: 1 })).toBeTruthy();
         });
     }
