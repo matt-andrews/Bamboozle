@@ -8,6 +8,8 @@ on:
       - K6 Load Tests
       - Startup Time
     types: [completed]
+  #for testing purposes
+  push:
 
 permissions:
   pull-requests: write
