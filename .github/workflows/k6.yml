@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Start Docker Compose stack
         run: docker compose -f ./scripts/docker-compose.dev.yml up -d
@@ -40,7 +40,7 @@ jobs:
 
       - name: Upload K6 results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: k6-results
           path: scripts/perf-test/k6/results.json
