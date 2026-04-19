@@ -50,7 +50,7 @@ pub fn eval_expression(expr: &str, ctx: &ContextModel) -> Result<bool, EvalexprE
     context.set_function(
         "header".to_string(),
         Function::new(move |arg| {
-            let key = arg.as_string()?;
+            let key = arg.as_string()?.to_ascii_lowercase();
             Ok(Value::String(
                 headers.get(&key).cloned().unwrap_or_default(),
             ))
@@ -197,7 +197,7 @@ mod tests {
         let mut ctx = make_ctx();
         ctx.headers
             .insert("x-request-id".to_string(), "abc123".to_string());
-        assert!(eval_expression(r#"header("x-request-id") == "abc123""#, &ctx).unwrap());
+        assert!(eval_expression(r#"header("x-Request-id") == "abc123""#, &ctx).unwrap());
         assert!(eval_expression(r#"header("missing") == """#, &ctx).unwrap());
     }
 

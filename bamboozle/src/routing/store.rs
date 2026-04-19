@@ -27,7 +27,7 @@ impl RouteStore {
         }
     }
 
-    pub fn set_route(&self, mut def: RouteDefinition) -> Result<(), AppError> {
+    pub fn set_route(&self, mut def: RouteDefinition) -> Result<RouteDefinition, AppError> {
         let verb = def.match_key.verb.trim().to_ascii_uppercase();
         let normalized = normalize_url(&def.match_key.pattern).to_ascii_lowercase();
         def.match_key.verb = verb.clone();
@@ -59,14 +59,14 @@ impl RouteStore {
         verb_map.insert(
             normalized.clone(),
             StoredRoute {
-                definition: def,
+                definition: def.clone(),
                 compiled_regex: compiled,
                 normalized_pattern: normalized,
             },
         );
 
         info!(route = %key_str, "Route set");
-        Ok(())
+        Ok(def)
     }
 
     pub fn delete_route(&self, key: &MatchKey) -> Result<(), RouteError> {

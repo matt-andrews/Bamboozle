@@ -15,11 +15,12 @@ test.describe('request body can do complex json', () => {
         }
         deleteState = [];
     });
-    const verbs: string[] = ['PUT', 'POST', 'PATCH'];
+    const verbs: string[] = ['PUT', 'POST', 'patch'];
     for (let verb of verbs) {
         test(verb, async ({ request }) => {
             const key: MatchKey = { verb: verb, pattern: 'playwright/request/body/can/do/complex/json' };
             deleteState.push(key);
+            verb = verb.toUpperCase();
             await bamboozleClient.addRoute({
                 match: key,
                 response: {
@@ -43,6 +44,7 @@ test.describe('request body can do complex json', () => {
             expect(init).toBeDefined();
             expect(init.hello).toEqual("world");
             expect(init.number).toEqual("24"); //in the LT content we convert to string
+            expect(await bamboozleClient.assert(key.verb, key.pattern, { expect: 1 })).toBeTruthy();
         });
     }
 });
@@ -62,7 +64,7 @@ test.describe('request body loopback should match original', () => {
     const verbs: string[] = ['PUT', 'POST', 'PATCH'];
     for (let verb of verbs) {
         test(verb, async ({ request }) => {
-            const key: MatchKey = { verb: verb, pattern: 'playwright/request/body/loopback/should/match/original' };
+            const key: MatchKey = { verb: verb, pattern: 'playwright/request/BODY/loopback/should/match/original' };
             deleteState.push(key);
             await bamboozleClient.addRoute({
                 match: key,
@@ -82,6 +84,7 @@ test.describe('request body loopback should match original', () => {
             expect(init).toBeDefined();
             expect(init.hello).toEqual("world");
             expect(init.number).toEqual(24);
+            expect(await bamboozleClient.assert(key.verb, key.pattern, { expect: 1 })).toBeTruthy();
         });
     }
 });

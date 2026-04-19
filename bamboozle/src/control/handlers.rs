@@ -30,8 +30,8 @@ pub async fn post_routes(
     State(state): State<AppState>,
     Json(route): Json<RouteDefinition>,
 ) -> Result<Json<RouteDefinition>, AppError> {
-    state.store.set_route(route.clone())?;
-    Ok(Json(route))
+    let response = state.store.set_route(route.clone())?;
+    Ok(Json(response))
 }
 
 // ── PUT /control/routes ─────────────────────────────────────────────────────
@@ -49,8 +49,14 @@ pub async fn put_routes(
     State(state): State<AppState>,
     Json(route): Json<RouteDefinition>,
 ) -> Result<Json<RouteDefinition>, AppError> {
+    // Normalize before deletion so PUT upserts the same canonical key that
+    // `set_route` uses internally.
+    let normalized_match_key = MatchKey::new(
+        route.match_key.verb.clone(),
+        route.match_key.pattern.clone(),
+    );
     // Ignore NotFound — PUT is idempotent
-    let _ = state.store.delete_route(&route.match_key);
+    let _ = state.store.delete_route(&normalized_match_key);
     state.store.set_route(route.clone())?;
     Ok(Json(route))
 }
