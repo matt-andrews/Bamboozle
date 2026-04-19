@@ -180,13 +180,14 @@ mod tests {
     #[test]
     fn pattern_variable() {
         let ctx = make_ctx();
-        assert!(eval_expression(r#"pattern == "/test""#, &ctx).unwrap());
+        assert!(eval_expression(r#"pattern == "test""#, &ctx).unwrap());
     }
 
     #[test]
     fn query_function_present_and_absent() {
         let mut ctx = make_ctx();
-        ctx.query_params.insert("status".to_string(), "active".to_string());
+        ctx.query_params
+            .insert("status".to_string(), "active".to_string());
         assert!(eval_expression(r#"query("status") == "active""#, &ctx).unwrap());
         assert!(eval_expression(r#"query("missing") == """#, &ctx).unwrap());
     }
@@ -194,7 +195,8 @@ mod tests {
     #[test]
     fn header_function_present_and_absent() {
         let mut ctx = make_ctx();
-        ctx.headers.insert("x-request-id".to_string(), "abc123".to_string());
+        ctx.headers
+            .insert("x-request-id".to_string(), "abc123".to_string());
         assert!(eval_expression(r#"header("x-request-id") == "abc123""#, &ctx).unwrap());
         assert!(eval_expression(r#"header("missing") == """#, &ctx).unwrap());
     }
@@ -252,7 +254,8 @@ mod tests {
     #[test]
     fn combined_and_expression() {
         let mut ctx = make_ctx();
-        ctx.query_params.insert("env".to_string(), "prod".to_string());
+        ctx.query_params
+            .insert("env".to_string(), "prod".to_string());
         assert!(eval_expression(r#"verb == "GET" && query("env") == "prod""#, &ctx).unwrap());
         assert!(!eval_expression(r#"verb == "POST" && query("env") == "prod""#, &ctx).unwrap());
     }

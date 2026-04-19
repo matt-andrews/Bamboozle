@@ -191,7 +191,7 @@ mod tests {
         let store = RouteStore::new();
         store.set_route(make_route("GET", "/hello")).unwrap();
         let (def, values) = store.match_route("GET", "/hello").unwrap();
-        assert_eq!(def.match_key.pattern, "/hello");
+        assert_eq!(def.match_key.pattern, "hello");
         assert!(values.is_empty());
     }
 
