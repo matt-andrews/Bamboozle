@@ -26,4 +26,22 @@ jobs:
         run: cargo clippy --all-targets --all-features -- -D warnings
 
       - name: Test
-        run: cargo test
+        run: |
+          cargo test 2>&1 | tee cargo-test-output.txt
+          python3 - << 'EOF'
+          import re, json
+          passed = failed = ignored = 0
+          with open("cargo-test-output.txt") as f:
+              for line in f:
+                  m = re.search(r"(\d+) passed; (\d+) failed; (\d+) ignored", line)
+                  if m:
+                      passed += int(m.group(1)); failed += int(m.group(2)); ignored += int(m.group(3))
+          json.dump({"passed": passed, "failed": failed, "ignored": ignored}, open("unit-test-results.json", "w"))
+          EOF
+
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: unit-test-results
+          path: ./bamboozle/unit-test-results.json
+          retention-days: 30

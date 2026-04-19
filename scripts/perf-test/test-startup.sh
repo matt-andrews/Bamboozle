@@ -70,6 +70,8 @@ if [ "${#times[@]}" -gt 0 ]; then
     echo "Max: ${max}ms"
     echo "Avg: ${avg}ms"
 
+    echo "{\"min_ms\":$min,\"max_ms\":$max,\"avg_ms\":$avg,\"iterations\":$ITERATIONS,\"successful\":${#times[@]}}" > startup-results.json
+
     if [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
         {
             echo "## Startup Time Results"
