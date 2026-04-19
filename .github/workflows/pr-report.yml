@@ -11,6 +11,7 @@ on:
 
 permissions:
   pull-requests: write
+  issues: write
   actions: read
 
 jobs:
@@ -18,6 +19,10 @@ jobs:
     runs-on: ubuntu-latest
     # Only fire for PR events; skip pushes to branches (e.g. nightly triggers)
     if: github.event.workflow_run.event == 'pull_request'
+    # Serialize updates per PR so concurrent firings don't overwrite each other
+    concurrency:
+      group: pr-report-${{ github.event.workflow_run.pull_requests[0].number || github.event.workflow_run.head_sha }}
+      cancel-in-progress: false
 
     steps:
       - uses: actions/checkout@v6
@@ -35,7 +40,7 @@ jobs:
 
           # Fallback: search open PRs by head SHA (needed for fork PRs)
           if [ -z "$PR_NUMBER" ]; then
-            PR_NUMBER=$(gh api "/repos/$REPO/pulls?state=open&per_page=100" \
+            PR_NUMBER=$(gh api "/repos/$REPO/pulls?state=open&per_page=1000" \
               --jq ".[] | select(.head.sha == \"$HEAD_SHA\") | .number" | head -1)
           fi
 
@@ -59,7 +64,7 @@ jobs:
           download_artifact() {
             local workflow_file="$1" artifact_name="$2" dest_dir="$3"
             local run_id
-            run_id=$(gh api "/repos/$REPO/actions/workflows/$workflow_file/runs?per_page=10" \
+            run_id=$(gh api "/repos/$REPO/actions/workflows/$workflow_file/runs?per_page=100" \
               --jq ".workflow_runs[]
                     | select(.head_sha == \"$HEAD_SHA\" and .status == \"completed\")
                     | .id" \
@@ -93,7 +98,7 @@ jobs:
           PR_NUMBER: ${{ steps.pr.outputs.pr_number }}
         run: |
           BASE_SHA=$(gh api "/repos/$REPO/pulls/$PR_NUMBER" --jq '.base.sha')
-          BASE_RUN_ID=$(gh api "/repos/$REPO/actions/workflows/ci.yml/runs?per_page=20" \
+          BASE_RUN_ID=$(gh api "/repos/$REPO/actions/workflows/ci.yml/runs?per_page=100" \
             --jq ".workflow_runs[]
                   | select(.head_sha == \"$BASE_SHA\" and .conclusion == \"success\")
                   | .id" \

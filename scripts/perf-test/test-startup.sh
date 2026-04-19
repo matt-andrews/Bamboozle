@@ -92,6 +92,8 @@ if [ "${#times[@]}" -gt 0 ]; then
             done
         } >> "$GITHUB_STEP_SUMMARY"
     fi
+else
+    echo "{\"min_ms\":null,\"max_ms\":null,\"avg_ms\":null,\"iterations\":$ITERATIONS,\"successful\":0}" > startup-results.json
 fi
 
 if [ "$failed" -gt 0 ]; then

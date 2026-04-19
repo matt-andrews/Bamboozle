@@ -5,13 +5,18 @@ Generates the CI summary markdown comment for a PR.
 Reads pre-downloaded artifacts from ./artifacts/<name>/ directories and
 writes the final comment body to ./comment.md.
 
-Expected artifact directories:
-  artifacts/unit-tests/unit-test-results.json
-  artifacts/playwright/playwright-results.json
-  artifacts/k6/k6-output.txt
-  artifacts/startup/startup-results.json
-  artifacts/docker-size/docker-size.json
-  artifacts/base-unit-tests/unit-test-results.json  (optional, for delta)
+Each artifact directory is searched recursively for the target filename so
+that `actions/upload-artifact`'s directory-structure preservation doesn't
+matter (e.g. artifacts/k6/scripts/perf-test/k6/k6-output.txt is found the
+same as artifacts/k6/k6-output.txt).
+
+Expected artifact directories (with their target files):
+  artifacts/unit-tests/   → unit-test-results.json
+  artifacts/playwright/   → playwright-results.json
+  artifacts/k6/           → k6-output.txt
+  artifacts/startup/      → startup-results.json
+  artifacts/docker-size/  → docker-size.json
+  artifacts/base-unit-tests/ → unit-test-results.json  (optional, for delta)
 
 Environment variables:
   TRIGGERING_WORKFLOW   name of the workflow that triggered this run
@@ -21,7 +26,6 @@ Environment variables:
 import json
 import os
 import re
-import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -30,7 +34,16 @@ MARKER = "<!-- bamboozle-ci-report -->"
 K6_METRICS = ["checks", "http_req_duration", "http_req_failed", "iteration_duration", "http_reqs"]
 
 
-def load_json(path: str):
+def find_file(artifact_dir: str, filename: str) -> Path | None:
+    """Return the first match for *filename* anywhere under *artifact_dir*."""
+    matches = list(Path(artifact_dir).glob(f"**/{filename}"))
+    return matches[0] if matches else None
+
+
+def load_json(artifact_dir: str, filename: str):
+    path = find_file(artifact_dir, filename)
+    if path is None:
+        return None
     try:
         with open(path) as f:
             return json.load(f)
@@ -38,25 +51,17 @@ def load_json(path: str):
         return None
 
 
-def status_icon(data, failed_key="failed", unexpected_key=None):
-    if data is None:
-        return "⏳"
-    f = data.get(failed_key, 0) or data.get(unexpected_key or "", 0)
-    return "❌" if f > 0 else "✅"
-
-
 def format_duration(ms: float) -> str:
     s = ms / 1000
     if s < 60:
         return f"{s:.1f}s"
     m = int(s // 60)
-    s = s % 60
-    return f"{m}m {s:.0f}s"
+    return f"{m}m {s % 60:.0f}s"
 
 
 def section_unit_tests() -> str:
-    data = load_json("artifacts/unit-tests/unit-test-results.json")
-    base = load_json("artifacts/base-unit-tests/unit-test-results.json")
+    data = load_json("artifacts/unit-tests", "unit-test-results.json")
+    base = load_json("artifacts/base-unit-tests", "unit-test-results.json")
 
     if data is None:
         return "### 🧪 Unit Tests\n⏳ _Pending_\n"
@@ -85,7 +90,7 @@ def section_unit_tests() -> str:
 
 
 def section_playwright() -> str:
-    data = load_json("artifacts/playwright/playwright-results.json")
+    data = load_json("artifacts/playwright", "playwright-results.json")
 
     if data is None:
         return "### 🎭 Playwright E2E\n⏳ _Pending_\n"
@@ -110,8 +115,8 @@ def section_playwright() -> str:
 
 
 def section_k6() -> str:
-    txt_path = "artifacts/k6/k6-output.txt"
-    if not os.path.exists(txt_path):
+    txt_path = find_file("artifacts/k6", "k6-output.txt")
+    if txt_path is None:
         return "### ⚡ K6 Load Tests\n⏳ _Pending_\n"
 
     selected = []
@@ -120,7 +125,6 @@ def section_k6() -> str:
             for line in f:
                 for metric in K6_METRICS:
                     if re.search(rf"\b{re.escape(metric)}\b", line):
-                        # Strip ANSI colour codes that k6 emits
                         clean = re.sub(r"\x1b\[[0-9;]*m", "", line).rstrip()
                         selected.append(clean)
                         break
@@ -141,15 +145,15 @@ def section_k6() -> str:
 
 
 def section_startup() -> str:
-    data = load_json("artifacts/startup/startup-results.json")
+    data = load_json("artifacts/startup", "startup-results.json")
 
     if data is None:
         return "### 🚀 Startup Performance\n⏳ _Pending_\n"
 
-    min_ms = data.get("min_ms", "—")
-    avg_ms = data.get("avg_ms", "—")
-    max_ms = data.get("max_ms", "—")
-    successful = data.get("successful", "?")
+    min_ms = data.get("min_ms") or "—"
+    avg_ms = data.get("avg_ms") or "—"
+    max_ms = data.get("max_ms") or "—"
+    successful = data.get("successful", 0)
     iterations = data.get("iterations", "?")
 
     icon = "❌" if successful != iterations else "✅"
@@ -166,7 +170,7 @@ def section_startup() -> str:
 
 
 def section_docker_size() -> str:
-    data = load_json("artifacts/docker-size/docker-size.json")
+    data = load_json("artifacts/docker-size", "docker-size.json")
 
     if data is None:
         return "### 🐳 Docker Image Size\n⏳ _Pending_\n"
@@ -208,7 +212,6 @@ if __name__ == "__main__":
     with open("comment.md", "w") as f:
         f.write(comment)
     print("comment.md written successfully")
-    # Print a preview of detected sections
     for line in comment.splitlines():
         if line.startswith("###") or line.startswith(">"):
             print(line)

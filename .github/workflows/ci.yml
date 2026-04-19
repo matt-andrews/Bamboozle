@@ -27,6 +27,7 @@ jobs:
 
       - name: Test
         run: |
+          set -o pipefail
           cargo test 2>&1 | tee cargo-test-output.txt
           python3 - << 'EOF'
           import re, json
