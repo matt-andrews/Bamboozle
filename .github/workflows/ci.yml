@@ -5,21 +5,25 @@ on:
     types: [opened, synchronize]
   workflow_call:
 
-env:
-  DOTNET_VERSION: '10.x'
-
 jobs:
-  dotnet-unit-test:
-    name: Dotnet Test
+  rust-test:
+    name: Rust Test
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./bamboozle
 
     steps:
       - uses: actions/checkout@v6
 
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v5
-        with:
-          dotnet-version: ${{env.DOTNET_VERSION}}
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Add Clippy
+        run: rustup component add clippy
+
+      - name: Cargo Check
+        run: cargo clippy --all-targets --all-features -- -D warnings
 
       - name: Test
-        run: dotnet test ./src/Bamboozle.slnx --configuration Release --logger "GitHubActions"
+        run: cargo test

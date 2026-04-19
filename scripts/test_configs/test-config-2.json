@@ -1,0 +1,17 @@
+{
+  "routes": [
+    {
+      "match": {
+        "verb": "GET",
+        "pattern": "something/{somethingName}/{somethingVersion}"
+      },
+      "response": {
+        "status": "200",
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "content": "{\"id\":\"{{routeValues.somethingName}}\", \"value\":\"test-value-{{routeValues.somethingName}}\"}"
+      }
+    }
+  ]
+}

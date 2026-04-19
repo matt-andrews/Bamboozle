@@ -1,0 +1,121 @@
+name: Nightly
+
+on:
+  schedule:
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+
+jobs:
+  check-changes:
+    name: Check for changes since last release
+    runs-on: ubuntu-latest
+    outputs:
+      has_changes: ${{ steps.check.outputs.has_changes }}
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Determine if build is needed
+        id: check
+        run: |
+          # Find the most recent relevant tag (version release or nightly marker)
+          NIGHTLY_TAG=$(git tag -l 'app/nightly' 2>/dev/null | head -1)
+          VERSION_TAG=$(git tag -l 'app/v*' --sort=-creatordate 2>/dev/null | tail -1)
+
+          if [ -n "$NIGHTLY_TAG" ] && [ -n "$VERSION_TAG" ]; then
+            NIGHTLY_TS=$(git log -1 --format="%ct" "app/nightly" 2>/dev/null || echo 0)
+            VERSION_TS=$(git log -1 --format="%ct" "$VERSION_TAG" 2>/dev/null || echo 0)
+            if [ "$NIGHTLY_TS" -gt "$VERSION_TS" ]; then
+              LAST_TAG="app/nightly"
+            else
+              LAST_TAG="$VERSION_TAG"
+            fi
+          elif [ -n "$NIGHTLY_TAG" ]; then
+            LAST_TAG="app/nightly"
+          elif [ -n "$VERSION_TAG" ]; then
+            LAST_TAG="$VERSION_TAG"
+          else
+            echo "No previous tags found — proceeding with first build"
+            echo "has_changes=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "Comparing HEAD against tag: $LAST_TAG"
+          CHANGED=$(git log "${LAST_TAG}..HEAD" --oneline -- bamboozle/ | wc -l | tr -d ' ')
+          echo "Commits in bamboozle/ since $LAST_TAG: $CHANGED"
+
+          if [ "$CHANGED" -gt 0 ]; then
+            echo "has_changes=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "No changes since $LAST_TAG — skipping nightly build"
+            echo "has_changes=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  ci:
+    name: Run CI
+    needs: check-changes
+    if: needs.check-changes.outputs.has_changes == 'true'
+    uses: ./.github/workflows/ci.yml
+
+  docker:
+    name: Build and push nightly Docker image
+    needs: [check-changes, ci]
+    if: needs.check-changes.outputs.has_changes == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: ./bamboozle
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/bamboozle:nightly
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Update nightly git tag
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag -f app/nightly HEAD
+          git push origin -f app/nightly
+
+      - name: Update nightly GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          NOTES="Automated nightly build from $(git rev-parse --short HEAD) on $(date +'%Y-%m-%d')."
+          if gh release view app/nightly &>/dev/null; then
+            gh release edit app/nightly \
+              --title "App Nightly ($(date +'%Y-%m-%d'))" \
+              --notes "$NOTES" \
+              --prerelease \
+              --tag app/nightly
+          else
+            gh release create app/nightly \
+              --title "App Nightly ($(date +'%Y-%m-%d'))" \
+              --notes "$NOTES" \
+              --prerelease \
+              --target "$GITHUB_SHA"
+          fi

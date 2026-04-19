@@ -1,0 +1,47 @@
+name: K6 Load Tests
+
+on:
+  workflow_dispatch:
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  k6:
+    name: K6 Load Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Start Docker Compose stack
+        run: docker compose -f ./scripts/docker-compose.dev.yml up -d
+
+      - name: Wait for health check
+        run: bash ./scripts/perf-test/k6/wait-for-health.sh 60
+
+      - name: Run K6 load tests
+        run: |
+          docker run --rm \
+            --network host \
+            --user $(id -u):$(id -g) \
+            -v "${{ github.workspace }}/scripts/perf-test/k6:/scripts" \
+            -e BASE_URL=http://localhost:18080 \
+            grafana/k6:0.57.0 \
+            run --no-color --out json=/scripts/results.json \
+            /scripts/load-test.js | tee ./scripts/perf-test/k6/k6-output.txt
+
+      - name: Post summary
+        if: always()
+        run: |
+          echo "## K6 Load Test Results" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          cat ./scripts/perf-test/k6/k6-output.txt >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+
+      - name: Upload K6 results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: k6-results
+          path: scripts/perf-test/k6/results.json
+          retention-days: 30
