@@ -1,5 +1,9 @@
 # Bamboozle
 
+<div align="center">
+  <img src="./assets/logo_full_19apr26.png" width=512 alt="Bamboozle Logo" >
+</div>
+
 Bamboozle is a container-native HTTP mock server for integration testing. It intercepts real HTTP traffic, allowing you to test your full client stack — serialisation, authentication headers, retry logic, circuit breakers — without any live dependency.
 
 Unlike in-process mocking libraries, Bamboozle runs as a self-contained Docker container that is fully programmable at runtime from your test code.

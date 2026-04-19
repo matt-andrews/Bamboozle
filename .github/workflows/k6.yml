@@ -23,6 +23,7 @@ jobs:
         run: |
           docker run --rm \
             --network host \
+            --user $(id -u):$(id -g) \
             -v "${{ github.workspace }}/scripts/perf-test/k6:/scripts" \
             -e BASE_URL=http://localhost:18080 \
             grafana/k6:0.57.0 \
