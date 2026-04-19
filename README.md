@@ -3,7 +3,7 @@
   <h1>Bamboozle</h1>
 </div>
 
-> ![WARNING]
+> [!WARNING]
 > This project is still in a pre-release state. Use at your own risk.
 
 Bamboozle is a container-native HTTP mock server for integration testing. It intercepts real HTTP traffic, allowing you to test your full client stack — serialisation, authentication headers, retry logic, circuit breakers — without any live dependency.
