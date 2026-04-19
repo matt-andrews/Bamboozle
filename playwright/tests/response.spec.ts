@@ -91,7 +91,6 @@ test.describe('request body loopback should match original', () => {
             expect(init).toBeDefined();
             expect(init.hello).toEqual("world");
             expect(init.number).toEqual(24);
-            console.log(await bamboozleClient.getCalls(key.verb, key.pattern));
             expect(await bamboozleClient.assert(key.verb, key.pattern, { expect: 1 })).toBeTruthy();
         });
     }
