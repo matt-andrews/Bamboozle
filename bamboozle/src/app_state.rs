@@ -1,10 +1,6 @@
 use std::sync::Arc;
 
-use crate::{
-    liquid_render::Renderer,
-    routing::store::RouteStore,
-    tracking::tracker::CallTracker,
-};
+use crate::{liquid_render::Renderer, routing::store::RouteStore, tracking::tracker::CallTracker};
 
 #[derive(Clone)]
 pub struct AppState {

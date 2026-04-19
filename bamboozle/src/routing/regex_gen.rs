@@ -24,9 +24,7 @@ fn constraint_pattern(constraint: &str) -> &'static str {
         "int" | "long" => r"-?\d+",
         "double" | "decimal" | "float" => r"-?\d+(\.\d+)?",
         "bool" => r"true|false",
-        "guid" => {
-            r"[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}"
-        }
+        "guid" => r"[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}",
         "alpha" => r"[a-zA-Z]+",
         "datetime" => r"\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}:\d{2})?",
         _ => r"[^/]+",
@@ -51,7 +49,11 @@ pub fn compile_pattern(pattern: &str) -> Result<Regex, regex::Error> {
                 remaining = &remaining[brace_end + 1..];
 
                 let optional = inner.ends_with('?');
-                let inner = if optional { &inner[..inner.len() - 1] } else { inner };
+                let inner = if optional {
+                    &inner[..inner.len() - 1]
+                } else {
+                    inner
+                };
 
                 let (param_name, constraint) = match inner.find(':') {
                     Some(colon) => (&inner[..colon], &inner[colon + 1..]),
@@ -108,7 +110,12 @@ pub fn try_match_route(
     let route_values = compiled
         .capture_names()
         .flatten()
-        .map(|name| (name.to_string(), caps.name(name).map_or("", |m| m.as_str()).to_string()))
+        .map(|name| {
+            (
+                name.to_string(),
+                caps.name(name).map_or("", |m| m.as_str()).to_string(),
+            )
+        })
         .collect();
 
     Some(route_values)
@@ -163,7 +170,14 @@ mod tests {
         let regex = compile_pattern("blog/{slug?}").unwrap();
         let result = try_match_route(&regex, "blog/{slug?}", "blog");
         assert!(result.is_some());
-        assert_eq!(result.unwrap().get("slug").map(|s| s.as_str()).unwrap_or(""), "");
+        assert_eq!(
+            result
+                .unwrap()
+                .get("slug")
+                .map(|s| s.as_str())
+                .unwrap_or(""),
+            ""
+        );
     }
 
     #[test]

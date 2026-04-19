@@ -7,7 +7,11 @@ use utoipa_swagger_ui::SwaggerUi;
 
 use crate::{
     app_state::AppState,
-    models::{context::ContextModel, match_key::MatchKey, route::{ResponseDefinition, RouteDefinition}},
+    models::{
+        context::ContextModel,
+        match_key::MatchKey,
+        route::{ResponseDefinition, RouteDefinition},
+    },
 };
 
 pub mod handlers;

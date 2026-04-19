@@ -302,7 +302,10 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_eq!(body_string(response.into_body()).await, r#"{"id":"widget"}"#);
+        assert_eq!(
+            body_string(response.into_body()).await,
+            r#"{"id":"widget"}"#
+        );
     }
 
     #[tokio::test]

@@ -31,7 +31,12 @@ impl Renderer {
     }
 
     /// Renders a template, returning `fallback` on any error.
-    pub fn render_or_fallback(&self, template_str: &str, ctx: &ContextModel, fallback: &str) -> String {
+    pub fn render_or_fallback(
+        &self,
+        template_str: &str,
+        ctx: &ContextModel,
+        fallback: &str,
+    ) -> String {
         self.render(template_str, ctx)
             .unwrap_or_else(|_| fallback.to_string())
     }
@@ -116,15 +121,20 @@ mod tests {
     fn query_param_interpolation() {
         let r = Renderer::new();
         let mut ctx = make_ctx();
-        ctx.query_params.insert("name".to_string(), "Alice".to_string());
-        assert_eq!(r.render("Hello {{ queryParams.name }}", &ctx).unwrap(), "Hello Alice");
+        ctx.query_params
+            .insert("name".to_string(), "Alice".to_string());
+        assert_eq!(
+            r.render("Hello {{ queryParams.name }}", &ctx).unwrap(),
+            "Hello Alice"
+        );
     }
 
     #[test]
     fn header_interpolation() {
         let r = Renderer::new();
         let mut ctx = make_ctx();
-        ctx.headers.insert("token".to_string(), "tok123".to_string());
+        ctx.headers
+            .insert("token".to_string(), "tok123".to_string());
         assert_eq!(r.render("{{ headers.token }}", &ctx).unwrap(), "tok123");
     }
 
@@ -161,7 +171,10 @@ mod tests {
     #[test]
     fn render_or_fallback_uses_fallback_on_error() {
         let r = Renderer::new();
-        assert_eq!(r.render_or_fallback("{%", &make_ctx(), "fallback"), "fallback");
+        assert_eq!(
+            r.render_or_fallback("{%", &make_ctx(), "fallback"),
+            "fallback"
+        );
     }
 
     #[test]
@@ -169,6 +182,9 @@ mod tests {
         let r = Renderer::new();
         let mut ctx = make_ctx();
         ctx.query_params.insert("x".to_string(), "1".to_string());
-        assert_eq!(r.render_or_fallback("{{ queryParams.x }}", &ctx, "fallback"), "1");
+        assert_eq!(
+            r.render_or_fallback("{{ queryParams.x }}", &ctx, "fallback"),
+            "1"
+        );
     }
 }

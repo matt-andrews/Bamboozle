@@ -2,11 +2,7 @@ use std::path::Path;
 use tokio::fs;
 use tracing::{error, warn};
 
-use crate::{
-    app_state::AppState,
-    config::AppConfig,
-    models::config_file::ConfigLoaderModel,
-};
+use crate::{app_state::AppState, config::AppConfig, models::config_file::ConfigLoaderModel};
 
 pub async fn load(config: &AppConfig, state: &AppState) -> anyhow::Result<()> {
     for folder in &config.route_config_folders {
@@ -45,7 +41,9 @@ pub async fn load(config: &AppConfig, state: &AppState) -> anyhow::Result<()> {
 
             let result = match ext.as_str() {
                 "json" => load_file(&file_path, state, parse_json, config.throw_on_error).await,
-                "yml" | "yaml" => load_file(&file_path, state, parse_yaml, config.throw_on_error).await,
+                "yml" | "yaml" => {
+                    load_file(&file_path, state, parse_yaml, config.throw_on_error).await
+                }
                 _ => continue,
             };
 

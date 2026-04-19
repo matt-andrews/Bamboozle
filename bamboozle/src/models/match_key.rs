@@ -30,8 +30,14 @@ impl MatchKey {
         let mut in_braces = false;
         for c in trimmed.chars() {
             match c {
-                '{' => { in_braces = true; result.push(c); }
-                '}' => { in_braces = false; result.push(c); }
+                '{' => {
+                    in_braces = true;
+                    result.push(c);
+                }
+                '}' => {
+                    in_braces = false;
+                    result.push(c);
+                }
                 _ if in_braces => result.push(c),
                 _ => result.push(c.to_ascii_lowercase()),
             }
