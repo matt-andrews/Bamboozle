@@ -1,6 +1,6 @@
 use std::path::Path;
 use tokio::fs;
-use tracing::{error, info, warn};
+use tracing::{error, warn};
 
 use crate::{
     app_state::AppState,
@@ -69,11 +69,7 @@ async fn load_file(
     let model = parser(&content)?;
 
     for route in model.routes {
-        let key = route.match_key.to_string();
-        match state.store.set_route(route) {
-            Ok(_) => info!(route = %key, "Loaded route from config"),
-            Err(e) => error!(route = %key, error = %e, "Failed to load route from config"),
-        }
+        let _ = state.store.set_route(route);
     }
 
     Ok(())

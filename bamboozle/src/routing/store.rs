@@ -1,6 +1,7 @@
 use dashmap::DashMap;
 use regex::Regex;
 use std::collections::HashMap;
+use tracing::{debug, error, info, warn};
 
 use crate::{
     error::RouteError,
@@ -31,8 +32,13 @@ impl RouteStore {
         let key_str = def.match_key.to_string();
         let normalized = normalize_url(&def.match_key.pattern);
 
-        let compiled = compile_pattern(&def.match_key.pattern)
-            .map_err(|e| RouteError::AlreadyExists(format!("Invalid pattern '{}': {}", normalized, e)))?;
+        let compiled = match compile_pattern(&def.match_key.pattern) {
+            Ok(c) => c,
+            Err(e) => {
+                error!(route = %key_str, error = %e, "Failed to compile route pattern");
+                return Err(RouteError::AlreadyExists(format!("Invalid pattern '{}': {}", normalized, e)));
+            }
+        };
 
         // Ensure the verb bucket exists, then drop the entry ref before borrowing again.
         self.routes.entry(verb.clone()).or_insert_with(DashMap::new);
@@ -42,6 +48,7 @@ impl RouteStore {
         let verb_map = verb_ref.value();
 
         if verb_map.contains_key(&normalized) {
+            warn!(route = %key_str, "Route already exists, skipping");
             return Err(RouteError::AlreadyExists(key_str));
         }
 
@@ -54,28 +61,43 @@ impl RouteStore {
             },
         );
 
+        info!(route = %key_str, "Route set");
         Ok(())
     }
 
     pub fn delete_route(&self, key: &MatchKey) -> Result<(), RouteError> {
+        let key_str = key.to_string();
         let normalized = normalize_url(&key.pattern);
-        let verb_map = self
-            .routes
-            .get(&key.verb)
-            .ok_or_else(|| RouteError::NotFound(key.to_string()))?;
+
+        let verb_map = match self.routes.get(&key.verb) {
+            Some(m) => m,
+            None => {
+                warn!(route = %key_str, "Route not found for deletion");
+                return Err(RouteError::NotFound(key_str));
+            }
+        };
 
         if verb_map.remove(&normalized).is_none() {
-            return Err(RouteError::NotFound(key.to_string()));
+            warn!(route = %key_str, "Route not found for deletion");
+            return Err(RouteError::NotFound(key_str));
         }
+
+        info!(route = %key_str, "Route deleted");
         Ok(())
     }
 
     pub fn get_route(&self, key: &MatchKey) -> Option<RouteDefinition> {
         let normalized = normalize_url(&key.pattern);
-        self.routes
-            .get(&key.verb)?
-            .get(&normalized)
-            .map(|r| r.definition.clone())
+        let result = self.routes
+            .get(&key.verb)
+            .and_then(|m| m.get(&normalized).map(|r| r.definition.clone()));
+
+        if result.is_some() {
+            debug!(route = %key, "Route retrieved");
+        } else {
+            debug!(route = %key, "Route not found");
+        }
+        result
     }
 
     /// Finds the first stored route whose pattern matches the given URL.
@@ -85,17 +107,19 @@ impl RouteStore {
         verb: &str,
         path: &str,
     ) -> Option<(RouteDefinition, HashMap<String, String>)> {
-        let verb_map = self.routes.get(verb)?;
-
-        for entry in verb_map.iter() {
-            let stored = entry.value();
-            if let Some(route_values) =
+        let result = self.routes.get(verb).and_then(|verb_map| {
+            verb_map.iter().find_map(|entry| {
+                let stored = entry.value();
                 try_match_route(&stored.compiled_regex, &stored.normalized_pattern, path)
-            {
-                return Some((stored.definition.clone(), route_values));
-            }
+                    .map(|route_values| (stored.definition.clone(), route_values))
+            })
+        });
+
+        match &result {
+            Some((def, _)) => debug!(verb, path, route = %def.match_key, "Request matched route"),
+            None => debug!(verb, path, "No route matched request"),
         }
-        None
+        result
     }
 
     pub fn get_all_routes(&self) -> Vec<RouteDefinition> {
@@ -113,5 +137,6 @@ impl RouteStore {
 
     pub fn reset(&self) {
         self.routes.clear();
+        info!("Route store cleared");
     }
 }

@@ -11,5 +11,8 @@
   "devDependencies": {
     "@playwright/test": "^1.59.1",
     "@types/node": "^25.6.0"
+  },
+  "dependencies": {
+    "@bamboozle/sdk": "file:../sdks/npm"
   }
 }
