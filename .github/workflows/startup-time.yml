@@ -17,4 +17,4 @@ jobs:
         run: docker compose -f ./scripts/docker-compose.dev.yml up -d
 
       - name: Run startup time test
-        run: bash scripts/test-startup.sh bamboozle:dev 5
+        run: bash ./scripts/perf-test/test-startup.sh bamboozle:dev 5

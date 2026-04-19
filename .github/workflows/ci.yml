@@ -17,4 +17,4 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
 
       - name: Test
-        run: cargo test --manifest-path bamboozle/Cargo.toml
+        run: RUSTFLAGS="-D warnings" cargo test --manifest-path bamboozle/Cargo.toml

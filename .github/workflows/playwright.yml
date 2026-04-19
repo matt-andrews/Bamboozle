@@ -12,7 +12,7 @@ jobs:
         with:
           node-version: lts/*
       - name: Run compose
-        run: bash ./scripts/dev.sh
+        run: docker compose -f ./scripts/docker-compose.dev.yml up -d
       - name: Install dependencies
         run: npm ci
       - name: Install Playwright Browsers
