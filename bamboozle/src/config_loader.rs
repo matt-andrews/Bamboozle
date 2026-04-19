@@ -82,3 +82,63 @@ fn parse_json(content: &str) -> anyhow::Result<ConfigLoaderModel> {
 fn parse_yaml(content: &str) -> anyhow::Result<ConfigLoaderModel> {
     serde_yaml::from_str(content).map_err(Into::into)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn parse_json_empty_routes() {
+        let model = parse_json(r#"{"routes": []}"#).unwrap();
+        assert!(model.routes.is_empty());
+    }
+
+    #[test]
+    fn parse_json_with_route() {
+        let json = r#"{
+            "routes": [{
+                "match": { "verb": "GET", "pattern": "/api/users" },
+                "response": { "status": "200", "content": "[]" }
+            }]
+        }"#;
+        let model = parse_json(json).unwrap();
+        assert_eq!(model.routes.len(), 1);
+        assert_eq!(model.routes[0].match_key.verb, "GET");
+        assert_eq!(model.routes[0].match_key.pattern, "/api/users");
+        assert_eq!(model.routes[0].response.content.as_deref(), Some("[]"));
+    }
+
+    #[test]
+    fn parse_json_invalid_returns_err() {
+        assert!(parse_json("not valid json {{{{").is_err());
+    }
+
+    #[test]
+    fn parse_yaml_empty_routes() {
+        let model = parse_yaml("routes: []").unwrap();
+        assert!(model.routes.is_empty());
+    }
+
+    #[test]
+    fn parse_yaml_with_route() {
+        let yaml = "
+routes:
+  - match:
+      verb: POST
+      pattern: /api/items
+    response:
+      status: \"201\"
+      content: created
+";
+        let model = parse_yaml(yaml).unwrap();
+        assert_eq!(model.routes.len(), 1);
+        assert_eq!(model.routes[0].match_key.verb, "POST");
+        assert_eq!(model.routes[0].match_key.pattern, "/api/items");
+        assert_eq!(model.routes[0].response.status, "201");
+    }
+
+    #[test]
+    fn parse_yaml_wrong_type_returns_err() {
+        assert!(parse_yaml("routes: not_a_list").is_err());
+    }
+}

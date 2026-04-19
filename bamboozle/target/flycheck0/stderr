@@ -1,12 +1,30 @@
-   0.144119400s  INFO prepare_target{force=false package_id=bamboozle v0.1.0 (C:\Users\Matthew\source\repos\Bamboozle\bamboozle) target="bamboozle"}: cargo::core::compiler::fingerprint: stale: changed "C:\\Users\\Matthew\\source\\repos\\Bamboozle\\bamboozle\\src\\models\\route.rs"
-   0.144146000s  INFO prepare_target{force=false package_id=bamboozle v0.1.0 (C:\Users\Matthew\source\repos\Bamboozle\bamboozle) target="bamboozle"}: cargo::core::compiler::fingerprint:           (vs) "C:\\Users\\Matthew\\source\\repos\\Bamboozle\\bamboozle\\target\\debug\\.fingerprint\\bamboozle-55a26529d6a8cca8\\dep-bin-bamboozle"
-   0.144150700s  INFO prepare_target{force=false package_id=bamboozle v0.1.0 (C:\Users\Matthew\source\repos\Bamboozle\bamboozle) target="bamboozle"}: cargo::core::compiler::fingerprint:                FileTime { seconds: 13421039400, nanos: 593723300 } < FileTime { seconds: 13421043581, nanos: 604973200 }
-   0.144414600s  INFO prepare_target{force=false package_id=bamboozle v0.1.0 (C:\Users\Matthew\source\repos\Bamboozle\bamboozle) target="bamboozle"}: cargo::core::compiler::fingerprint: fingerprint dirty for bamboozle v0.1.0 (C:\Users\Matthew\source\repos\Bamboozle\bamboozle)/Check { test: false }/TargetInner { name: "bamboozle", doc: true, ..: with_path("C:\\Users\\Matthew\\source\\repos\\Bamboozle\\bamboozle\\src\\main.rs", Edition2021) }
-   0.144437200s  INFO prepare_target{force=false package_id=bamboozle v0.1.0 (C:\Users\Matthew\source\repos\Bamboozle\bamboozle) target="bamboozle"}: cargo::core::compiler::fingerprint:     dirty: FsStatusOutdated(StaleItem(ChangedFile { reference: "C:\\Users\\Matthew\\source\\repos\\Bamboozle\\bamboozle\\target\\debug\\.fingerprint\\bamboozle-55a26529d6a8cca8\\dep-bin-bamboozle", reference_mtime: FileTime { seconds: 13421039400, nanos: 593723300 }, stale: "C:\\Users\\Matthew\\source\\repos\\Bamboozle\\bamboozle\\src\\models\\route.rs", stale_mtime: FileTime { seconds: 13421043581, nanos: 604973200 } }))
-   0.179483700s  INFO prepare_target{force=false package_id=bamboozle v0.1.0 (C:\Users\Matthew\source\repos\Bamboozle\bamboozle) target="bamboozle"}: cargo::core::compiler::fingerprint: stale: changed "C:\\Users\\Matthew\\source\\repos\\Bamboozle\\bamboozle\\src\\expression.rs"
-   0.179499800s  INFO prepare_target{force=false package_id=bamboozle v0.1.0 (C:\Users\Matthew\source\repos\Bamboozle\bamboozle) target="bamboozle"}: cargo::core::compiler::fingerprint:           (vs) "C:\\Users\\Matthew\\source\\repos\\Bamboozle\\bamboozle\\target\\debug\\.fingerprint\\bamboozle-8754b57b51b982a6\\dep-test-bin-bamboozle"
-   0.179504200s  INFO prepare_target{force=false package_id=bamboozle v0.1.0 (C:\Users\Matthew\source\repos\Bamboozle\bamboozle) target="bamboozle"}: cargo::core::compiler::fingerprint:                FileTime { seconds: 13421039400, nanos: 593723300 } < FileTime { seconds: 13421042802, nanos: 523331200 }
-   0.179678700s  INFO prepare_target{force=false package_id=bamboozle v0.1.0 (C:\Users\Matthew\source\repos\Bamboozle\bamboozle) target="bamboozle"}: cargo::core::compiler::fingerprint: fingerprint dirty for bamboozle v0.1.0 (C:\Users\Matthew\source\repos\Bamboozle\bamboozle)/Check { test: true }/TargetInner { name: "bamboozle", doc: true, ..: with_path("C:\\Users\\Matthew\\source\\repos\\Bamboozle\\bamboozle\\src\\main.rs", Edition2021) }
-   0.179692000s  INFO prepare_target{force=false package_id=bamboozle v0.1.0 (C:\Users\Matthew\source\repos\Bamboozle\bamboozle) target="bamboozle"}: cargo::core::compiler::fingerprint:     dirty: FsStatusOutdated(StaleItem(ChangedFile { reference: "C:\\Users\\Matthew\\source\\repos\\Bamboozle\\bamboozle\\target\\debug\\.fingerprint\\bamboozle-8754b57b51b982a6\\dep-test-bin-bamboozle", reference_mtime: FileTime { seconds: 13421039400, nanos: 593723300 }, stale: "C:\\Users\\Matthew\\source\\repos\\Bamboozle\\bamboozle\\src\\expression.rs", stale_mtime: FileTime { seconds: 13421042802, nanos: 523331200 } }))
+   0.289142100s  INFO prepare_target{force=false package_id=bamboozle v0.1.0 (C:\Users\Matthew\source\repos\Bamboozle\bamboozle) target="bamboozle"}: cargo::core::compiler::fingerprint: fingerprint error for bamboozle v0.1.0 (C:\Users\Matthew\source\repos\Bamboozle\bamboozle)/Check { test: true }/TargetInner { name: "bamboozle", doc: true, ..: with_path("C:\\Users\\Matthew\\source\\repos\\Bamboozle\\bamboozle\\src\\main.rs", Edition2021) }
+   0.289176800s  INFO prepare_target{force=false package_id=bamboozle v0.1.0 (C:\Users\Matthew\source\repos\Bamboozle\bamboozle) target="bamboozle"}: cargo::core::compiler::fingerprint:     err: failed to read `C:\Users\Matthew\source\repos\Bamboozle\bamboozle\target\debug\.fingerprint\bamboozle-a3f2cc6d3f762261\test-bin-bamboozle`
+
+Caused by:
+    The system cannot find the file specified. (os error 2)
+
+Stack backtrace:
+   0: git_midx_writer_dump
+   1: git_midx_writer_dump
+   2: git_midx_writer_dump
+   3: git_midx_writer_dump
+   4: git_filter_source_repo
+   5: git_filter_source_repo
+   6: git_filter_source_repo
+   7: git_filter_source_repo
+   8: git_filter_source_repo
+   9: git_filter_source_repo
+  10: git_filter_source_repo
+  11: git_libgit2_prerelease
+  12: <unknown>
+  13: <unknown>
+  14: <unknown>
+  15: <unknown>
+  16: git_midx_writer_dump
+  17: git_filter_source_repo
+  18: git_midx_writer_dump
+  19: BaseThreadInitThunk
+  20: RtlUserThreadStart
     Checking bamboozle v0.1.0 (C:\Users\Matthew\source\repos\Bamboozle\bamboozle)
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.76s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.09s

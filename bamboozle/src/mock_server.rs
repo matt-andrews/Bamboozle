@@ -120,3 +120,143 @@ async fn catch_all(
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{
+        app_state::AppState,
+        models::{
+            match_key::MatchKey,
+            route::{ResponseDefinition, RouteDefinition},
+        },
+    };
+    use axum::{body::Body, http::Request};
+    use tower::ServiceExt;
+
+    fn make_route(verb: &str, pattern: &str, content: Option<&str>, status: &str) -> RouteDefinition {
+        RouteDefinition {
+            match_key: MatchKey::new(verb, pattern),
+            response: ResponseDefinition {
+                status: status.to_string(),
+                content: content.map(|s| s.to_string()),
+                ..Default::default()
+            },
+        }
+    }
+
+    async fn body_string(body: axum::body::Body) -> String {
+        let bytes = axum::body::to_bytes(body, usize::MAX).await.unwrap();
+        String::from_utf8_lossy(&bytes).into_owned()
+    }
+
+    #[tokio::test]
+    async fn unmatched_route_returns_404() {
+        let app = router(AppState::new());
+        let response = app
+            .oneshot(Request::builder().uri("/nonexistent").body(Body::empty()).unwrap())
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::NOT_FOUND);
+    }
+
+    #[tokio::test]
+    async fn matched_static_route_returns_200() {
+        let state = AppState::new();
+        state.store.set_route(make_route("GET", "/hello", Some("world"), "200")).unwrap();
+        let response = router(state)
+            .oneshot(Request::builder().uri("/hello").body(Body::empty()).unwrap())
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+    }
+
+    #[tokio::test]
+    async fn response_body_matches_configured_content() {
+        let state = AppState::new();
+        state.store.set_route(make_route("GET", "/greet", Some("hello there"), "200")).unwrap();
+        let response = router(state)
+            .oneshot(Request::builder().uri("/greet").body(Body::empty()).unwrap())
+            .await
+            .unwrap();
+        assert_eq!(body_string(response.into_body()).await, "hello there");
+    }
+
+    #[tokio::test]
+    async fn custom_status_code_is_returned() {
+        let state = AppState::new();
+        state.store.set_route(make_route("POST", "/things", None, "201")).unwrap();
+        let response = router(state)
+            .oneshot(
+                Request::builder()
+                    .method("POST")
+                    .uri("/things")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::CREATED);
+    }
+
+    #[tokio::test]
+    async fn loopback_echoes_request_body() {
+        let state = AppState::new();
+        state.store.set_route(RouteDefinition {
+            match_key: MatchKey::new("POST", "/echo"),
+            response: ResponseDefinition {
+                status: "200".to_string(),
+                loopback: Some(true),
+                ..Default::default()
+            },
+        }).unwrap();
+        let response = router(state)
+            .oneshot(
+                Request::builder()
+                    .method("POST")
+                    .uri("/echo")
+                    .body(Body::from("ping"))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(body_string(response.into_body()).await, "ping");
+    }
+
+    #[tokio::test]
+    async fn route_value_rendered_in_response_body() {
+        let state = AppState::new();
+        state
+            .store
+            .set_route(make_route("GET", "/greet/{name}", Some("Hello {{ routeValues.name }}"), "200"))
+            .unwrap();
+        let response = router(state)
+            .oneshot(Request::builder().uri("/greet/Alice").body(Body::empty()).unwrap())
+            .await
+            .unwrap();
+        assert_eq!(body_string(response.into_body()).await, "Hello Alice");
+    }
+
+    #[tokio::test]
+    async fn unmatched_request_is_tracked() {
+        let state = AppState::new();
+        let tracker = state.tracker.clone();
+        router(state)
+            .oneshot(Request::builder().uri("/missing").body(Body::empty()).unwrap())
+            .await
+            .unwrap();
+        assert_eq!(tracker.get_unmatched().len(), 1);
+    }
+
+    #[tokio::test]
+    async fn matched_request_is_tracked() {
+        let state = AppState::new();
+        state.store.set_route(make_route("GET", "/tracked", Some("ok"), "200")).unwrap();
+        let tracker = state.tracker.clone();
+        router(state)
+            .oneshot(Request::builder().uri("/tracked").body(Body::empty()).unwrap())
+            .await
+            .unwrap();
+        assert_eq!(tracker.get_calls_for_route(&MatchKey::new("GET", "/tracked")).len(), 1);
+    }
+}

@@ -138,3 +138,128 @@ pub fn eval_expression(expr: &str, ctx: &ContextModel) -> Result<bool, EvalexprE
 
     eval_boolean_with_context(expr, &context)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::models::{
+        context::ContextModel,
+        match_key::MatchKey,
+        route::{ResponseDefinition, RouteDefinition},
+    };
+    use std::collections::HashMap;
+
+    fn make_ctx() -> ContextModel {
+        ContextModel {
+            query_params: HashMap::new(),
+            headers: HashMap::new(),
+            route_values: HashMap::new(),
+            body: serde_json::Value::Null,
+            body_raw: String::new(),
+            route_model: RouteDefinition {
+                match_key: MatchKey::new("GET", "/test"),
+                response: ResponseDefinition::default(),
+            },
+        }
+    }
+
+    #[test]
+    fn empty_expression_returns_true() {
+        let ctx = make_ctx();
+        assert!(eval_expression("", &ctx).unwrap());
+        assert!(eval_expression("   ", &ctx).unwrap());
+    }
+
+    #[test]
+    fn verb_variable() {
+        let ctx = make_ctx();
+        assert!(eval_expression(r#"verb == "GET""#, &ctx).unwrap());
+        assert!(!eval_expression(r#"verb == "POST""#, &ctx).unwrap());
+    }
+
+    #[test]
+    fn pattern_variable() {
+        let ctx = make_ctx();
+        assert!(eval_expression(r#"pattern == "/test""#, &ctx).unwrap());
+    }
+
+    #[test]
+    fn query_function_present_and_absent() {
+        let mut ctx = make_ctx();
+        ctx.query_params.insert("status".to_string(), "active".to_string());
+        assert!(eval_expression(r#"query("status") == "active""#, &ctx).unwrap());
+        assert!(eval_expression(r#"query("missing") == """#, &ctx).unwrap());
+    }
+
+    #[test]
+    fn header_function_present_and_absent() {
+        let mut ctx = make_ctx();
+        ctx.headers.insert("x-request-id".to_string(), "abc123".to_string());
+        assert!(eval_expression(r#"header("x-request-id") == "abc123""#, &ctx).unwrap());
+        assert!(eval_expression(r#"header("missing") == """#, &ctx).unwrap());
+    }
+
+    #[test]
+    fn route_function() {
+        let mut ctx = make_ctx();
+        ctx.route_values.insert("id".to_string(), "42".to_string());
+        assert!(eval_expression(r#"route("id") == "42""#, &ctx).unwrap());
+    }
+
+    #[test]
+    fn body_variable_as_string() {
+        let mut ctx = make_ctx();
+        ctx.body = serde_json::Value::String("hello world".to_string());
+        ctx.body_raw = "hello world".to_string();
+        assert!(eval_expression(r#"contains(body, "hello")"#, &ctx).unwrap());
+    }
+
+    #[test]
+    fn body_function_json_string_field() {
+        let mut ctx = make_ctx();
+        ctx.body = serde_json::json!({"name": "Alice"});
+        assert!(eval_expression(r#"body("name") == "Alice""#, &ctx).unwrap());
+    }
+
+    #[test]
+    fn body_function_json_number_field() {
+        let mut ctx = make_ctx();
+        ctx.body = serde_json::json!({"count": 30});
+        assert!(eval_expression(r#"body("count") == 30"#, &ctx).unwrap());
+    }
+
+    #[test]
+    fn contains_function() {
+        let ctx = make_ctx();
+        assert!(eval_expression(r#"contains("hello world", "world")"#, &ctx).unwrap());
+        assert!(!eval_expression(r#"contains("hello world", "xyz")"#, &ctx).unwrap());
+    }
+
+    #[test]
+    fn starts_with_function() {
+        let ctx = make_ctx();
+        assert!(eval_expression(r#"starts_with("hello world", "hello")"#, &ctx).unwrap());
+        assert!(!eval_expression(r#"starts_with("hello world", "world")"#, &ctx).unwrap());
+    }
+
+    #[test]
+    fn ends_with_function() {
+        let ctx = make_ctx();
+        assert!(eval_expression(r#"ends_with("hello world", "world")"#, &ctx).unwrap());
+        assert!(!eval_expression(r#"ends_with("hello world", "hello")"#, &ctx).unwrap());
+    }
+
+    #[test]
+    fn combined_and_expression() {
+        let mut ctx = make_ctx();
+        ctx.query_params.insert("env".to_string(), "prod".to_string());
+        assert!(eval_expression(r#"verb == "GET" && query("env") == "prod""#, &ctx).unwrap());
+        assert!(!eval_expression(r#"verb == "POST" && query("env") == "prod""#, &ctx).unwrap());
+    }
+
+    #[test]
+    fn invalid_expression_returns_err() {
+        let ctx = make_ctx();
+        assert!(eval_expression("@@@", &ctx).is_err());
+    }
+}

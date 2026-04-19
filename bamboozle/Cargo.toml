@@ -29,3 +29,4 @@ evalexpr = "13"
 
 [dev-dependencies]
 tokio = { version = "1", features = ["full"] }
+tower = { version = "0.4", features = ["util"] }

@@ -140,3 +140,101 @@ impl RouteStore {
         info!("Route store cleared");
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{
+        error::RouteError,
+        models::{
+            match_key::MatchKey,
+            route::{ResponseDefinition, RouteDefinition},
+        },
+    };
+
+    fn make_route(verb: &str, pattern: &str) -> RouteDefinition {
+        RouteDefinition {
+            match_key: MatchKey::new(verb, pattern),
+            response: ResponseDefinition::default(),
+        }
+    }
+
+    #[test]
+    fn set_and_get_route() {
+        let store = RouteStore::new();
+        store.set_route(make_route("GET", "/api/users")).unwrap();
+        assert!(store.get_route(&MatchKey::new("GET", "/api/users")).is_some());
+    }
+
+    #[test]
+    fn get_route_returns_none_for_unknown() {
+        let store = RouteStore::new();
+        assert!(store.get_route(&MatchKey::new("GET", "/nonexistent")).is_none());
+    }
+
+    #[test]
+    fn duplicate_set_route_returns_already_exists() {
+        let store = RouteStore::new();
+        store.set_route(make_route("GET", "/api/users")).unwrap();
+        let err = store.set_route(make_route("GET", "/api/users")).unwrap_err();
+        assert!(matches!(err, RouteError::AlreadyExists(_)));
+    }
+
+    #[test]
+    fn delete_route_removes_it() {
+        let store = RouteStore::new();
+        store.set_route(make_route("DELETE", "/items/{id}")).unwrap();
+        let key = MatchKey::new("DELETE", "/items/{id}");
+        store.delete_route(&key).unwrap();
+        assert!(store.get_route(&key).is_none());
+    }
+
+    #[test]
+    fn delete_nonexistent_route_returns_not_found() {
+        let store = RouteStore::new();
+        let err = store.delete_route(&MatchKey::new("GET", "/missing")).unwrap_err();
+        assert!(matches!(err, RouteError::NotFound(_)));
+    }
+
+    #[test]
+    fn match_static_route() {
+        let store = RouteStore::new();
+        store.set_route(make_route("GET", "/hello")).unwrap();
+        let (def, values) = store.match_route("GET", "/hello").unwrap();
+        assert_eq!(def.match_key.pattern, "/hello");
+        assert!(values.is_empty());
+    }
+
+    #[test]
+    fn match_parameterized_route_extracts_values() {
+        let store = RouteStore::new();
+        store.set_route(make_route("GET", "/users/{id}")).unwrap();
+        let (_, values) = store.match_route("GET", "/users/42").unwrap();
+        assert_eq!(values["id"], "42");
+    }
+
+    #[test]
+    fn match_route_returns_none_for_no_match() {
+        let store = RouteStore::new();
+        store.set_route(make_route("GET", "/api/users")).unwrap();
+        assert!(store.match_route("GET", "/api/orders").is_none());
+        assert!(store.match_route("POST", "/api/users").is_none());
+    }
+
+    #[test]
+    fn get_all_routes_returns_all() {
+        let store = RouteStore::new();
+        store.set_route(make_route("GET", "/a")).unwrap();
+        store.set_route(make_route("POST", "/b")).unwrap();
+        assert_eq!(store.get_all_routes().len(), 2);
+    }
+
+    #[test]
+    fn reset_clears_all_routes() {
+        let store = RouteStore::new();
+        store.set_route(make_route("GET", "/a")).unwrap();
+        store.reset();
+        assert!(store.get_all_routes().is_empty());
+        assert!(store.match_route("GET", "/a").is_none());
+    }
+}

@@ -81,3 +81,94 @@ fn json_to_liquid(value: &JsonValue) -> Value {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::models::{
+        context::ContextModel,
+        match_key::MatchKey,
+        route::{ResponseDefinition, RouteDefinition},
+    };
+    use std::collections::HashMap;
+
+    fn make_ctx() -> ContextModel {
+        ContextModel {
+            query_params: HashMap::new(),
+            headers: HashMap::new(),
+            route_values: HashMap::new(),
+            body: serde_json::Value::Null,
+            body_raw: String::new(),
+            route_model: RouteDefinition {
+                match_key: MatchKey::new("GET", "/test"),
+                response: ResponseDefinition::default(),
+            },
+        }
+    }
+
+    #[test]
+    fn static_template() {
+        let r = Renderer::new();
+        assert_eq!(r.render("hello world", &make_ctx()).unwrap(), "hello world");
+    }
+
+    #[test]
+    fn query_param_interpolation() {
+        let r = Renderer::new();
+        let mut ctx = make_ctx();
+        ctx.query_params.insert("name".to_string(), "Alice".to_string());
+        assert_eq!(r.render("Hello {{ queryParams.name }}", &ctx).unwrap(), "Hello Alice");
+    }
+
+    #[test]
+    fn header_interpolation() {
+        let r = Renderer::new();
+        let mut ctx = make_ctx();
+        ctx.headers.insert("token".to_string(), "tok123".to_string());
+        assert_eq!(r.render("{{ headers.token }}", &ctx).unwrap(), "tok123");
+    }
+
+    #[test]
+    fn route_value_interpolation() {
+        let r = Renderer::new();
+        let mut ctx = make_ctx();
+        ctx.route_values.insert("id".to_string(), "99".to_string());
+        assert_eq!(r.render("id={{ routeValues.id }}", &ctx).unwrap(), "id=99");
+    }
+
+    #[test]
+    fn body_raw_interpolation() {
+        let r = Renderer::new();
+        let mut ctx = make_ctx();
+        ctx.body_raw = "raw content".to_string();
+        assert_eq!(r.render("{{ bodyRaw }}", &ctx).unwrap(), "raw content");
+    }
+
+    #[test]
+    fn body_json_field_interpolation() {
+        let r = Renderer::new();
+        let mut ctx = make_ctx();
+        ctx.body = serde_json::json!({"status": "ok"});
+        assert_eq!(r.render("{{ body.status }}", &ctx).unwrap(), "ok");
+    }
+
+    #[test]
+    fn invalid_template_returns_err() {
+        let r = Renderer::new();
+        assert!(r.render("{%", &make_ctx()).is_err());
+    }
+
+    #[test]
+    fn render_or_fallback_uses_fallback_on_error() {
+        let r = Renderer::new();
+        assert_eq!(r.render_or_fallback("{%", &make_ctx(), "fallback"), "fallback");
+    }
+
+    #[test]
+    fn render_or_fallback_returns_rendered_output() {
+        let r = Renderer::new();
+        let mut ctx = make_ctx();
+        ctx.query_params.insert("x".to_string(), "1".to_string());
+        assert_eq!(r.render_or_fallback("{{ queryParams.x }}", &ctx, "fallback"), "1");
+    }
+}

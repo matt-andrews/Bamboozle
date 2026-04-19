@@ -59,3 +59,85 @@ impl CallTracker {
         info!("Call tracker cleared");
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::models::{
+        context::ContextModel,
+        match_key::MatchKey,
+        route::{ResponseDefinition, RouteDefinition},
+    };
+    use std::collections::HashMap;
+
+    fn make_ctx(verb: &str, pattern: &str) -> ContextModel {
+        ContextModel {
+            query_params: HashMap::new(),
+            headers: HashMap::new(),
+            route_values: HashMap::new(),
+            body: serde_json::Value::Null,
+            body_raw: String::new(),
+            route_model: RouteDefinition {
+                match_key: MatchKey::new(verb, pattern),
+                response: ResponseDefinition::default(),
+            },
+        }
+    }
+
+    #[test]
+    fn new_tracker_has_no_calls() {
+        let tracker = CallTracker::new();
+        let key = MatchKey::new("GET", "/test");
+        assert!(tracker.get_calls_for_route(&key).is_empty());
+        assert!(tracker.get_unmatched().is_empty());
+    }
+
+    #[test]
+    fn record_matched_and_retrieve() {
+        let tracker = CallTracker::new();
+        tracker.record_matched(make_ctx("GET", "/api/users"));
+        let key = MatchKey::new("GET", "/api/users");
+        let calls = tracker.get_calls_for_route(&key);
+        assert_eq!(calls.len(), 1);
+        assert_eq!(calls[0].route_model.match_key.verb, "GET");
+    }
+
+    #[test]
+    fn record_unmatched_and_retrieve() {
+        let tracker = CallTracker::new();
+        tracker.record_unmatched(make_ctx("POST", "/unknown"));
+        let keys = tracker.get_unmatched();
+        assert_eq!(keys.len(), 1);
+        assert_eq!(keys[0].pattern, "/unknown");
+    }
+
+    #[test]
+    fn get_calls_filters_by_route() {
+        let tracker = CallTracker::new();
+        tracker.record_matched(make_ctx("GET", "/a"));
+        tracker.record_matched(make_ctx("GET", "/a"));
+        tracker.record_matched(make_ctx("GET", "/b"));
+        assert_eq!(tracker.get_calls_for_route(&MatchKey::new("GET", "/a")).len(), 2);
+        assert_eq!(tracker.get_calls_for_route(&MatchKey::new("GET", "/b")).len(), 1);
+    }
+
+    #[test]
+    fn delete_calls_removes_only_matching_route() {
+        let tracker = CallTracker::new();
+        tracker.record_matched(make_ctx("GET", "/a"));
+        tracker.record_matched(make_ctx("GET", "/b"));
+        tracker.delete_calls_for_route(&MatchKey::new("GET", "/a"));
+        assert!(tracker.get_calls_for_route(&MatchKey::new("GET", "/a")).is_empty());
+        assert_eq!(tracker.get_calls_for_route(&MatchKey::new("GET", "/b")).len(), 1);
+    }
+
+    #[test]
+    fn reset_clears_all_calls() {
+        let tracker = CallTracker::new();
+        tracker.record_matched(make_ctx("GET", "/a"));
+        tracker.record_unmatched(make_ctx("POST", "/missing"));
+        tracker.reset();
+        assert!(tracker.get_calls_for_route(&MatchKey::new("GET", "/a")).is_empty());
+        assert!(tracker.get_unmatched().is_empty());
+    }
+}
