@@ -13,10 +13,13 @@ export {
   IBamboozleAssertBuilder,
   Conjunction,
   IAssertion,
+  AssertionBuilder,
+  AssertionProxy,
+  AssertContext,
   QueryAssertion,
   RouteAssertion,
   HeaderAssertion,
-  VerbAssertion,
-  PatternAssertion,
+  ContextAssertion,
+  BodyAssertion,
   Operator
 } from './assert.js';

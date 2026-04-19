@@ -2,6 +2,7 @@ use liquid::model::Value;
 use std::collections::HashMap;
 
 use crate::models::context::ContextModel;
+use serde_json::Value as JsonValue;
 
 pub struct Renderer {
     parser: liquid::Parser,
@@ -47,6 +48,7 @@ fn build_globals(ctx: &ContextModel) -> liquid::Object {
     globals.insert("queryParams".into(), map_to_value(&ctx.query_params));
     globals.insert("headers".into(), map_to_value(&ctx.headers));
     globals.insert("routeValues".into(), map_to_value(&ctx.route_values));
+    globals.insert("body".into(), json_to_liquid(&ctx.body));
     globals
 }
 
@@ -56,4 +58,25 @@ fn map_to_value(map: &HashMap<String, String>) -> Value {
         .map(|(k, v)| (k.clone().into(), Value::scalar(v.clone())))
         .collect();
     Value::Object(obj)
+}
+
+fn json_to_liquid(value: &JsonValue) -> Value {
+    match value {
+        JsonValue::Null => Value::Nil,
+        JsonValue::Bool(b) => Value::scalar(*b),
+        JsonValue::Number(n) => n
+            .as_i64()
+            .map(Value::scalar)
+            .or_else(|| n.as_f64().map(Value::scalar))
+            .unwrap_or_else(|| Value::scalar(n.to_string())),
+        JsonValue::String(s) => Value::scalar(s.clone()),
+        JsonValue::Array(arr) => Value::Array(arr.iter().map(json_to_liquid).collect()),
+        JsonValue::Object(obj) => {
+            let liquid_obj: liquid::Object = obj
+                .iter()
+                .map(|(k, v)| (k.clone().into(), json_to_liquid(v)))
+                .collect();
+            Value::Object(liquid_obj)
+        }
+    }
 }

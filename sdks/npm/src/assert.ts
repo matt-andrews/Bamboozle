@@ -3,10 +3,37 @@ export interface IBamboozleAssertBuilder {
     build(): string;
 }
 
+export interface AssertionBuilder {
+    equals(value: string | number): IAssertion;
+    notEquals(value: string | number): IAssertion;
+    greaterThan(value: number): IAssertion;
+    greaterThanOrEqual(value: number): IAssertion;
+    lessThan(value: number): IAssertion;
+    lessThanOrEqual(value: number): IAssertion;
+    contains(value: string): IAssertion;
+    startsWith(value: string): IAssertion;
+    endsWith(value: string): IAssertion;
+}
+
+export type AssertionProxy = Record<string, AssertionBuilder>;
+
+export interface AssertContext {
+    route: AssertionProxy;
+    query: AssertionProxy;
+    header: AssertionProxy;
+    context: AssertionProxy;
+    body: AssertionProxy;
+}
+
 export class BamboozleAssertBuilder implements IBamboozleAssertBuilder {
     private assertions: IAssertion[] = [];
 
-    with(assertion: IAssertion): Conjunction {
+    with(assertion: IAssertion): Conjunction;
+    with(fn: (ctx: AssertContext) => IAssertion): Conjunction;
+    with(assertionOrFn: IAssertion | ((ctx: AssertContext) => IAssertion)): Conjunction {
+        const assertion = typeof assertionOrFn === 'function'
+            ? assertionOrFn(makeAssertContext())
+            : assertionOrFn;
         this.assertions.push(assertion);
         return new Conjunction(this);
     }
@@ -26,15 +53,23 @@ export class BamboozleAssertBuilder implements IBamboozleAssertBuilder {
             }
 
             if (assert.op == Operator.Contains || assert.op == Operator.StartsWith || assert.op == Operator.EndsWith) {
-                result += ` ${assert.op}(${assert.type}("${assert.key}"), "${assert.value}") `
-            } else if (assert.op == Operator.Equals || assert.op == Operator.NotEquals) {
-                result += ` ${assert.type}("${assert.key}") ${assert.op} "${assert.value}" `
+                result += ` ${assert.op}(${this.getKeyFromType(assert)}, "${assert.value}") `
+            } else if (typeof assert.value === 'number') {
+                result += ` ${this.getKeyFromType(assert)} ${assert.op} ${assert.value} `
             } else {
-                result += ` ${assert.type}("${assert.key}") ${assert.op} "${assert.value}" `
+                result += ` ${this.getKeyFromType(assert)} ${assert.op} "${assert.value}" `
             }
         }
 
         return result;
+    }
+
+    getKeyFromType(assert: IAssertion): string {
+        if (assert.type == AssertionType.Context) {
+            return `${assert.key}`;
+        } else {
+            return `${assert.type}("${assert.key}")`;
+        }
     }
 }
 
@@ -58,15 +93,15 @@ export interface IAssertion {
     type: AssertionType;
     key: string;
     op: Operator;
-    value: string;
+    value: string | number;
 }
 
 export class QueryAssertion implements IAssertion {
     public type: AssertionType = AssertionType.Query;
     public key: string;
     public op: Operator;
-    public value: string;
-    constructor(key: string, op: Operator, value: string) {
+    public value: string | number;
+    constructor(key: string, op: Operator, value: string | number) {
         this.key = key;
         this.op = op;
         this.value = value;
@@ -81,20 +116,28 @@ export class HeaderAssertion extends QueryAssertion {
     public type: AssertionType = AssertionType.Header;
 }
 
-export class VerbAssertion implements IAssertion {
-    public type: AssertionType = AssertionType.Verb;
-    public key: string = "verb";
+export class ContextAssertion implements IAssertion {
+    public type: AssertionType = AssertionType.Context;
+    public key: string;
     public op: Operator;
-    public value: string;
-    constructor(op: Operator, value: string) {
+    public value: string | number;
+    constructor(key: string, op: Operator, value: string | number) {
+        this.key = key;
         this.op = op;
         this.value = value;
     }
 }
 
-export class PatternAssertion extends VerbAssertion {
-    public type: AssertionType = AssertionType.Pattern;
-    public key: string = "pattern";
+export class BodyAssertion implements IAssertion {
+    public type: AssertionType = AssertionType.Body;
+    public key: string;
+    public op: Operator;
+    public value: string | number;
+    constructor(key: string, op: Operator, value: string | number) {
+        this.key = key;
+        this.op = op;
+        this.value = value;
+    }
 }
 
 export class AndAssertion implements IAssertion {
@@ -127,8 +170,38 @@ export enum AssertionType {
     Query = 'query',
     Route = 'route',
     Header = 'header',
-    Verb = 'verb',
-    Pattern = 'pattern',
+    Context = 'context',
+    Body = 'body',
     And = '&&',
     Or = '||'
+}
+
+function makeProxy(ctor: new (key: string, op: Operator, value: string | number) => IAssertion): AssertionProxy {
+    return new Proxy({} as AssertionProxy, {
+        get(_, key: string | symbol): AssertionBuilder {
+            const k = String(key);
+            return {
+                equals: (v) => new ctor(k, Operator.Equals, v),
+                notEquals: (v) => new ctor(k, Operator.NotEquals, v),
+                greaterThan: (v) => new ctor(k, Operator.GreaterThan, v),
+                greaterThanOrEqual: (v) => new ctor(k, Operator.GreaterThanOrEqual, v),
+                lessThan: (v) => new ctor(k, Operator.LessThan, v),
+                lessThanOrEqual: (v) => new ctor(k, Operator.LessThanOrEqual, v),
+                contains: (v) => new ctor(k, Operator.Contains, v),
+                startsWith: (v) => new ctor(k, Operator.StartsWith, v),
+                endsWith: (v) => new ctor(k, Operator.EndsWith, v),
+            };
+        }
+    });
+}
+
+
+function makeAssertContext(): AssertContext {
+    return {
+        route: makeProxy(RouteAssertion),
+        query: makeProxy(QueryAssertion),
+        header: makeProxy(HeaderAssertion),
+        context: makeProxy(ContextAssertion),
+        body: makeProxy(BodyAssertion)
+    };
 }

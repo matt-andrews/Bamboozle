@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use serde_json::Value as JsonValue;
 use std::collections::HashMap;
 use utoipa::ToSchema;
 
@@ -13,4 +14,5 @@ pub struct ContextModel {
     pub route_values: HashMap<String, String>,
     #[serde(rename = "routeModel")]
     pub route_model: RouteDefinition,
+    pub body: JsonValue,
 }

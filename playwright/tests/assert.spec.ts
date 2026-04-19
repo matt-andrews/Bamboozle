@@ -1,5 +1,5 @@
 import { test, expect, APIRequestContext } from '@playwright/test';
-import { BamboozleClient, MatchKey, BamboozleAssertBuilder, HeaderAssertion, Operator, QueryAssertion, RouteAssertion } from '@bamboozle/sdk';
+import { BamboozleClient, MatchKey, BamboozleAssertBuilder } from '@bamboozle/sdk';
 
 const bamboozleClient: BamboozleClient = new BamboozleClient({ baseUrl: "http://localhost:19090" });
 let deleteState: MatchKey[] = [];
@@ -7,8 +7,11 @@ let deleteState: MatchKey[] = [];
 
 test.afterEach(async () => {
   for (let key of deleteState) {
-    await bamboozleClient.clearCalls(key.verb, key.pattern);
-    await bamboozleClient.deleteRoute(key.verb, key.pattern);
+    try {
+      await bamboozleClient.clearCalls(key.verb, key.pattern);
+      await bamboozleClient.deleteRoute(key.verb, key.pattern);
+    }
+    catch { }
   }
   deleteState = [];
 })
@@ -26,9 +29,9 @@ test.describe('assert header query match', () => {
       expect(init).toHaveLength(2);
       const assertReq = await bamboozleClient.assert(key.verb, key.pattern, {
         expression: new BamboozleAssertBuilder()
-          .with(new HeaderAssertion('connection', Operator.Equals, 'keep-alive'))
+          .with(({ header }) => header.connection.equals('keep-alive'))
           .and()
-          .with(new QueryAssertion('queryParam1', Operator.Equals, 'true'))
+          .with(({ query }) => query.queryParam1.equals('true'))
       });
       expect(assertReq).toBeTruthy();
     });
@@ -48,9 +51,9 @@ test.describe('assert header query nonmatch', () => {
       expect(init).toHaveLength(1);
       const assertReq = await bamboozleClient.assert(key.verb, key.pattern, {
         expression: new BamboozleAssertBuilder()
-          .with(new HeaderAssertion('connection', Operator.Equals, 'keep-alive'))
+          .with(({ header }) => header.connection.equals('keep-alive'))
           .and()
-          .with(new QueryAssertion('queryParam1', Operator.Equals, 'true'))
+          .with(({ query }) => query.queryParam1.equals('true'))
       });
       expect(assertReq).toBeFalsy();
     });
@@ -71,7 +74,7 @@ test.describe('assert route match', () => {
       expect(init).toHaveLength(2);
       const assertReq = await bamboozleClient.assert(key.verb, key.pattern, {
         expression: new BamboozleAssertBuilder()
-          .with(new RouteAssertion('param1', Operator.Equals, 'test'))
+          .with(({ route }) => route.param1.equals('test'))
       });
       expect(assertReq).toBeTruthy();
     });
@@ -92,7 +95,7 @@ test.describe('assert route nonmatch', () => {
       expect(init).toHaveLength(2);
       const assertReq = await bamboozleClient.assert(key.verb, key.pattern, {
         expression: new BamboozleAssertBuilder()
-          .with(new RouteAssertion('param1', Operator.Equals, 'test2'))
+          .with(({ route }) => route.param1.equals('test2'))
       });
       expect(assertReq).toBeFalsy();
     });
@@ -113,30 +116,147 @@ test.describe('assert route header query match', () => {
       expect(init).toHaveLength(2);
       const assertReq = await bamboozleClient.assert(key.verb, key.pattern, {
         expression: new BamboozleAssertBuilder()
-          .with(new RouteAssertion('param1', Operator.Equals, 'testRouteParam'))
+          .with(({ route }) => route.param1.equals('testRouteParam'))
           .and()
-          .with(new QueryAssertion('queryParam1', Operator.Equals, 'true'))
+          .with(({ query }) => query.queryParam1.equals('true'))
           .and()
-          .with(new HeaderAssertion('accept-encoding', Operator.Contains, 'gzip'))
+          .with(({ header }) => header['accept-encoding'].contains('gzip'))
           .and()
-          .with(new HeaderAssertion('host', Operator.StartsWith, 'localhost'))
+          .with(({ header }) => header.host.startsWith('localhost'))
           .and()
-          .with(new HeaderAssertion('host', Operator.EndsWith, ':18080'))
+          .with(({ header }) => header.host.endsWith(':18080'))
       });
       expect(assertReq).toBeTruthy();
     });
   }
 });
 
-async function reqFactory(verb: string, location: string, request: APIRequestContext) {
+test.describe('assert match verb nonmatch pattern', () => {
+  const verbs: string[] = ['GET', 'PUT', 'POST', 'PATCH', 'DELETE'];
+  for (let verb of verbs) {
+    test(verb, async ({ request }) => {
+      const key: MatchKey = { verb: verb, pattern: 'playwright/assert/match/verb/nonmatch/pattern' };
+      deleteState.push(key);
+      await addRoute(key);
+      const initReq = await reqFactory(verb, `http://localhost:18080/${key.pattern}`, request);
+      const init = await initReq.json();
+      expect(init).toBeDefined();
+      expect(init).toHaveLength(0);
+      const assertReq = await bamboozleClient.assert(key.verb, key.pattern, {
+        expression: new BamboozleAssertBuilder()
+          .with(({ context }) => context.verb.equals(verb))
+          .or()
+          .with(({ context }) => context.pattern.equals('wrong'))
+      });
+      expect(assertReq).toBeTruthy();
+    });
+  }
+});
+
+test.describe('assert nonmatch verb match pattern', () => {
+  const verbs: string[] = ['GET', 'PUT', 'POST', 'PATCH', 'DELETE'];
+  for (let verb of verbs) {
+    test(verb, async ({ request }) => {
+      const key: MatchKey = { verb: verb, pattern: 'playwright/assert/nonmatch/verb/match/pattern' };
+      deleteState.push(key);
+      await addRoute(key);
+      const initReq = await reqFactory(verb, `http://localhost:18080/${key.pattern}`, request);
+      const init = await initReq.json();
+      expect(init).toBeDefined();
+      expect(init).toHaveLength(0);
+      const assertReq = await bamboozleClient.assert(key.verb, key.pattern, {
+        expression: new BamboozleAssertBuilder()
+          .with(({ context }) => context.verb.equals('wrong'))
+          .or()
+          .with(({ context }) => context.pattern.equals(key.pattern))
+      });
+      expect(assertReq).toBeTruthy();
+    });
+  }
+});
+
+test.describe('assert match with no expression', () => {
+  const verbs: string[] = ['GET', 'PUT', 'POST', 'PATCH', 'DELETE'];
+  for (let verb of verbs) {
+    test(verb, async ({ request }) => {
+      const key: MatchKey = { verb: verb, pattern: 'playwright/assert/nonmatch/verb/match/pattern' };
+      deleteState.push(key);
+      await addRoute(key);
+      const initReq = await reqFactory(verb, `http://localhost:18080/${key.pattern}`, request);
+      const init = await initReq.json();
+      expect(init).toBeDefined();
+      expect(init).toHaveLength(0);
+      const assertReq = await bamboozleClient.assert(key.verb, key.pattern);
+      expect(assertReq).toBeTruthy();
+    });
+  }
+});
+
+test.describe('assert match complext body', () => {
+  const verbs: string[] = ['PUT', 'POST', 'PATCH'];
+  for (let verb of verbs) {
+    test(verb, async ({ request }) => {
+      const key: MatchKey = { verb: verb, pattern: 'playwright/assert/match/complex/body' };
+      deleteState.push(key);
+      await bamboozleClient.addRoute({
+        match: key,
+        response: {
+          status: "200",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          content: `
+            [
+              {% for kvp in queryParams %} 
+                "{{kvp[0]}}={{kvp[1]}}"{% unless forloop.last %}, {% endunless %}
+              {% endfor %}
+            ]
+          `
+        }
+      });
+      const initReq = await reqFactory(verb, `http://localhost:18080/${key.pattern}`, request, {
+        hello: "world",
+        number: 24
+      });
+      const init = await initReq.json();
+      expect(init).toBeDefined();
+      expect(init).toHaveLength(0);
+      const assertReq = await bamboozleClient.assert(key.verb, key.pattern, {
+        expression: new BamboozleAssertBuilder()
+          .with(({ body }) => body.hello.equals("world"))
+          .and()
+          .with(({ body }) => body.number.equals(24))
+          .and()
+          .with(({ body }) => body.number.notEquals("24"))
+          .and()
+          .with(({ body }) => body.number.greaterThan(23))
+          .and()
+          .with(({ body }) => body.number.lessThan(25))
+          .and()
+          .with(({ body }) => body.number.greaterThan(3))
+          .and()
+          .with(({ body }) => body.number.lessThan(100))
+      });
+      expect(assertReq).toBeTruthy();
+    });
+  }
+});
+
+async function reqFactory(verb: string, location: string, request: APIRequestContext, body: any = {}) {
   if (verb === 'GET') {
     return await request.get(location);
   } else if (verb === 'PUT') {
-    return await request.put(location);
+    return await request.put(location, {
+      data: body
+    });
   } else if (verb === 'POST') {
-    return await request.post(location);
+    return await request.post(location, {
+      data: body
+    });
   } else if (verb === 'PATCH') {
-    return await request.patch(location);
+    return await request.patch(location, {
+      data: body
+    });
   } else if (verb === 'DELETE') {
     return await request.delete(location);
   }

@@ -1,4 +1,5 @@
 use axum::{
+    body::Bytes,
     extract::State,
     http::{HeaderMap, Method, StatusCode, Uri},
     response::{IntoResponse, Response},
@@ -26,6 +27,7 @@ async fn catch_all(
     method: Method,
     uri: Uri,
     headers: HeaderMap,
+    body_bytes: Bytes,
 ) -> impl IntoResponse {
     let verb = method.as_str().to_string();
     let path = uri.path().to_string();
@@ -49,12 +51,25 @@ async fn catch_all(
         })
         .collect();
 
+    let body_str = String::from_utf8_lossy(&body_bytes).into_owned();
+    let is_json = headers
+        .get("content-type")
+        .and_then(|v| v.to_str().ok())
+        .map(|v| v.contains("application/json"))
+        .unwrap_or(false);
+    let body: serde_json::Value = if is_json {
+        serde_json::from_str(&body_str).unwrap_or(serde_json::Value::String(body_str))
+    } else {
+        serde_json::Value::String(body_str)
+    };
+
     match state.store.match_route(&verb, &path) {
         None => {
             let ctx = ContextModel {
                 query_params: HashMap::new(),
                 headers: HashMap::new(),
                 route_values: HashMap::new(),
+                body: serde_json::Value::Null,
                 route_model: RouteDefinition {
                     match_key: MatchKey::new(verb, path),
                     response: ResponseDefinition::default(),
@@ -69,6 +84,7 @@ async fn catch_all(
                 query_params,
                 headers: header_map,
                 route_values,
+                body,
                 route_model: route_def.clone(),
             };
             state.tracker.record_matched(ctx.clone());

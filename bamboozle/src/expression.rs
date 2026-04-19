@@ -17,13 +17,23 @@ use crate::models::context::ContextModel;
 ///   starts_with(str, prefix)
 ///   ends_with(str, suffix)
 pub fn eval_expression(expr: &str, ctx: &ContextModel) -> Result<bool, EvalexprError> {
+    if expr.trim().is_empty() {
+        return Ok(true);
+    }
     let query_params = ctx.query_params.clone();
     let headers = ctx.headers.clone();
     let route_values = ctx.route_values.clone();
+    let body_json = ctx.body.clone();
+
+    let body_str = match &ctx.body {
+        serde_json::Value::String(s) => s.clone(),
+        v => serde_json::to_string(v).unwrap_or_default(),
+    };
 
     let mut context: HashMapContext = context_map! {
         "verb"    => Value::String(ctx.route_model.match_key.verb.clone()),
         "pattern" => Value::String(ctx.route_model.match_key.pattern.clone()),
+        "body"    => Value::String(body_str),
     }?;
 
     context.set_function(
@@ -53,6 +63,27 @@ pub fn eval_expression(expr: &str, ctx: &ContextModel) -> Result<bool, EvalexprE
             Ok(Value::String(
                 route_values.get(&key).cloned().unwrap_or_default(),
             ))
+        }),
+    )?;
+
+    context.set_function(
+        "body".to_string(),
+        Function::new(move |arg| {
+            let key = arg.as_string()?;
+            match body_json.get(&key) {
+                Some(serde_json::Value::String(s)) => Ok(Value::String(s.clone())),
+                Some(serde_json::Value::Number(n)) => {
+                    if let Some(i) = n.as_i64() {
+                        Ok(Value::Int(i))
+                    } else if let Some(f) = n.as_f64() {
+                        Ok(Value::Float(f))
+                    } else {
+                        Ok(Value::String(n.to_string()))
+                    }
+                }
+                Some(serde_json::Value::Bool(b)) => Ok(Value::Boolean(*b)),
+                _ => Ok(Value::String(String::new())),
+            }
         }),
     )?;
 
