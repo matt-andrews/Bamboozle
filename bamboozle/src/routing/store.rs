@@ -48,12 +48,8 @@ impl RouteStore {
             }
         };
 
-        // Ensure the verb bucket exists, then drop the entry ref before borrowing again.
-        self.routes.entry(verb.clone()).or_default();
-
-        // Now borrow the inner map via get() — separate from the entry above.
-        let verb_ref = self.routes.get(&verb).unwrap();
-        let verb_map = verb_ref.value();
+        let verb_entry = self.routes.entry(verb.clone()).or_default();
+        let verb_map = verb_entry.value();
 
         if verb_map.contains_key(&storage_key) {
             warn!(route = %key_str, "Route already exists, skipping");
@@ -102,7 +98,19 @@ impl RouteStore {
         path: &str,
     ) -> Option<(RouteDefinition, HashMap<String, String>)> {
         let result = self.routes.get(verb).and_then(|verb_map| {
-            verb_map.iter().find_map(|entry| {
+            let mut entries: Vec<_> = verb_map.iter().collect();
+            // Static routes before parameterized; longer patterns before shorter.
+            entries.sort_by(|a, b| {
+                let a_params = a.value().normalized_pattern.matches('{').count();
+                let b_params = b.value().normalized_pattern.matches('{').count();
+                a_params.cmp(&b_params).then_with(|| {
+                    b.value()
+                        .normalized_pattern
+                        .len()
+                        .cmp(&a.value().normalized_pattern.len())
+                })
+            });
+            entries.iter().find_map(|entry| {
                 let stored = entry.value();
                 try_match_route(&stored.compiled_regex, &stored.normalized_pattern, path)
                     .map(|route_values| (stored.definition.clone(), route_values))

@@ -1,1 +1,1 @@
-# Bamboozle Sdks
+# Bamboozle SDKs
