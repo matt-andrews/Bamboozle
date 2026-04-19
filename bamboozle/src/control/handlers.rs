@@ -57,8 +57,8 @@ pub async fn put_routes(
     );
     // Ignore NotFound — PUT is idempotent
     let _ = state.store.delete_route(&normalized_match_key);
-    state.store.set_route(route.clone())?;
-    Ok(Json(route))
+    let response = state.store.set_route(route.clone())?;
+    Ok(Json(response))
 }
 
 // ── DELETE /control/routes/:verb/:pattern ────────────────────────────────────
