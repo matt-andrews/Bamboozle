@@ -36,7 +36,10 @@ impl RouteStore {
             Ok(c) => c,
             Err(e) => {
                 error!(route = %key_str, error = %e, "Failed to compile route pattern");
-                return Err(RouteError::AlreadyExists(format!("Invalid pattern '{}': {}", normalized, e)));
+                return Err(RouteError::AlreadyExists(format!(
+                    "Invalid pattern '{}': {}",
+                    normalized, e
+                )));
             }
         };
 
@@ -84,20 +87,6 @@ impl RouteStore {
 
         info!(route = %key_str, "Route deleted");
         Ok(())
-    }
-
-    pub fn get_route(&self, key: &MatchKey) -> Option<RouteDefinition> {
-        let normalized = normalize_url(&key.pattern);
-        let result = self.routes
-            .get(&key.verb)
-            .and_then(|m| m.get(&normalized).map(|r| r.definition.clone()));
-
-        if result.is_some() {
-            debug!(route = %key, "Route retrieved");
-        } else {
-            debug!(route = %key, "Route not found");
-        }
-        result
     }
 
     /// Finds the first stored route whose pattern matches the given URL.
@@ -160,39 +149,39 @@ mod tests {
     }
 
     #[test]
-    fn set_and_get_route() {
+    fn set_route_and_match_it() {
         let store = RouteStore::new();
         store.set_route(make_route("GET", "/api/users")).unwrap();
-        assert!(store.get_route(&MatchKey::new("GET", "/api/users")).is_some());
-    }
-
-    #[test]
-    fn get_route_returns_none_for_unknown() {
-        let store = RouteStore::new();
-        assert!(store.get_route(&MatchKey::new("GET", "/nonexistent")).is_none());
+        assert!(store.match_route("GET", "/api/users").is_some());
     }
 
     #[test]
     fn duplicate_set_route_returns_already_exists() {
         let store = RouteStore::new();
         store.set_route(make_route("GET", "/api/users")).unwrap();
-        let err = store.set_route(make_route("GET", "/api/users")).unwrap_err();
+        let err = store
+            .set_route(make_route("GET", "/api/users"))
+            .unwrap_err();
         assert!(matches!(err, RouteError::AlreadyExists(_)));
     }
 
     #[test]
     fn delete_route_removes_it() {
         let store = RouteStore::new();
-        store.set_route(make_route("DELETE", "/items/{id}")).unwrap();
+        store
+            .set_route(make_route("DELETE", "/items/{id}"))
+            .unwrap();
         let key = MatchKey::new("DELETE", "/items/{id}");
         store.delete_route(&key).unwrap();
-        assert!(store.get_route(&key).is_none());
+        assert!(store.match_route("DELETE", "/items/{id}").is_none());
     }
 
     #[test]
     fn delete_nonexistent_route_returns_not_found() {
         let store = RouteStore::new();
-        let err = store.delete_route(&MatchKey::new("GET", "/missing")).unwrap_err();
+        let err = store
+            .delete_route(&MatchKey::new("GET", "/missing"))
+            .unwrap_err();
         assert!(matches!(err, RouteError::NotFound(_)));
     }
 
