@@ -14,10 +14,8 @@ updates:
         patterns:
           - "*"
 
-  - package-ecosystem: "nuget"
-    directories:
-      - "/src/Bamboozle"
-      - "/src/Bamboozle.Tests"
+  - package-ecosystem: "cargo"
+    directory: "/bamboozle"
     schedule:
       interval: "weekly"
       day: "monday"
@@ -25,13 +23,3 @@ updates:
       - "matt-andrews"
     commit-message:
       prefix: "chore"
-    groups:
-      nuget-test-tooling:
-        patterns:
-          - "xunit*"
-          - "coverlet*"
-          - "Microsoft.NET.Test.Sdk"
-          - "GitHubActionsTestLogger"
-      nuget-dependencies:
-        patterns:
-          - "*"
