@@ -40,8 +40,24 @@ jobs:
 
           # Fallback: search open PRs by head SHA (needed for fork PRs)
           if [ -z "$PR_NUMBER" ]; then
-            PR_NUMBER=$(gh api "/repos/$REPO/pulls?state=open&per_page=1000" \
-              --jq ".[] | select(.head.sha == \"$HEAD_SHA\") | .number" | head -1)
+            page=1
+            while :; do
+              response=$(gh api "/repos/$REPO/pulls?state=open&per_page=100&page=$page")
+              PR_NUMBER=$(echo "$response" \
+                | jq -r ".[] | select(.head.sha == \"$HEAD_SHA\") | .number" \
+                | head -1)
+
+              if [ -n "$PR_NUMBER" ]; then
+                break
+              fi
+
+              count=$(echo "$response" | jq 'length')
+              if [ "$count" -lt 100 ]; then
+                break
+              fi
+
+              page=$((page + 1))
+            done
           fi
 
           if [ -z "$PR_NUMBER" ]; then
