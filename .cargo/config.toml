@@ -1,7 +1,0 @@
-# Dependabot cannot access the sparse crates.io registry (index.crates.io) due
-# to infrastructure limitations — fall back to the git-based index.
-[source.crates-io]
-replace-with = "git-index"
-
-[source.git-index]
-registry = "https://github.com/rust-lang/crates.io-index"

@@ -249,6 +249,7 @@ def section_docker_size() -> str:
 
 
 def build_comment() -> str:
+    _statuses.clear()
     triggering = os.environ.get("TRIGGERING_WORKFLOW", "unknown workflow")
     head_sha = os.environ.get("HEAD_SHA", "")
     sha_str = f"`{head_sha[:7]}`" if head_sha else ""
