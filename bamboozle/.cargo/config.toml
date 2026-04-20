@@ -1,7 +1,8 @@
-# Dependabot cannot access the sparse crates.io registry (index.crates.io) due
-# to infrastructure limitations — fall back to the git-based index.
+# Dependabot cannot access the sparse crates.io registry (index.crates.io)
+# due to infrastructure limitations. This falls back to the git-based index.
+# Scoped to bamboozle/ so it does not affect other parts of the repo.
 [source.crates-io]
-replace-with = "git-index"
+replace-with = "crates-io-git"
 
-[source.git-index]
+[source.crates-io-git]
 registry = "https://github.com/rust-lang/crates.io-index"
