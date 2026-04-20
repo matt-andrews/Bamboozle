@@ -55,7 +55,7 @@ async fn scalar_ui() -> Html<&'static str> {
     <meta name="viewport" content="width=device-width, initial-scale=1" />
   </head>
   <body>
-    <script id="api-reference" data-url="/api-docs/openapi.json"></script>
+    <script id="api-reference" data-url="/api-docs/openapi.json" data-configuration='{"theme":"elysiajs"}'></script>
     <script src="https://cdn.jsdelivr.net/npm/@scalar/api-reference"></script>
   </body>
 </html>"#,
