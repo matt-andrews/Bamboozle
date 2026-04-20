@@ -1,0 +1,7 @@
+# Dependabot cannot access the sparse crates.io registry (index.crates.io).
+# Switch to the git protocol and use the system git CLI to avoid libgit2 issues.
+[registries.crates-io]
+protocol = "git"
+
+[net]
+git-fetch-with-cli = true
