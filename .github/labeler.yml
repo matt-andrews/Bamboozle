@@ -1,0 +1,11 @@
+app:
+  - changed-files:
+    - any-glob-to-any-file: 'bamboozle/**'
+
+github_actions:
+  - changed-files:
+    - any-glob-to-any-file: '.github/**'
+
+sdks:
+  - changed-files:
+    - any-glob-to-any-file: 'sdks/**'
