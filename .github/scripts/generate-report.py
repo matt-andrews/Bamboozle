@@ -3,7 +3,8 @@
 Generates the CI summary markdown comment for a PR.
 
 Reads pre-downloaded artifacts from ./artifacts/<name>/ directories and
-writes the final comment body to ./comment.md.
+writes the final comment body to ./comment.md and overall status to
+./status.json.
 
 Each artifact directory is searched recursively for the target filename so
 that `actions/upload-artifact`'s directory-structure preservation doesn't
@@ -21,6 +22,8 @@ Expected artifact directories (with their target files):
 Environment variables:
   TRIGGERING_WORKFLOW   name of the workflow that triggered this run
   HEAD_SHA              the PR head commit SHA (shown in footer)
+  MAX_STARTUP_AVG_MS    (optional) fail if startup avg exceeds this value
+  MAX_DOCKER_SIZE_MB    (optional) fail if image size exceeds this value (MiB)
 """
 
 import json
@@ -32,6 +35,13 @@ from pathlib import Path
 MARKER = "<!-- bamboozle-ci-report -->"
 
 K6_METRICS = ["checks", "http_req_duration", "http_req_failed", "iteration_duration", "http_reqs"]
+
+# Each section appends one of: "pending" | "passing" | "failing"
+_statuses: list[str] = []
+
+
+def _record(status: str) -> None:
+    _statuses.append(status)
 
 
 def find_file(artifact_dir: str, filename: str) -> Path | None:
@@ -51,6 +61,22 @@ def load_json(artifact_dir: str, filename: str):
         return None
 
 
+def _env_int(name: str) -> int | None:
+    v = os.environ.get(name, "").strip()
+    try:
+        return int(v) if v else None
+    except ValueError:
+        return None
+
+
+def _env_float(name: str) -> float | None:
+    v = os.environ.get(name, "").strip()
+    try:
+        return float(v) if v else None
+    except ValueError:
+        return None
+
+
 def format_duration(ms: float) -> str:
     s = ms / 1000
     if s < 60:
@@ -64,12 +90,15 @@ def section_unit_tests() -> str:
     base = load_json("artifacts/base-unit-tests", "unit-test-results.json")
 
     if data is None:
+        _record("pending")
         return "### 🧪 Unit Tests\n⏳ _Pending_\n"
 
-    icon = "❌" if data.get("failed", 0) > 0 else "✅"
     passed = data.get("passed", 0)
     failed = data.get("failed", 0)
     ignored = data.get("ignored", 0)
+
+    _record("failing" if failed > 0 else "passing")
+    icon = "❌" if failed > 0 else "✅"
 
     delta = ""
     if base is not None:
@@ -81,18 +110,18 @@ def section_unit_tests() -> str:
         else:
             delta = " · (no change)"
 
-    lines = [
+    return "\n".join([
         "### 🧪 Unit Tests",
         f"{icon} **{passed} passed** · {failed} failed · {ignored} ignored{delta}",
         "",
-    ]
-    return "\n".join(lines)
+    ])
 
 
 def section_playwright() -> str:
     data = load_json("artifacts/playwright", "playwright-results.json")
 
     if data is None:
+        _record("pending")
         return "### 🎭 Playwright E2E\n⏳ _Pending_\n"
 
     stats = data.get("stats", {})
@@ -102,86 +131,121 @@ def section_playwright() -> str:
     flaky = stats.get("flaky", 0)
     duration_ms = stats.get("duration", 0)
 
+    _record("failing" if failed > 0 else "passing")
     icon = "❌" if failed > 0 else "✅"
-    dur_str = format_duration(duration_ms)
-
     flaky_str = f" · {flaky} flaky" if flaky > 0 else ""
-    lines = [
+
+    return "\n".join([
         "### 🎭 Playwright E2E",
-        f"{icon} **{passed} passed** · {failed} failed · {skipped} skipped{flaky_str} · {dur_str}",
+        f"{icon} **{passed} passed** · {failed} failed · {skipped} skipped{flaky_str} · {format_duration(duration_ms)}",
         "",
-    ]
-    return "\n".join(lines)
+    ])
 
 
 def section_k6() -> str:
     txt_path = find_file("artifacts/k6", "k6-output.txt")
     if txt_path is None:
+        _record("pending")
         return "### ⚡ K6 Load Tests\n⏳ _Pending_\n"
 
-    selected = []
     try:
-        with open(txt_path, encoding="utf-8", errors="replace") as f:
-            for line in f:
-                for metric in K6_METRICS:
-                    if re.search(rf"\b{re.escape(metric)}\b", line):
-                        clean = re.sub(r"\x1b\[[0-9;]*m", "", line).rstrip()
-                        selected.append(clean)
-                        break
+        content = txt_path.read_text(encoding="utf-8", errors="replace")
     except Exception as e:
+        _record("failing")
         return f"### ⚡ K6 Load Tests\n❌ _Could not parse output: {e}_\n"
 
-    icon = "✅" if selected else "⚠️"
+    # k6 prints "FAILED" on its summary line when any threshold is exceeded
+    k6_failed = bool(re.search(r"\bFAILED\b", content))
+    _record("failing" if k6_failed else "passing")
+    icon = "❌" if k6_failed else "✅"
+
+    selected = []
+    for line in content.splitlines():
+        for metric in K6_METRICS:
+            if re.search(rf"\b{re.escape(metric)}\b", line):
+                clean = re.sub(r"\x1b\[[0-9;]*m", "", line).rstrip()
+                selected.append(clean)
+                break
+
     block = "\n".join(selected) if selected else "(no metrics found)"
-    lines = [
+    return "\n".join([
         "### ⚡ K6 Load Tests",
         f"{icon}",
         "```",
         block,
         "```",
         "",
-    ]
-    return "\n".join(lines)
+    ])
 
 
 def section_startup() -> str:
     data = load_json("artifacts/startup", "startup-results.json")
 
     if data is None:
+        _record("pending")
         return "### 🚀 Startup Performance\n⏳ _Pending_\n"
 
-    min_ms = data.get("min_ms") or "—"
-    avg_ms = data.get("avg_ms") or "—"
-    max_ms = data.get("max_ms") or "—"
+    avg_ms_val: int | None = data.get("avg_ms")
+    min_ms_val: int | None = data.get("min_ms")
+    max_ms_val: int | None = data.get("max_ms")
     successful = data.get("successful", 0)
     iterations = data.get("iterations", "?")
 
-    icon = "❌" if successful != iterations else "✅"
-    lines = [
+    avg_display = f"{avg_ms_val}ms" if avg_ms_val is not None else "—"
+    min_display = f"{min_ms_val}ms" if min_ms_val is not None else "—"
+    max_display = f"{max_ms_val}ms" if max_ms_val is not None else "—"
+
+    threshold = _env_int("MAX_STARTUP_AVG_MS")
+    threshold_exceeded = threshold is not None and avg_ms_val is not None and avg_ms_val > threshold
+
+    run_failed = successful != iterations
+    is_failing = run_failed or threshold_exceeded
+    _record("failing" if is_failing else "passing")
+    icon = "❌" if is_failing else "✅"
+
+    notes = []
+    if threshold_exceeded:
+        notes.append(f"avg {avg_display} exceeds threshold ({threshold}ms)")
+    note_line = f"\n> ⚠️ {'; '.join(notes)}" if notes else ""
+
+    return "\n".join([
         f"### 🚀 Startup Performance ({successful}/{iterations} runs)",
-        f"{icon}",
+        f"{icon}{note_line}",
         "",
         "| Min | Avg | Max |",
         "|-----|-----|-----|",
-        f"| {min_ms}ms | {avg_ms}ms | {max_ms}ms |",
+        f"| {min_display} | {avg_display} | {max_display} |",
         "",
-    ]
-    return "\n".join(lines)
+    ])
 
 
 def section_docker_size() -> str:
     data = load_json("artifacts/docker-size", "docker-size.json")
 
     if data is None:
+        _record("pending")
         return "### 🐳 Docker Image Size\n⏳ _Pending_\n"
 
     human = data.get("human", "unknown")
-    lines = [
+    bytes_val = data.get("bytes", 0)
+
+    threshold_mb = _env_float("MAX_DOCKER_SIZE_MB")
+    threshold_bytes = threshold_mb * 1024 * 1024 if threshold_mb is not None else None
+    threshold_exceeded = threshold_bytes is not None and bytes_val > threshold_bytes
+
+    _record("failing" if threshold_exceeded else "passing")
+    icon = "❌" if threshold_exceeded else "✅"
+
+    notes = []
+    if threshold_exceeded:
+        notes.append(f"`{human}` exceeds threshold ({threshold_mb:.0f} MiB)")
+    note_line = f"\n> ⚠️ {'; '.join(notes)}" if notes else ""
+
+    return "\n".join([
         "### 🐳 Docker Image Size",
-        f"`{human}` (uncompressed)",
+        f"{icon} `{human}` (uncompressed){note_line}",
         "",
-    ]
-    return "\n".join(lines)
+    ])
 
 
 def build_comment() -> str:
@@ -192,26 +256,47 @@ def build_comment() -> str:
 
     meta = f"> Last updated: {timestamp} · triggered by _{triggering}_ {sha_str}"
 
-    sections = [
-        MARKER,
-        "## CI Summary",
-        "",
-        meta,
-        "",
+    sections = "\n".join([
         section_unit_tests(),
         section_playwright(),
         section_k6(),
         section_startup(),
         section_docker_size(),
-    ]
-    return "\n".join(sections)
+    ])
+
+    # Derive overall status from recorded section statuses
+    pending_count = _statuses.count("pending")
+    failing_count = _statuses.count("failing")
+    total = len(_statuses)
+
+    if failing_count > 0:
+        overall_state = "failure"
+        state_desc = f"{failing_count} check(s) failed"
+    elif pending_count > 0:
+        overall_state = "pending"
+        state_desc = f"{total - pending_count}/{total} checks complete"
+    else:
+        overall_state = "success"
+        state_desc = "All checks passed"
+
+    with open("status.json", "w") as f:
+        json.dump({"state": overall_state, "description": state_desc}, f)
+
+    return "\n".join([
+        MARKER,
+        "## CI Summary",
+        "",
+        meta,
+        "",
+        sections,
+    ])
 
 
 if __name__ == "__main__":
     comment = build_comment()
     with open("comment.md", "w") as f:
         f.write(comment)
-    print("comment.md written successfully")
+    print("comment.md and status.json written")
     for line in comment.splitlines():
         if line.startswith("###") or line.startswith(">"):
             print(line)

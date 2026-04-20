@@ -13,6 +13,7 @@ permissions:
   pull-requests: write
   issues: write
   actions: read
+  statuses: write
 
 jobs:
   report:
@@ -136,7 +137,25 @@ jobs:
         env:
           TRIGGERING_WORKFLOW: ${{ github.event.workflow_run.name }}
           HEAD_SHA: ${{ steps.pr.outputs.head_sha }}
+          MAX_STARTUP_AVG_MS: ${{ vars.MAX_STARTUP_AVG_MS }}
+          MAX_DOCKER_SIZE_MB: ${{ vars.MAX_DOCKER_SIZE_MB }}
         run: python3 .github/scripts/generate-report.py
+
+      - name: Post commit status
+        if: steps.pr.outputs.pr_number != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          HEAD_SHA: ${{ steps.pr.outputs.head_sha }}
+          PR_NUMBER: ${{ steps.pr.outputs.pr_number }}
+        run: |
+          STATE=$(jq -r '.state' status.json)
+          DESC=$(jq -r '.description' status.json)
+          gh api --method POST "/repos/$REPO/statuses/$HEAD_SHA" \
+            -f state="$STATE" \
+            -f description="$DESC" \
+            -f context="PR CI Report" \
+            -f target_url="https://github.com/$REPO/pull/$PR_NUMBER"
 
       - name: Post or update PR comment
         if: steps.pr.outputs.pr_number != ''
