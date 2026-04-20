@@ -1,5 +1,7 @@
-# Dependabot cannot reach the sparse crates.io registry (index.crates.io).
-# This tells Cargo to use the system git CLI for registry operations instead,
-# which avoids the sparse protocol entirely without redefining any sources.
+# Dependabot cannot access the sparse crates.io registry (index.crates.io).
+# Switch to the git protocol and use the system git CLI to avoid libgit2 issues.
+[registries.crates-io]
+protocol = "git"
+
 [net]
 git-fetch-with-cli = true
