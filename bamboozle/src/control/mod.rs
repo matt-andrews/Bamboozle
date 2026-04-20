@@ -1,9 +1,5 @@
-use axum::{
-    routing::{delete, get, post},
-    Router,
-};
+use axum::{response::Html, routing::{delete, get, post}, Router};
 use utoipa::OpenApi;
-use utoipa_swagger_ui::SwaggerUi;
 
 use crate::{
     app_state::AppState,
@@ -49,6 +45,27 @@ pub mod handlers;
 )]
 struct ApiDoc;
 
+async fn scalar_ui() -> Html<&'static str> {
+    Html(
+        r#"<!doctype html>
+<html>
+  <head>
+    <title>Bamboozle Control API</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+  </head>
+  <body>
+    <script id="api-reference" data-url="/api-docs/openapi.json"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@scalar/api-reference"></script>
+  </body>
+</html>"#,
+    )
+}
+
+async fn openapi_json() -> axum::Json<utoipa::openapi::OpenApi> {
+    axum::Json(ApiDoc::openapi())
+}
+
 pub fn router(state: AppState) -> Router {
     Router::new()
         .route(
@@ -73,6 +90,7 @@ pub fn router(state: AppState) -> Router {
         .route("/control/reset", post(handlers::reset))
         .route("/control/health", get(handlers::health))
         .route("/control/version", get(handlers::version))
-        .merge(SwaggerUi::new("/swagger-ui").url("/api-docs/openapi.json", ApiDoc::openapi()))
+        .route("/", get(scalar_ui))
+        .route("/api-docs/openapi.json", get(openapi_json))
         .with_state(state)
 }
