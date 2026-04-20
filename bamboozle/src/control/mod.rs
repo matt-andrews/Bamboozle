@@ -1,4 +1,10 @@
-use axum::{response::Html, routing::{delete, get, post}, Router};
+use axum::{
+    http::header,
+    response::Html,
+    routing::{delete, get, post},
+    Router,
+};
+use std::sync::OnceLock;
 use utoipa::OpenApi;
 
 use crate::{
@@ -56,14 +62,19 @@ async fn scalar_ui() -> Html<&'static str> {
   </head>
   <body>
     <script id="api-reference" data-url="/api-docs/openapi.json" data-configuration='{"theme":"elysiajs"}'></script>
-    <script src="https://cdn.jsdelivr.net/npm/@scalar/api-reference"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@scalar/api-reference@1.52.3"></script>
   </body>
 </html>"#,
     )
 }
 
-async fn openapi_json() -> axum::Json<utoipa::openapi::OpenApi> {
-    axum::Json(ApiDoc::openapi())
+static OPENAPI_JSON: OnceLock<String> = OnceLock::new();
+
+async fn openapi_json() -> impl axum::response::IntoResponse {
+    let json = OPENAPI_JSON.get_or_init(|| {
+        serde_json::to_string(&ApiDoc::openapi()).expect("OpenApi serialization is infallible")
+    });
+    ([(header::CONTENT_TYPE, "application/json")], json.as_str())
 }
 
 pub fn router(state: AppState) -> Router {
