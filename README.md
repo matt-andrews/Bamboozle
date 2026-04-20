@@ -241,7 +241,7 @@ This is the first place to check when your system under test is unexpectedly rec
 
 ## API reference
 
-Swagger UI is available at `http://localhost:9090/swagger-ui` when the container is running.
+Scalar API reference is available at `http://localhost:9090/` when the container is running.
 
 ## Roadmap
 

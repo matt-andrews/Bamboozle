@@ -1,9 +1,11 @@
 use axum::{
+    http::header,
+    response::Html,
     routing::{delete, get, post},
     Router,
 };
+use std::sync::OnceLock;
 use utoipa::OpenApi;
-use utoipa_swagger_ui::SwaggerUi;
 
 use crate::{
     app_state::AppState,
@@ -49,6 +51,32 @@ pub mod handlers;
 )]
 struct ApiDoc;
 
+async fn scalar_ui() -> Html<&'static str> {
+    Html(
+        r#"<!doctype html>
+<html>
+  <head>
+    <title>Bamboozle Control API</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+  </head>
+  <body>
+    <script id="api-reference" data-url="/api-docs/openapi.json" data-configuration='{"theme":"elysiajs"}'></script>
+    <script src="https://cdn.jsdelivr.net/npm/@scalar/api-reference@1.52.3"></script>
+  </body>
+</html>"#,
+    )
+}
+
+static OPENAPI_JSON: OnceLock<String> = OnceLock::new();
+
+async fn openapi_json() -> impl axum::response::IntoResponse {
+    let json = OPENAPI_JSON.get_or_init(|| {
+        serde_json::to_string(&ApiDoc::openapi()).expect("OpenApi serialization is infallible")
+    });
+    ([(header::CONTENT_TYPE, "application/json")], json.as_str())
+}
+
 pub fn router(state: AppState) -> Router {
     Router::new()
         .route(
@@ -73,6 +101,7 @@ pub fn router(state: AppState) -> Router {
         .route("/control/reset", post(handlers::reset))
         .route("/control/health", get(handlers::health))
         .route("/control/version", get(handlers::version))
-        .merge(SwaggerUi::new("/swagger-ui").url("/api-docs/openapi.json", ApiDoc::openapi()))
+        .route("/", get(scalar_ui))
+        .route("/api-docs/openapi.json", get(openapi_json))
         .with_state(state)
 }
