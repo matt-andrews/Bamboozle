@@ -1,8 +1,5 @@
-# Dependabot cannot access the sparse crates.io registry (index.crates.io)
-# due to infrastructure limitations. This falls back to the git-based index.
-# Scoped to bamboozle/ so it does not affect other parts of the repo.
-[source.crates-io]
-replace-with = "crates-io-git"
-
-[source.crates-io-git]
-registry = "https://github.com/rust-lang/crates.io-index"
+# Dependabot cannot reach the sparse crates.io registry (index.crates.io).
+# This tells Cargo to use the system git CLI for registry operations instead,
+# which avoids the sparse protocol entirely without redefining any sources.
+[net]
+git-fetch-with-cli = true
