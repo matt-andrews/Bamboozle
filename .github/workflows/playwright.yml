@@ -38,3 +38,10 @@ jobs:
           name: playwright-report
           path: ./playwright/playwright-report/
           retention-days: 30
+
+      - uses: actions/upload-artifact@v7
+        if: ${{ !cancelled() }}
+        with:
+          name: playwright-results
+          path: ./playwright/playwright-results.json
+          retention-days: 30
