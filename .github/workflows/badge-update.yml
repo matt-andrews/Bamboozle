@@ -1,0 +1,87 @@
+name: Update Badges
+
+on:
+  pull_request:
+    types: [closed]
+    branches: [main]
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  update-badges:
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.merged == true
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Download startup and docker-size artifacts
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          mkdir -p artifacts
+
+          download_artifact() {
+            local workflow_file="$1" artifact_name="$2" dest_dir="$3"
+            local run_id
+            run_id=$(gh api "/repos/$REPO/actions/workflows/$workflow_file/runs?per_page=100" \
+              --jq ".workflow_runs[]
+                    | select(.head_sha == \"$HEAD_SHA\" and .status == \"completed\")
+                    | .id" \
+              | head -1)
+
+            if [ -n "$run_id" ]; then
+              gh run download "$run_id" \
+                --repo "$REPO" \
+                --name "$artifact_name" \
+                --dir "artifacts/$dest_dir" 2>/dev/null \
+                && echo "  ✓ $artifact_name" \
+                || echo "  ✗ $artifact_name (not found in run $run_id — badge will show unknown)"
+            else
+              echo "  ⏳ $artifact_name (no completed run for $HEAD_SHA — badge will show unknown)"
+            fi
+          }
+
+          echo "Collecting artifacts for $HEAD_SHA ..."
+          download_artifact startup-time.yml startup-results startup
+          download_artifact startup-time.yml docker-size     docker-size
+
+      - name: Generate badge JSON files
+        env:
+          BADGE_OUTPUT_DIR: /tmp/badges
+          MAX_STARTUP_AVG_MS: ${{ vars.MAX_STARTUP_AVG_MS }}
+          MAX_DOCKER_SIZE_MB: ${{ vars.MAX_DOCKER_SIZE_MB }}
+        run: python3 .github/scripts/generate-badges.py
+
+      - name: Publish to badges branch
+        env:
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          if git ls-remote --heads origin badges | grep -q badges; then
+            git fetch origin badges --depth=1
+            git checkout badges
+          else
+            git checkout --orphan badges
+            git rm -rf . 2>/dev/null || true
+          fi
+
+          cp /tmp/badges/badge-startup.json      .
+          cp /tmp/badges/badge-docker-size.json  .
+
+          git add badge-startup.json badge-docker-size.json
+
+          if ! git diff --staged --quiet; then
+            git commit -m "chore: update badges (PR #$PR_NUMBER / ${HEAD_SHA:0:7})"
+            git push origin badges
+            echo "Badges updated on badges branch"
+          else
+            echo "Badge values unchanged — skipping push"
+          fi
