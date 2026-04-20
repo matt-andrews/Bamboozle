@@ -2,8 +2,8 @@
   <img src="./assets/logo_full_19apr26.png" width=256 alt="Bamboozle Logo" >
   <h1>Bamboozle</h1>
 
-  [![Startup Time](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/matt-andrews/Bamboozle/badges/badge-startup.json&cacheSeconds=3600)](https://github.com/matt-andrews/Bamboozle/actions/workflows/startup-time.yml)
-  [![Image Size](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/matt-andrews/Bamboozle/badges/badge-docker-size.json&cacheSeconds=3600)](https://github.com/matt-andrews/Bamboozle/pkgs/container/bamboozle)
+  [![Startup Time](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/matt-andrews/Bamboozle/badges/badge-startup.json?v=1&cacheSeconds=3600)](https://github.com/matt-andrews/Bamboozle/actions/workflows/startup-time.yml)
+  [![Image Size](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/matt-andrews/Bamboozle/badges/badge-docker-size.json?v=1&cacheSeconds=3600)](https://github.com/matt-andrews/Bamboozle/pkgs/container/bamboozle)
 </div>
 
 > [!WARNING]
