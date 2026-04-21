@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use utoipa::ToSchema;
 
-use super::match_key::MatchKey;
+use super::{match_key::MatchKey, simulation::SimulationConfig};
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct RouteDefinition {
@@ -12,6 +12,8 @@ pub struct RouteDefinition {
     pub response: ResponseDefinition,
     #[serde(rename = "setState", default, skip_serializing_if = "Option::is_none")]
     pub set_state: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub simulation: Option<SimulationConfig>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default, ToSchema)]

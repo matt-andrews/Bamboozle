@@ -96,6 +96,7 @@ mod tests {
             route_model: RouteDefinition {
                 match_key: MatchKey::new(verb, pattern),
                 set_state: None,
+                simulation: None,
                 response: ResponseDefinition::default(),
             },
             previous_context: None,
