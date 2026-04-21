@@ -6,11 +6,11 @@ services:
       context: ../bamboozle/
       dockerfile: Dockerfile
     ports:
-      - "18000-19000:8000-9000"
+      - "18080-18090:8080-8090"
       - "19090:9090"
     volumes:
       - ./test_configs:/test_configs
     environment:
       - ROUTE_CONFIG_THROW_ON_ERROR=true
       - ROUTE_CONFIG_FOLDERS=["/test_configs"]
-      - EXPOSE_PORTS=8000-9000
+      - EXPOSE_PORTS=8080-8090
