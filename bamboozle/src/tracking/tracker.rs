@@ -27,7 +27,8 @@ impl CallTracker {
 
     pub fn record_matched(&self, ctx: ContextModel) {
         debug!(route = %ctx.route_model.match_key, "Recorded matched call");
-        self.last_matched.insert(ctx.route_model.match_key.clone(), ctx.clone());
+        self.last_matched
+            .insert(ctx.route_model.match_key.clone(), ctx.clone());
         self.matched.insert(Uuid::new_v4(), ctx);
     }
 

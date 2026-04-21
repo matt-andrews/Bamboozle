@@ -2,11 +2,7 @@ use std::path::Path;
 use tokio::fs;
 use tracing::{error, warn};
 
-use crate::{
-    app_state::AppState,
-    config::AppConfig,
-    models::route::RouteDefinition,
-};
+use crate::{app_state::AppState, config::AppConfig, models::route::RouteDefinition};
 
 #[derive(Debug, serde::Deserialize, Default)]
 struct ConfigLoaderModel {

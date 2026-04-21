@@ -138,12 +138,13 @@ async fn apply_simulation(sim: &SimulationConfig) -> Option<Response> {
 fn fault_response(kind: &FaultKind) -> Response {
     match kind {
         FaultKind::ConnectionReset => {
-            let body = Body::from_stream(stream::once(std::future::ready(
-                Err::<Bytes, std::io::Error>(std::io::Error::new(
-                    std::io::ErrorKind::ConnectionReset,
-                    "simulated connection reset",
-                )),
-            )));
+            let body =
+                Body::from_stream(stream::once(std::future::ready(
+                    Err::<Bytes, std::io::Error>(std::io::Error::new(
+                        std::io::ErrorKind::ConnectionReset,
+                        "simulated connection reset",
+                    )),
+                )));
             Response::builder()
                 .status(200)
                 .body(body)
@@ -156,7 +157,11 @@ fn fault_response(kind: &FaultKind) -> Response {
     }
 }
 
-fn build_response(route_def: &RouteDefinition, ctx: &ContextModel, renderer: &Renderer) -> Response {
+fn build_response(
+    route_def: &RouteDefinition,
+    ctx: &ContextModel,
+    renderer: &Renderer,
+) -> Response {
     let status_str = renderer.render_or_fallback(&route_def.response.status, ctx, "200");
     let status_code: u16 = status_str.trim().parse().unwrap_or(200);
 
@@ -215,12 +220,7 @@ mod tests {
 
     async fn make_request(state: AppState, uri: &str) {
         router(state)
-            .oneshot(
-                Request::builder()
-                    .uri(uri)
-                    .body(Body::empty())
-                    .unwrap(),
-            )
+            .oneshot(Request::builder().uri(uri).body(Body::empty()).unwrap())
             .await
             .unwrap();
     }
@@ -475,10 +475,7 @@ mod tests {
         make_request(state.clone(), "/thing").await;
         make_request(state, "/thing").await;
         let calls = tracker.get_calls_for_route(&MatchKey::new("GET", "/thing"));
-        let call_with_prev = calls
-            .iter()
-            .find(|c| c.previous_context.is_some())
-            .unwrap();
+        let call_with_prev = calls.iter().find(|c| c.previous_context.is_some()).unwrap();
         assert!(call_with_prev
             .previous_context
             .as_ref()
@@ -558,7 +555,12 @@ mod tests {
             .set_route(make_route("GET", "/plain", Some("ok"), "200"))
             .unwrap();
         let response = router(state)
-            .oneshot(Request::builder().uri("/plain").body(Body::empty()).unwrap())
+            .oneshot(
+                Request::builder()
+                    .uri("/plain")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
             .await
             .unwrap();
         assert_eq!(response.status(), StatusCode::OK);
@@ -667,7 +669,10 @@ mod tests {
             .unwrap();
         assert_eq!(response.status(), StatusCode::OK);
         let result = axum::body::to_bytes(response.into_body(), usize::MAX).await;
-        assert!(result.is_err(), "body read should error for connection reset");
+        assert!(
+            result.is_err(),
+            "body read should error for connection reset"
+        );
     }
 
     #[tokio::test]
@@ -696,7 +701,12 @@ mod tests {
             .unwrap();
         for _ in 0..10 {
             let response = router(state.clone())
-                .oneshot(Request::builder().uri("/no-fault").body(Body::empty()).unwrap())
+                .oneshot(
+                    Request::builder()
+                        .uri("/no-fault")
+                        .body(Body::empty())
+                        .unwrap(),
+                )
                 .await
                 .unwrap();
             assert_eq!(body_string(response.into_body()).await, "normal");
