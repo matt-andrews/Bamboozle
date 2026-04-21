@@ -146,14 +146,16 @@ impl RouteStore {
             .iter()
             .flat_map(|outer| {
                 let stored_verb = outer.key().clone();
-                outer.value().iter().map(|inner| {
+                let normalized = normalized.clone();
+                let verb_upper = verb_upper.clone();
+                outer.value().iter().map(move |inner| {
                     let pattern = &inner.value().normalized_pattern;
                     let mut score = jaro_winkler(normalized.as_str(), pattern.as_str());
                     if stored_verb == verb_upper {
                         score = (score + 0.05).min(1.0);
                     }
                     (score, format!("{}|{}", stored_verb, pattern))
-                })
+                }).collect::<Vec<_>>()
             })
             .filter(|(score, _)| *score >= SUGGESTION_THRESHOLD)
             .collect();
