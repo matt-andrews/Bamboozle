@@ -211,6 +211,7 @@ Available expression tokens:
 | Token | Description |
 | ------- | ------------- |
 | `verb` | HTTP method of the call |
+| `state` | The state value set through RouteDefinition.setState |
 | `query("key")` | Query string parameter |
 | `header("key")` | Request header (case-insensitive) |
 | `route("key")` | Captured route parameter |
