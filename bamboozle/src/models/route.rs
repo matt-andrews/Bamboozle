@@ -18,14 +18,17 @@ pub struct RouteDefinition {
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default, ToSchema)]
 pub struct ResponseDefinition {
-    #[serde(default = "default_status")]
+    #[serde(default = "ResponseDefinition::default_status")]
     pub status: String,
     #[serde(default)]
     pub headers: HashMap<String, String>,
     pub content: Option<String>,
-    pub loopback: Option<bool>,
+    #[serde(default)]
+    pub loopback: bool,
 }
 
-fn default_status() -> String {
-    "200".to_string()
+impl ResponseDefinition {
+    fn default_status() -> String {
+        "200".to_string()
+    }
 }

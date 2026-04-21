@@ -10,6 +10,12 @@ pub struct CallTracker {
     last_matched: DashMap<MatchKey, ContextModel>,
 }
 
+impl Default for CallTracker {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl CallTracker {
     pub fn new() -> Self {
         Self {

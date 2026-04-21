@@ -10,11 +10,12 @@ use std::{collections::HashMap, time::Duration};
 
 use crate::{
     app_state::AppState,
+    liquid_render::Renderer,
     models::{
         context::ContextModel,
         match_key::MatchKey,
         route::{ResponseDefinition, RouteDefinition},
-        simulation::FaultKind,
+        simulation::{FaultKind, SimulationConfig},
     },
 };
 
@@ -31,32 +32,9 @@ async fn catch_all(
 ) -> impl IntoResponse {
     let verb = method.as_str().to_string();
     let path = uri.path().to_string();
-
-    let query_params: HashMap<String, String> = uri
-        .query()
-        .map(|q| {
-            form_urlencoded::parse(q.as_bytes())
-                .map(|(k, v)| (k.into_owned(), v.into_owned()))
-                .collect()
-        })
-        .unwrap_or_default();
-
-    let header_map: HashMap<String, String> = headers
-        .iter()
-        .map(|(k, v)| (k.as_str().to_string(), v.to_str().unwrap_or("").to_string()))
-        .collect();
-
-    let body_raw = String::from_utf8_lossy(&body_bytes).into_owned();
-    let is_json = headers
-        .get("content-type")
-        .and_then(|v| v.to_str().ok())
-        .map(|v| v.contains("application/json"))
-        .unwrap_or(false);
-    let body: serde_json::Value = if is_json {
-        serde_json::from_str(&body_raw).unwrap_or(serde_json::Value::String(body_raw.clone()))
-    } else {
-        serde_json::Value::String(body_raw.clone())
-    };
+    let query_params = extract_query_params(&uri);
+    let header_map = extract_headers(&headers);
+    let (body_raw, body) = parse_body(&body_bytes, &headers);
 
     match state.store.match_route(&verb, &path) {
         None => {
@@ -101,66 +79,112 @@ async fn catch_all(
             state.tracker.record_matched(ctx.clone());
 
             if let Some(sim) = &route_def.simulation {
-                if let Some(delay) = &sim.delay {
-                    tokio::time::sleep(Duration::from_millis(delay.sample_ms())).await;
-                }
-                if let Some(fault) = &sim.fault {
-                    if fault.should_trigger() {
-                        return match &fault.kind {
-                            FaultKind::ConnectionReset => {
-                                let body = Body::from_stream(stream::once(std::future::ready(
-                                    Err::<Bytes, std::io::Error>(std::io::Error::new(
-                                        std::io::ErrorKind::ConnectionReset,
-                                        "simulated connection reset",
-                                    )),
-                                )));
-                                Response::builder()
-                                    .status(200)
-                                    .body(body)
-                                    .unwrap_or_else(|_| {
-                                        StatusCode::INTERNAL_SERVER_ERROR.into_response()
-                                    })
-                            }
-                            FaultKind::EmptyResponse => Response::builder()
-                                .status(200)
-                                .body(Body::empty())
-                                .unwrap_or_else(|_| {
-                                    StatusCode::INTERNAL_SERVER_ERROR.into_response()
-                                }),
-                        };
-                    }
+                if let Some(fault_response) = apply_simulation(sim).await {
+                    return fault_response;
                 }
             }
 
-            let status_str =
-                state
-                    .renderer
-                    .render_or_fallback(&route_def.response.status, &ctx, "200");
-            let status_code: u16 = status_str.trim().parse().unwrap_or(200);
-
-            let body = if route_def.response.loopback == Some(true) {
-                body_raw
-            } else {
-                route_def
-                    .response
-                    .content
-                    .as_deref()
-                    .map(|t| state.renderer.render_or_fallback(t, &ctx, ""))
-                    .unwrap_or_default()
-            };
-
-            let mut builder = Response::builder().status(status_code);
-
-            for (key, val_template) in &route_def.response.headers {
-                let val = state.renderer.render_or_fallback(val_template, &ctx, "");
-                builder = builder.header(key.as_str(), val.as_str());
-            }
-
-            builder
-                .body(axum::body::Body::from(body))
-                .unwrap_or_else(|_| StatusCode::INTERNAL_SERVER_ERROR.into_response())
+            build_response(&route_def, &ctx, &body_raw, &state.renderer)
         }
     }
+}
+
+fn extract_query_params(uri: &Uri) -> HashMap<String, String> {
+    uri.query()
+        .map(|q| {
+            form_urlencoded::parse(q.as_bytes())
+                .map(|(k, v)| (k.into_owned(), v.into_owned()))
+                .collect()
+        })
+        .unwrap_or_default()
+}
+
+fn extract_headers(headers: &HeaderMap) -> HashMap<String, String> {
+    headers
+        .iter()
+        .map(|(k, v)| (k.as_str().to_string(), v.to_str().unwrap_or("").to_string()))
+        .collect()
+}
+
+fn parse_body(body_bytes: &Bytes, headers: &HeaderMap) -> (String, serde_json::Value) {
+    let body_raw = String::from_utf8_lossy(body_bytes).into_owned();
+    let is_json = headers
+        .get("content-type")
+        .and_then(|v| v.to_str().ok())
+        .map(|v| v.contains("application/json"))
+        .unwrap_or(false);
+    let body = if is_json {
+        serde_json::from_str(&body_raw).unwrap_or(serde_json::Value::String(body_raw.clone()))
+    } else {
+        serde_json::Value::String(body_raw.clone())
+    };
+    (body_raw, body)
+}
+
+/// Applies delay and fault simulation. Returns `Some(Response)` if a fault fired
+/// (caller should short-circuit), or `None` if normal response processing should continue.
+async fn apply_simulation(sim: &SimulationConfig) -> Option<Response> {
+    if let Some(delay) = &sim.delay {
+        tokio::time::sleep(Duration::from_millis(delay.sample_ms())).await;
+    }
+    if let Some(fault) = &sim.fault {
+        if fault.should_trigger() {
+            return Some(fault_response(&fault.kind));
+        }
+    }
+    None
+}
+
+fn fault_response(kind: &FaultKind) -> Response {
+    match kind {
+        FaultKind::ConnectionReset => {
+            let body = Body::from_stream(stream::once(std::future::ready(
+                Err::<Bytes, std::io::Error>(std::io::Error::new(
+                    std::io::ErrorKind::ConnectionReset,
+                    "simulated connection reset",
+                )),
+            )));
+            Response::builder()
+                .status(200)
+                .body(body)
+                .unwrap_or_else(|_| StatusCode::INTERNAL_SERVER_ERROR.into_response())
+        }
+        FaultKind::EmptyResponse => Response::builder()
+            .status(200)
+            .body(Body::empty())
+            .unwrap_or_else(|_| StatusCode::INTERNAL_SERVER_ERROR.into_response()),
+    }
+}
+
+fn build_response(
+    route_def: &RouteDefinition,
+    ctx: &ContextModel,
+    body_raw: &str,
+    renderer: &Renderer,
+) -> Response {
+    let status_str = renderer.render_or_fallback(&route_def.response.status, ctx, "200");
+    let status_code: u16 = status_str.trim().parse().unwrap_or(200);
+
+    let body = if route_def.response.loopback {
+        body_raw.to_string()
+    } else {
+        route_def
+            .response
+            .content
+            .as_deref()
+            .map(|t| renderer.render_or_fallback(t, ctx, ""))
+            .unwrap_or_default()
+    };
+
+    let mut builder = Response::builder().status(status_code);
+    for (key, val_template) in &route_def.response.headers {
+        let val = renderer.render_or_fallback(val_template, ctx, "");
+        builder = builder.header(key.as_str(), val.as_str());
+    }
+
+    builder
+        .body(Body::from(body))
+        .unwrap_or_else(|_| StatusCode::INTERNAL_SERVER_ERROR.into_response())
 }
 
 #[cfg(test)]
@@ -295,7 +319,7 @@ mod tests {
                 simulation: None,
                 response: ResponseDefinition {
                     status: "200".to_string(),
-                    loopback: Some(true),
+                    loopback: true,
                     ..Default::default()
                 },
             })

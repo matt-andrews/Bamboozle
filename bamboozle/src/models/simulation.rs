@@ -55,11 +55,15 @@ impl DelayConfig {
 pub struct FaultConfig {
     #[serde(rename = "type")]
     pub kind: FaultKind,
-    #[serde(default = "default_probability")]
+    #[serde(default = "FaultConfig::default_probability")]
     pub probability: f64,
 }
 
 impl FaultConfig {
+    fn default_probability() -> f64 {
+        1.0
+    }
+
     pub fn should_trigger(&self) -> bool {
         if self.probability >= 1.0 {
             true
@@ -69,10 +73,6 @@ impl FaultConfig {
             rand::thread_rng().gen_bool(self.probability)
         }
     }
-}
-
-fn default_probability() -> f64 {
-    1.0
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]

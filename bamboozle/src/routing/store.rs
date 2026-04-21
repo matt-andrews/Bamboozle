@@ -16,8 +16,14 @@ struct StoredRoute {
 }
 
 pub struct RouteStore {
-    // outer key = HTTP verb ("GET"), inner key = normalized pattern string
+    // outer key = uppercase HTTP verb ("GET"), inner key = fully-lowercase normalized pattern
     routes: DashMap<String, DashMap<String, StoredRoute>>,
+}
+
+impl Default for RouteStore {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl RouteStore {
@@ -29,21 +35,21 @@ impl RouteStore {
 
     pub fn set_route(&self, mut def: RouteDefinition) -> Result<RouteDefinition, AppError> {
         let verb = def.match_key.verb.trim().to_ascii_uppercase();
-        // Normalise: lowercase literal segments but preserve case inside {braces} so
-        // param names match Liquid template access ({{routeValues.thingName}}).
-        // The storage key is fully lowercase for case-insensitive deduplication.
-        let normalized = MatchKey::normalize_pattern(&def.match_key.pattern);
-        let storage_key = normalized.to_ascii_lowercase();
+        // `pattern` preserves case inside {braces} so param names match Liquid template
+        // access (e.g. `{{routeValues.thingName}}`), but lowercases literal segments.
+        // `lookup_key` is fully lowercase for case-insensitive deduplication in the map.
+        let pattern = MatchKey::normalize_pattern(&def.match_key.pattern);
+        let lookup_key = pattern.to_ascii_lowercase();
         def.match_key.verb = verb.clone();
-        def.match_key.pattern = normalized.clone();
+        def.match_key.pattern = pattern.clone();
         let key_str = def.match_key.to_string();
-        let compiled = match compile_pattern(&normalized) {
+        let compiled = match compile_pattern(&pattern) {
             Ok(c) => c,
             Err(e) => {
                 error!(route = %key_str, error = %e, "Failed to compile route pattern");
                 return Err(AppError::BadRequest(format!(
                     "Invalid pattern '{}': {}",
-                    normalized, e
+                    pattern, e
                 )));
             }
         };
@@ -51,17 +57,17 @@ impl RouteStore {
         let verb_entry = self.routes.entry(verb.clone()).or_default();
         let verb_map = verb_entry.value();
 
-        if verb_map.contains_key(&storage_key) {
+        if verb_map.contains_key(&lookup_key) {
             warn!(route = %key_str, "Route already exists, skipping");
             return Err(AppError::AlreadyExists(key_str));
         }
 
         verb_map.insert(
-            storage_key,
+            lookup_key,
             StoredRoute {
                 definition: def.clone(),
                 compiled_regex: compiled,
-                normalized_pattern: normalized,
+                normalized_pattern: pattern,
             },
         );
 
@@ -70,10 +76,11 @@ impl RouteStore {
     }
 
     pub fn delete_route(&self, key: &MatchKey) -> Result<(), RouteError> {
-        let key_str = key.to_string();
-        let normalized = MatchKey::normalize_pattern(&key.pattern).to_ascii_lowercase();
+        let verb = key.verb.trim().to_ascii_uppercase();
+        let lookup_key = MatchKey::normalize_pattern(&key.pattern).to_ascii_lowercase();
+        let key_str = format!("{}|{}", verb, lookup_key);
 
-        let verb_map = match self.routes.get(&key.verb) {
+        let verb_map = match self.routes.get(&verb) {
             Some(m) => m,
             None => {
                 warn!(route = %key_str, "Route not found for deletion");
@@ -81,7 +88,7 @@ impl RouteStore {
             }
         };
 
-        if verb_map.remove(&normalized).is_none() {
+        if verb_map.remove(&lookup_key).is_none() {
             warn!(route = %key_str, "Route not found for deletion");
             return Err(RouteError::NotFound(key_str));
         }
@@ -100,7 +107,7 @@ impl RouteStore {
         let result = self.routes.get(verb).and_then(|verb_map| {
             let mut entries: Vec<_> = verb_map.iter().collect();
             // Static routes before parameterized; longer patterns before shorter.
-            entries.sort_by(|a, b| {
+            entries.sort_unstable_by(|a, b| {
                 let a_params = a.value().normalized_pattern.matches('{').count();
                 let b_params = b.value().normalized_pattern.matches('{').count();
                 a_params.cmp(&b_params).then_with(|| {

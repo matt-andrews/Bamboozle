@@ -9,6 +9,12 @@ pub struct Renderer {
     parser: liquid::Parser,
 }
 
+impl Default for Renderer {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Renderer {
     pub fn new() -> Self {
         Self {
@@ -52,14 +58,7 @@ impl Renderer {
 /// [key, value] pair arrays, enabling the {{kvp[0]}}={{kvp[1]}} pattern used in
 /// the test configs.
 fn build_globals(ctx: &ContextModel) -> liquid::Object {
-    let mut globals = liquid::Object::new();
-    globals.insert("queryParams".into(), map_to_value(&ctx.query_params));
-    globals.insert("headers".into(), map_to_value(&ctx.headers));
-    globals.insert("routeValues".into(), map_to_value(&ctx.route_values));
-    globals.insert("body".into(), json_to_liquid(&ctx.body));
-    globals.insert("bodyRaw".into(), Value::scalar(ctx.body_raw.clone()));
-    globals.insert("state".into(), Value::scalar(ctx.state.clone()));
-    globals.insert("routeModel".into(), route_model_to_value(&ctx.route_model));
+    let mut globals = context_to_object(ctx);
     let prev = ctx
         .previous_context
         .as_deref()
