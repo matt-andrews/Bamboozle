@@ -14,6 +14,7 @@ test.afterEach(async () => {
     }
     deleteState = [];
 });
+
 test('check for previous context', async ({ request }) => {
     const key: MatchKey = { verb: 'GET', pattern: 'playwright/check/for/previous/context' };
     deleteState.push(key);
@@ -28,6 +29,25 @@ test('check for previous context', async ({ request }) => {
     expect(await initReq.text()).toEqual("");
 
     const secondReq = await request.get(`http://localhost:18080/${key.pattern}`);
+    expect(await secondReq.text()).toEqual("OK");
+});
+
+test('use previousContext to trigger 409', async ({ request }) => {
+    const key: MatchKey = { verb: 'GET', pattern: 'playwright/use/previous/context/to/trigger/409' };
+    deleteState.push(key);
+    await bamboozleClient.addRoute({
+        match: key,
+        response: {
+            status: "{% if previousContext != null %}409{% else %}200{% endif %}",
+            content: `OK`
+        }
+    });
+    const initReq = await request.get(`http://localhost:18080/${key.pattern}`);
+    expect(initReq.status()).toEqual(200);
+    expect(await initReq.text()).toEqual("OK");
+
+    const secondReq = await request.get(`http://localhost:18080/${key.pattern}`);
+    expect(secondReq.status()).toEqual(409);
     expect(await secondReq.text()).toEqual("OK");
 });
 
@@ -53,17 +73,19 @@ test('check for no previous previous context', async ({ request }) => {
     expect(await thirdReq.text()).toEqual("");
 });
 
+/*
+* Asserts that with previousContext we can carry the state forward through multiple requests
+*/
 test('test for state carry forward', async ({ request }) => {
     const key: MatchKey = { verb: 'GET', pattern: 'test/for/state/carry/forward' };
     deleteState.push(key);
     await bamboozleClient.addRoute({
         match: key,
+        setState: "{% if previousContext == nil %}1{% else %}{% assign n = previousContext.state | plus: 1 %}{{ n }}{% endif %}",
         response: {
             status: "200",
             headers: {
-                "my-state": '{% if previousContext == null %}0{% else %}'
-                    + '{% if previousContext["routeModel"]["response"]["headers"]["my-state"] == null %}0{% else %}'
-                    + '{% assign stateCount = previousContext["routeModel"]["response"]["headers"]["my-state"] %}{{ stateCount }}{% endif %}{% endif %}'
+                "my-state": "{{previousContext.state}}"
             },
             content: `OK`
         }
@@ -71,7 +93,7 @@ test('test for state carry forward', async ({ request }) => {
 
     const initReq = await request.get(`http://localhost:18080/${key.pattern}`);
     expect(await initReq.text()).toEqual("OK");
-    expect(initReq.headers()["my-state"]).toEqual('0');
+    expect(initReq.headers()["my-state"]).toEqual('');
 
     const secondReq = await request.get(`http://localhost:18080/${key.pattern}`);
     expect(await secondReq.text()).toEqual("OK");

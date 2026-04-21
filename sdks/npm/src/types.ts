@@ -15,6 +15,7 @@ export interface ResponseDefinition {
 export interface RouteDefinition {
   match: MatchKey;
   response: ResponseDefinition;
+  setState?: string;
 }
 
 export interface ContextModel {

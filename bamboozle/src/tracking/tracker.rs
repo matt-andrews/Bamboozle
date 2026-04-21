@@ -92,8 +92,10 @@ mod tests {
             route_values: HashMap::new(),
             body: serde_json::Value::Null,
             body_raw: String::new(),
+            state: String::new(),
             route_model: RouteDefinition {
                 match_key: MatchKey::new(verb, pattern),
+                set_state: None,
                 response: ResponseDefinition::default(),
             },
             previous_context: None,

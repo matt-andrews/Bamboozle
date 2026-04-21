@@ -58,6 +58,7 @@ fn build_globals(ctx: &ContextModel) -> liquid::Object {
     globals.insert("routeValues".into(), map_to_value(&ctx.route_values));
     globals.insert("body".into(), json_to_liquid(&ctx.body));
     globals.insert("bodyRaw".into(), Value::scalar(ctx.body_raw.clone()));
+    globals.insert("state".into(), Value::scalar(ctx.state.clone()));
     globals.insert("routeModel".into(), route_model_to_value(&ctx.route_model));
     let prev = ctx
         .previous_context
@@ -75,6 +76,7 @@ fn context_to_object(ctx: &ContextModel) -> liquid::Object {
     obj.insert("routeValues".into(), map_to_value(&ctx.route_values));
     obj.insert("body".into(), json_to_liquid(&ctx.body));
     obj.insert("bodyRaw".into(), Value::scalar(ctx.body_raw.clone()));
+    obj.insert("state".into(), Value::scalar(ctx.state.clone()));
     obj.insert("routeModel".into(), route_model_to_value(&ctx.route_model));
     obj
 }
@@ -130,8 +132,10 @@ mod tests {
             route_values: HashMap::new(),
             body: serde_json::Value::Null,
             body_raw: String::new(),
+            state: String::new(),
             route_model: RouteDefinition {
                 match_key: MatchKey::new("GET", "/test"),
+                set_state: None,
                 response: ResponseDefinition::default(),
             },
             previous_context: None,

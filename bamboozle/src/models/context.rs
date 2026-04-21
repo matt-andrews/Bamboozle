@@ -18,6 +18,8 @@ pub struct ContextModel {
     pub body: JsonValue,
     #[serde(rename = "bodyRaw")]
     pub body_raw: String,
+    #[serde(default)]
+    pub state: String,
     #[serde(rename = "previousContext")]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub previous_context: Option<Box<ContextModel>>,

@@ -66,8 +66,10 @@ async fn catch_all(
                 body_raw,
                 route_model: RouteDefinition {
                     match_key: MatchKey::new(verb, path),
+                    set_state: None,
                     response: ResponseDefinition::default(),
                 },
+                state: String::new(),
                 previous_context: None,
             };
             state.tracker.record_unmatched(ctx);
@@ -78,7 +80,7 @@ async fn catch_all(
             let previous_context = state
                 .tracker
                 .get_last_matched_for_route(&route_def.match_key);
-            let ctx = ContextModel {
+            let mut ctx = ContextModel {
                 query_params,
                 headers: header_map,
                 route_values,
@@ -86,7 +88,13 @@ async fn catch_all(
                 body_raw: body_raw.clone(),
                 route_model: route_def.clone(),
                 previous_context,
+                state: String::new(),
             };
+
+            if let Some(set_state) = &route_def.set_state {
+                ctx.state = state.renderer.render_or_fallback(set_state, &ctx, "");
+            }
+
             state.tracker.record_matched(ctx.clone());
 
             let status_str =
@@ -141,6 +149,7 @@ mod tests {
     ) -> RouteDefinition {
         RouteDefinition {
             match_key: MatchKey::new(verb, pattern),
+            set_state: None,
             response: ResponseDefinition {
                 status: status.to_string(),
                 content: content.map(|s| s.to_string()),
@@ -246,6 +255,7 @@ mod tests {
             .store
             .set_route(RouteDefinition {
                 match_key: MatchKey::new("POST", "/echo"),
+                set_state: None,
                 response: ResponseDefinition {
                     status: "200".to_string(),
                     loopback: Some(true),
@@ -303,6 +313,7 @@ mod tests {
                     verb: "GET".to_string(),
                     pattern: "/thing/{thingName}/{thingVersion}".to_string(),
                 },
+                set_state: None,
                 response: ResponseDefinition {
                     status: "200".to_string(),
                     content: Some(r#"{"id":"{{ routeValues.thingName }}"}"#.to_string()),
@@ -417,5 +428,66 @@ mod tests {
             .unwrap()
             .previous_context
             .is_none());
+    }
+
+    #[tokio::test]
+    async fn set_state_template_is_rendered_and_stored() {
+        let state = AppState::new();
+        state
+            .store
+            .set_route(RouteDefinition {
+                match_key: MatchKey::new("GET", "/stateful"),
+                set_state: Some("hello-state".to_string()),
+                response: ResponseDefinition {
+                    status: "200".to_string(),
+                    content: Some("{{ state }}".to_string()),
+                    ..Default::default()
+                },
+            })
+            .unwrap();
+        let tracker = state.tracker.clone();
+        let response = router(state)
+            .oneshot(
+                Request::builder()
+                    .uri("/stateful")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(body_string(response.into_body()).await, "hello-state");
+        let calls = tracker.get_calls_for_route(&MatchKey::new("GET", "/stateful"));
+        assert_eq!(calls[0].state, "hello-state");
+    }
+
+    #[tokio::test]
+    async fn previous_context_state_accessible_on_second_call() {
+        let state = AppState::new();
+        state
+            .store
+            .set_route(RouteDefinition {
+                match_key: MatchKey::new("GET", "/counter"),
+                set_state: Some(
+                    "{% if previousContext == nil %}0{% else %}{{ previousContext.state }}{% endif %}"
+                        .to_string(),
+                ),
+                response: ResponseDefinition {
+                    status: "200".to_string(),
+                    content: Some("{{ state }}".to_string()),
+                    ..Default::default()
+                },
+            })
+            .unwrap();
+        make_request(state.clone(), "/counter").await;
+        let response = router(state)
+            .oneshot(
+                Request::builder()
+                    .uri("/counter")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(body_string(response.into_body()).await, "0");
     }
 }

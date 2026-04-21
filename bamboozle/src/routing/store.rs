@@ -157,6 +157,7 @@ mod tests {
     fn make_route(verb: &str, pattern: &str) -> RouteDefinition {
         RouteDefinition {
             match_key: MatchKey::new(verb, pattern),
+            set_state: None,
             response: ResponseDefinition::default(),
         }
     }
