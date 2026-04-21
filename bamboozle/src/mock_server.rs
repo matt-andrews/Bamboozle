@@ -66,7 +66,7 @@ async fn catch_all(
                 headers: header_map,
                 route_values,
                 body,
-                body_raw: body_raw.clone(),
+                body_raw,
                 route_model: route_def.clone(),
                 previous_context,
                 state: String::new(),
@@ -84,7 +84,7 @@ async fn catch_all(
                 }
             }
 
-            build_response(&route_def, &ctx, &body_raw, &state.renderer)
+            build_response(&route_def, &ctx, &state.renderer)
         }
     }
 }
@@ -156,17 +156,12 @@ fn fault_response(kind: &FaultKind) -> Response {
     }
 }
 
-fn build_response(
-    route_def: &RouteDefinition,
-    ctx: &ContextModel,
-    body_raw: &str,
-    renderer: &Renderer,
-) -> Response {
+fn build_response(route_def: &RouteDefinition, ctx: &ContextModel, renderer: &Renderer) -> Response {
     let status_str = renderer.render_or_fallback(&route_def.response.status, ctx, "200");
     let status_code: u16 = status_str.trim().parse().unwrap_or(200);
 
     let body = if route_def.response.loopback {
-        body_raw.to_string()
+        ctx.body_raw.clone()
     } else {
         route_def
             .response
