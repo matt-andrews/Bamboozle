@@ -114,7 +114,26 @@ pub fn eval_expression(expr: &str, ctx: &ContextModel) -> Result<bool, EvalexprE
         }),
     )?;
 
-    eval_boolean_with_context(expr, &context)
+    let result = eval_boolean_with_context(expr, &context);
+    if let Err(ref e) = result {
+        match e {
+            EvalexprError::ExpectedBoolean { .. } => {
+                tracing::debug!(
+                    expression = %expr,
+                    error = %e,
+                    "Expression did not evaluate to a boolean — must be a true/false expression"
+                );
+            }
+            _ => {
+                tracing::debug!(
+                    expression = %expr,
+                    error = %e,
+                    "Expression evaluation error"
+                );
+            }
+        }
+    }
+    result
 }
 
 fn two_string_args(arg: &Value) -> Result<(String, String), EvalexprError> {
