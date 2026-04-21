@@ -10,6 +10,8 @@ pub struct RouteDefinition {
     pub match_key: MatchKey,
     #[serde(default)]
     pub response: ResponseDefinition,
+    #[serde(rename = "setState", default, skip_serializing_if = "Option::is_none")]
+    pub set_state: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default, ToSchema)]
