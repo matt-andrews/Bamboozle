@@ -7,13 +7,13 @@
 </div>
 
 > [!WARNING]
-> This project is still in a pre-release state. Use at your own risk.
+> This project is still in a super-pre-release state. Use at your own risk.
 
 Bamboozle is a container-native HTTP mock server for integration testing. It intercepts real HTTP traffic, allowing you to test your full client stack — serialisation, authentication headers, retry logic, circuit breakers — without any live dependency.
 
 Unlike in-process mocking libraries, Bamboozle runs as a self-contained Docker container that is fully programmable at runtime from your test code, or configurable from startup files.
 
-This readme discusses the app; we have a collection of SDKs to help you leverage the app in your language of choice.
+This readme discusses the app; we are working on a collection of SDKs to help you leverage the app in your language of choice.
 
 ## How it works
 
@@ -119,6 +119,7 @@ Response bodies, headers, and status codes support [Liquid](https://shopify.gith
 | `{{ headers }}` | Request header |
 | `{{ body }}` | Parsed JSON body |
 | `{{ bodyRaw }}` | Raw request body as a string |
+| `{{ previousContext }}` | The context from the previous request (if it exists) |
 
 Example — echo the captured ID back in a JSON response:
 
@@ -248,7 +249,6 @@ Scalar API reference is available at `http://localhost:9090/` when the container
 Bamboozle is built against a detailed design specification. The following capabilities are planned but not yet implemented:
 
 - **Request matching on content** — match routes based on headers, query parameters, and request body (JSON path conditions and schema validation), in addition to verb and path
-- **Response sequences** — return different responses on successive calls to the same route, enabling stateful mock scenarios (e.g. first call returns `202`, second returns `409`)
 - **Delay simulation** — configurable fixed, random, and gaussian latency to test client timeout handling and retry behaviour
 - **Fault simulation** — connection reset and empty response injection to test client resilience against network failures
 - **Session isolation** — per-test namespace via a session header, enabling safe parallel test execution against a shared Bamboozle instance
