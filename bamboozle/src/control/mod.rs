@@ -86,15 +86,15 @@ pub fn router(state: AppState) -> Router {
                 .get(handlers::get_routes),
         )
         .route(
-            "/control/routes/:verb/:pattern",
+            "/control/routes/{verb}/{pattern}",
             delete(handlers::delete_route),
         )
         .route(
-            "/control/routes/:verb/:pattern/calls",
+            "/control/routes/{verb}/{pattern}/calls",
             get(handlers::get_route_calls).delete(handlers::delete_route_calls),
         )
         .route(
-            "/control/routes/:verb/:pattern/assert",
+            "/control/routes/{verb}/{pattern}/assert",
             post(handlers::assert_route),
         )
         .route("/control/unmatched", get(handlers::get_unmatched))
