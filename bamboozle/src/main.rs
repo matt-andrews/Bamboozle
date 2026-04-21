@@ -16,8 +16,7 @@ use tracing::info;
 fn init_tracing() {
     use tracing_subscriber::{fmt, layer::SubscriberExt, util::SubscriberInitExt, EnvFilter};
 
-    let filter = EnvFilter::try_from_default_env()
-        .unwrap_or_else(|_| EnvFilter::new("info"));
+    let filter = EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("info"));
 
     let format = std::env::var("RUST_LOG_FORMAT")
         .unwrap_or_default()
@@ -28,9 +27,9 @@ fn init_tracing() {
 
     // Each format variant is a different concrete type; box to unify them.
     let fmt_layer: Box<dyn tracing_subscriber::Layer<_> + Send + Sync> = match format.as_str() {
-        "json"   => Box::new(fmt::layer().json()),
+        "json" => Box::new(fmt::layer().json()),
         "pretty" => Box::new(fmt::layer().pretty().with_ansi(ansi)),
-        _        => Box::new(fmt::layer().compact().with_ansi(ansi)),
+        _ => Box::new(fmt::layer().compact().with_ansi(ansi)),
     };
 
     #[cfg(feature = "otel")]
@@ -61,8 +60,6 @@ fn init_tracing() {
             .with(fmt_layer)
             .with(otel_layer)
             .init();
-
-        return;
     }
 
     #[cfg(not(feature = "otel"))]
