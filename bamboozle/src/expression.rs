@@ -93,15 +93,7 @@ pub fn eval_expression(expr: &str, ctx: &ContextModel) -> Result<bool, EvalexprE
     context.set_function(
         "contains".to_string(),
         Function::new(|arg| {
-            let args = arg.as_tuple()?;
-            if args.len() != 2 {
-                return Err(EvalexprError::WrongOperatorArgumentAmount {
-                    expected: 2,
-                    actual: args.len(),
-                });
-            }
-            let haystack = args[0].as_string()?;
-            let needle = args[1].as_string()?;
+            let (haystack, needle) = two_string_args(arg)?;
             Ok(Value::Boolean(haystack.contains(needle.as_str())))
         }),
     )?;
@@ -109,15 +101,7 @@ pub fn eval_expression(expr: &str, ctx: &ContextModel) -> Result<bool, EvalexprE
     context.set_function(
         "starts_with".to_string(),
         Function::new(|arg| {
-            let args = arg.as_tuple()?;
-            if args.len() != 2 {
-                return Err(EvalexprError::WrongOperatorArgumentAmount {
-                    expected: 2,
-                    actual: args.len(),
-                });
-            }
-            let s = args[0].as_string()?;
-            let prefix = args[1].as_string()?;
+            let (s, prefix) = two_string_args(arg)?;
             Ok(Value::Boolean(s.starts_with(prefix.as_str())))
         }),
     )?;
@@ -125,20 +109,23 @@ pub fn eval_expression(expr: &str, ctx: &ContextModel) -> Result<bool, EvalexprE
     context.set_function(
         "ends_with".to_string(),
         Function::new(|arg| {
-            let args = arg.as_tuple()?;
-            if args.len() != 2 {
-                return Err(EvalexprError::WrongOperatorArgumentAmount {
-                    expected: 2,
-                    actual: args.len(),
-                });
-            }
-            let s = args[0].as_string()?;
-            let suffix = args[1].as_string()?;
+            let (s, suffix) = two_string_args(arg)?;
             Ok(Value::Boolean(s.ends_with(suffix.as_str())))
         }),
     )?;
 
     eval_boolean_with_context(expr, &context)
+}
+
+fn two_string_args(arg: &Value) -> Result<(String, String), EvalexprError> {
+    let args = arg.as_tuple()?;
+    if args.len() != 2 {
+        return Err(EvalexprError::WrongOperatorArgumentAmount {
+            expected: 2,
+            actual: args.len(),
+        });
+    }
+    Ok((args[0].as_string()?, args[1].as_string()?))
 }
 
 #[cfg(test)]
