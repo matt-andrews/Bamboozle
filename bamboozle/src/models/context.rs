@@ -6,6 +6,7 @@ use utoipa::ToSchema;
 use super::route::RouteDefinition;
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+#[schema(no_recursion)]
 pub struct ContextModel {
     #[serde(rename = "queryParams")]
     pub query_params: HashMap<String, String>,
@@ -17,4 +18,7 @@ pub struct ContextModel {
     pub body: JsonValue,
     #[serde(rename = "bodyRaw")]
     pub body_raw: String,
+    #[serde(rename = "previousContext")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub previous_context: Option<Box<ContextModel>>,
 }

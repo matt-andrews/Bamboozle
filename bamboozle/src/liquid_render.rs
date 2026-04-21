@@ -1,5 +1,6 @@
 use liquid::model::Value;
 use std::collections::HashMap;
+use tracing::warn;
 
 use crate::models::context::ContextModel;
 use serde_json::Value as JsonValue;
@@ -37,8 +38,10 @@ impl Renderer {
         ctx: &ContextModel,
         fallback: &str,
     ) -> String {
-        self.render(template_str, ctx)
-            .unwrap_or_else(|_| fallback.to_string())
+        self.render(template_str, ctx).unwrap_or_else(|e| {
+            warn!(template = template_str, error = %e, "Template rendering failed, using fallback");
+            fallback.to_string()
+        })
     }
 }
 
@@ -55,7 +58,30 @@ fn build_globals(ctx: &ContextModel) -> liquid::Object {
     globals.insert("routeValues".into(), map_to_value(&ctx.route_values));
     globals.insert("body".into(), json_to_liquid(&ctx.body));
     globals.insert("bodyRaw".into(), Value::scalar(ctx.body_raw.clone()));
+    globals.insert("routeModel".into(), route_model_to_value(&ctx.route_model));
+    let prev = ctx
+        .previous_context
+        .as_deref()
+        .map(|p| Value::Object(context_to_object(p)))
+        .unwrap_or(Value::Nil);
+    globals.insert("previousContext".into(), prev);
     globals
+}
+
+fn context_to_object(ctx: &ContextModel) -> liquid::Object {
+    let mut obj = liquid::Object::new();
+    obj.insert("queryParams".into(), map_to_value(&ctx.query_params));
+    obj.insert("headers".into(), map_to_value(&ctx.headers));
+    obj.insert("routeValues".into(), map_to_value(&ctx.route_values));
+    obj.insert("body".into(), json_to_liquid(&ctx.body));
+    obj.insert("bodyRaw".into(), Value::scalar(ctx.body_raw.clone()));
+    obj.insert("routeModel".into(), route_model_to_value(&ctx.route_model));
+    obj
+}
+
+fn route_model_to_value(route_model: &crate::models::route::RouteDefinition) -> Value {
+    let json = serde_json::to_value(route_model).unwrap_or(JsonValue::Null);
+    json_to_liquid(&json)
 }
 
 fn map_to_value(map: &HashMap<String, String>) -> Value {
@@ -108,6 +134,7 @@ mod tests {
                 match_key: MatchKey::new("GET", "/test"),
                 response: ResponseDefinition::default(),
             },
+            previous_context: None,
         }
     }
 
@@ -186,5 +213,46 @@ mod tests {
             r.render_or_fallback("{{ queryParams.x }}", &ctx, "fallback"),
             "1"
         );
+    }
+
+    #[test]
+    fn route_model_verb_interpolation() {
+        let r = Renderer::new();
+        let ctx = make_ctx();
+        assert_eq!(
+            r.render("{{ routeModel.match.verb }}", &ctx).unwrap(),
+            "GET"
+        );
+    }
+
+    #[test]
+    fn route_model_pattern_interpolation() {
+        let r = Renderer::new();
+        let ctx = make_ctx();
+        assert_eq!(
+            r.render("{{ routeModel.match.pattern }}", &ctx).unwrap(),
+            "test"
+        );
+    }
+
+    #[test]
+    fn previous_context_interpolation() {
+        let r = Renderer::new();
+        let mut prev = make_ctx();
+        prev.route_values.insert("id".to_string(), "42".to_string());
+        let mut ctx = make_ctx();
+        ctx.previous_context = Some(Box::new(prev));
+        assert_eq!(
+            r.render("prev={{ previousContext.routeValues.id }}", &ctx)
+                .unwrap(),
+            "prev=42"
+        );
+    }
+
+    #[test]
+    fn previous_context_nil_when_absent() {
+        let r = Renderer::new();
+        let ctx = make_ctx();
+        assert_eq!(r.render("{{ previousContext }}", &ctx).unwrap(), "");
     }
 }

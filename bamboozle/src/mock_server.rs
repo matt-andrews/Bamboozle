@@ -68,12 +68,16 @@ async fn catch_all(
                     match_key: MatchKey::new(verb, path),
                     response: ResponseDefinition::default(),
                 },
+                previous_context: None,
             };
             state.tracker.record_unmatched(ctx);
             StatusCode::NOT_FOUND.into_response()
         }
 
         Some((route_def, route_values)) => {
+            let previous_context = state
+                .tracker
+                .get_last_matched_for_route(&route_def.match_key);
             let ctx = ContextModel {
                 query_params,
                 headers: header_map,
@@ -81,6 +85,7 @@ async fn catch_all(
                 body,
                 body_raw: body_raw.clone(),
                 route_model: route_def.clone(),
+                previous_context,
             };
             state.tracker.record_matched(ctx.clone());
 
@@ -142,6 +147,18 @@ mod tests {
                 ..Default::default()
             },
         }
+    }
+
+    async fn make_request(state: AppState, uri: &str) {
+        router(state)
+            .oneshot(
+                Request::builder()
+                    .uri(uri)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
     }
 
     async fn body_string(body: axum::body::Body) -> String {
@@ -347,5 +364,58 @@ mod tests {
                 .len(),
             1
         );
+    }
+
+    #[tokio::test]
+    async fn previous_context_is_null_on_first_call() {
+        let state = AppState::new();
+        state
+            .store
+            .set_route(make_route("GET", "/thing", Some("ok"), "200"))
+            .unwrap();
+        let tracker = state.tracker.clone();
+        make_request(state, "/thing").await;
+        let calls = tracker.get_calls_for_route(&MatchKey::new("GET", "/thing"));
+        assert_eq!(calls.len(), 1);
+        assert!(calls[0].previous_context.is_none());
+    }
+
+    #[tokio::test]
+    async fn previous_context_is_set_on_second_call() {
+        let state = AppState::new();
+        state
+            .store
+            .set_route(make_route("GET", "/thing", Some("ok"), "200"))
+            .unwrap();
+        let tracker = state.tracker.clone();
+        make_request(state.clone(), "/thing").await;
+        make_request(state, "/thing").await;
+        let calls = tracker.get_calls_for_route(&MatchKey::new("GET", "/thing"));
+        assert_eq!(calls.len(), 2);
+        assert!(calls.iter().any(|c| c.previous_context.is_some()));
+    }
+
+    #[tokio::test]
+    async fn previous_context_does_not_nest() {
+        let state = AppState::new();
+        state
+            .store
+            .set_route(make_route("GET", "/thing", Some("ok"), "200"))
+            .unwrap();
+        let tracker = state.tracker.clone();
+        make_request(state.clone(), "/thing").await;
+        make_request(state.clone(), "/thing").await;
+        make_request(state, "/thing").await;
+        let calls = tracker.get_calls_for_route(&MatchKey::new("GET", "/thing"));
+        let call_with_prev = calls
+            .iter()
+            .find(|c| c.previous_context.is_some())
+            .unwrap();
+        assert!(call_with_prev
+            .previous_context
+            .as_ref()
+            .unwrap()
+            .previous_context
+            .is_none());
     }
 }

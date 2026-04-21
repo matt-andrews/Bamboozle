@@ -160,6 +160,7 @@ mod tests {
                 match_key: MatchKey::new("GET", "/test"),
                 response: ResponseDefinition::default(),
             },
+            previous_context: None,
         }
     }
 
