@@ -32,6 +32,25 @@ test('check for previous context', async ({ request }) => {
     expect(await secondReq.text()).toEqual("OK");
 });
 
+test('assert state on current req', async ({ request }) => {
+    const key: MatchKey = { verb: 'GET', pattern: 'playwright/check/for/previous/context' };
+    deleteState.push(key);
+    await bamboozleClient.addRoute({
+        match: key,
+        setState: "{% if previousContext == nil %}1{% else %}{% assign n = previousContext.state | plus: 1 %}{{ n }}{% endif %}",
+        response: {
+            status: "200",
+            content: `{% if previousContext != null %}OK{% endif %}`
+        }
+    });
+    const initReq = await request.get(`http://localhost:18080/${key.pattern}`);
+    expect(await initReq.text()).toEqual("");
+    expect(await bamboozleClient.assert(key.verb, key.pattern, {
+        expression: new BamboozleAssertBuilder()
+            .with(({ context }) => context.state.equals("1"))
+    }))
+});
+
 test('use previousContext to trigger 409', async ({ request }) => {
     const key: MatchKey = { verb: 'GET', pattern: 'playwright/use/previous/context/to/trigger/409' };
     deleteState.push(key);
