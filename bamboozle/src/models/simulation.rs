@@ -34,9 +34,17 @@ impl DelayConfig {
         match self {
             Self::Fixed { ms } => *ms,
             Self::Random { min_ms, max_ms } => {
-                rand::thread_rng().gen_range(*min_ms..=*max_ms)
+                let (start, end) = if min_ms <= max_ms {
+                    (*min_ms, *max_ms)
+                } else {
+                    (*max_ms, *min_ms)
+                };
+                rand::thread_rng().gen_range(start..=end)
             }
-            Self::Gaussian { mean_ms, std_dev_ms } => Normal::new(*mean_ms, *std_dev_ms)
+            Self::Gaussian {
+                mean_ms,
+                std_dev_ms,
+            } => Normal::new(*mean_ms, *std_dev_ms)
                 .map(|dist| dist.sample(&mut rand::thread_rng()).max(0.0) as u64)
                 .unwrap_or(*mean_ms as u64),
         }

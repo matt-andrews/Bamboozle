@@ -57,6 +57,7 @@ test.describe('random delay', () => {
 
         expect(response.status()).toBe(200);
         expect(elapsed).toBeGreaterThanOrEqual(100);
+        expect(elapsed).toBeLessThanOrEqual(500);//nudge a little higher to account for true bandwith
     });
 });
 
