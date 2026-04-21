@@ -84,14 +84,15 @@ async fn main() -> anyhow::Result<()> {
     info!("Mock server listening on :8080");
     info!("Control server listening on :9090");
 
-    tokio::try_join!(
+    let result = tokio::try_join!(
         axum::serve(mock_listener, mock_server::router(state.clone())),
         axum::serve(control_listener, control::router(state.clone())),
-    )?;
+    );
 
-    // Flush any buffered OTLP spans before exiting.
     #[cfg(feature = "otel")]
     opentelemetry::global::shutdown_tracer_provider();
+
+    result?;
 
     Ok(())
 }

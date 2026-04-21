@@ -146,24 +146,19 @@ impl RouteStore {
             .iter()
             .flat_map(|outer| {
                 let stored_verb = outer.key().clone();
-                outer
-                    .value()
-                    .iter()
-                    .map(|inner| {
-                        let pattern = &inner.value().normalized_pattern;
-                        let mut score = jaro_winkler(normalized.as_str(), pattern.as_str());
-                        if stored_verb == verb_upper {
-                            score = (score + 0.05).min(1.0);
-                        }
-                        (score, format!("{}|{}", stored_verb, pattern))
-                    })
-                    .collect::<Vec<_>>()
+                outer.value().iter().map(|inner| {
+                    let pattern = &inner.value().normalized_pattern;
+                    let mut score = jaro_winkler(normalized.as_str(), pattern.as_str());
+                    if stored_verb == verb_upper {
+                        score = (score + 0.05).min(1.0);
+                    }
+                    (score, format!("{}|{}", stored_verb, pattern))
+                })
             })
             .filter(|(score, _)| *score >= SUGGESTION_THRESHOLD)
             .collect();
 
-        scored
-            .sort_unstable_by(|a, b| b.0.partial_cmp(&a.0).unwrap_or(std::cmp::Ordering::Equal));
+        scored.sort_unstable_by(|a, b| b.0.partial_cmp(&a.0).unwrap_or(std::cmp::Ordering::Equal));
         scored.truncate(SUGGESTION_LIMIT);
         scored.into_iter().map(|(_, label)| label).collect()
     }
@@ -318,10 +313,16 @@ mod tests {
     #[test]
     fn suggest_routes_returns_empty_when_no_similar_routes() {
         let store = RouteStore::new();
-        store.set_route(make_route("GET", "/completely/different/path")).unwrap();
+        store
+            .set_route(make_route("GET", "/completely/different/path"))
+            .unwrap();
         // A totally unrelated short path should fall below the similarity threshold.
         let suggestions = store.suggest_routes("POST", "/xyz");
-        assert!(suggestions.is_empty(), "expected no suggestions, got {:?}", suggestions);
+        assert!(
+            suggestions.is_empty(),
+            "expected no suggestions, got {:?}",
+            suggestions
+        );
     }
 
     #[test]
@@ -329,8 +330,12 @@ mod tests {
         let store = RouteStore::new();
         store.set_route(make_route("GET", "/api/users")).unwrap();
         store.set_route(make_route("GET", "/api/user")).unwrap();
-        store.set_route(make_route("GET", "/api/users/list")).unwrap();
-        store.set_route(make_route("GET", "/api/users/search")).unwrap();
+        store
+            .set_route(make_route("GET", "/api/users/list"))
+            .unwrap();
+        store
+            .set_route(make_route("GET", "/api/users/search"))
+            .unwrap();
         let suggestions = store.suggest_routes("GET", "/api/users");
         assert!(
             suggestions.len() <= SUGGESTION_LIMIT,
