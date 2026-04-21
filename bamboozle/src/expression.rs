@@ -10,6 +10,7 @@ use crate::models::context::ContextModel;
 /// Available variables and functions:
 ///   verb                     – HTTP method of the recorded call ("GET", "POST", …)
 ///   pattern                  – route pattern matched by the call
+///   state                    – computed state string from the setState template
 ///   query("key")             – value of a query-string parameter (empty string if absent)
 ///   header("key")            – value of a request header (empty string if absent)
 ///   route("key")             – value of a route-template capture (empty string if absent)
@@ -35,6 +36,7 @@ pub fn eval_expression(expr: &str, ctx: &ContextModel) -> Result<bool, EvalexprE
         "pattern"  => Value::String(ctx.route_model.match_key.pattern.clone()),
         "body"     => Value::String(body_str),
         "body_raw" => Value::String(ctx.body_raw.clone()),
+        "state"    => Value::String(ctx.state.clone()),
     }?;
 
     context.set_function(
@@ -156,10 +158,13 @@ mod tests {
             route_values: HashMap::new(),
             body: serde_json::Value::Null,
             body_raw: String::new(),
+            state: String::new(),
             route_model: RouteDefinition {
                 match_key: MatchKey::new("GET", "/test"),
+                set_state: None,
                 response: ResponseDefinition::default(),
             },
+            previous_context: None,
         }
     }
 
@@ -258,6 +263,14 @@ mod tests {
             .insert("env".to_string(), "prod".to_string());
         assert!(eval_expression(r#"verb == "GET" && query("env") == "prod""#, &ctx).unwrap());
         assert!(!eval_expression(r#"verb == "POST" && query("env") == "prod""#, &ctx).unwrap());
+    }
+
+    #[test]
+    fn state_variable() {
+        let mut ctx = make_ctx();
+        ctx.state = "active".to_string();
+        assert!(eval_expression(r#"state == "active""#, &ctx).unwrap());
+        assert!(!eval_expression(r#"state == "inactive""#, &ctx).unwrap());
     }
 
     #[test]
