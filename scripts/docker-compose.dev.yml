@@ -6,7 +6,7 @@ services:
       context: ../bamboozle/
       dockerfile: Dockerfile
     ports:
-      - "18080:8080"
+      - "18000-19000:8080"
       - "19090:9090"
     volumes:
       - ./test_configs:/test_configs

@@ -77,6 +77,10 @@ fn context_to_object(ctx: &ContextModel) -> liquid::Object {
     obj.insert("bodyRaw".into(), Value::scalar(ctx.body_raw.clone()));
     obj.insert("state".into(), Value::scalar(ctx.state.clone()));
     obj.insert("routeModel".into(), route_model_to_value(&ctx.route_model));
+    obj.insert(
+        "port".into(),
+        Value::scalar(ctx.port.map(|p| p as i64).unwrap_or(0i64)),
+    );
     obj
 }
 
@@ -139,6 +143,7 @@ mod tests {
                 response: ResponseDefinition::default(),
             },
             previous_context: None,
+            port: None,
         }
     }
 
@@ -258,5 +263,20 @@ mod tests {
         let r = Renderer::new();
         let ctx = make_ctx();
         assert_eq!(r.render("{{ previousContext }}", &ctx).unwrap(), "");
+    }
+
+    #[test]
+    fn port_interpolation() {
+        let r = Renderer::new();
+        let mut ctx = make_ctx();
+        ctx.port = Some(18042);
+        assert_eq!(r.render("{{ port }}", &ctx).unwrap(), "18042");
+    }
+
+    #[test]
+    fn port_is_zero_when_absent() {
+        let r = Renderer::new();
+        let ctx = make_ctx();
+        assert_eq!(r.render("{{ port }}", &ctx).unwrap(), "0");
     }
 }

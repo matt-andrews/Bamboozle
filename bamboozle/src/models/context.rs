@@ -22,4 +22,6 @@ pub struct ContextModel {
     pub state: String,
     #[serde(rename = "previousContext", skip_serializing_if = "Option::is_none")]
     pub previous_context: Option<Box<ContextModel>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub port: Option<u16>,
 }

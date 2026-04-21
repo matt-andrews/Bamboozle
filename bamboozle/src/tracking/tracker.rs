@@ -7,7 +7,7 @@ use crate::models::{context::ContextModel, match_key::MatchKey};
 pub struct CallTracker {
     matched: DashMap<Uuid, ContextModel>,
     unmatched: DashMap<Uuid, ContextModel>,
-    last_matched: DashMap<MatchKey, ContextModel>,
+    last_matched: DashMap<(MatchKey, Option<u16>), ContextModel>,
 }
 
 impl Default for CallTracker {
@@ -27,17 +27,23 @@ impl CallTracker {
 
     pub fn record_matched(&self, ctx: ContextModel) {
         debug!(route = %ctx.route_model.match_key, "Recorded matched call");
-        self.last_matched
-            .insert(ctx.route_model.match_key.clone(), ctx.clone());
+        let session_key = (ctx.route_model.match_key.clone(), ctx.port);
+        self.last_matched.insert(session_key, ctx.clone());
         self.matched.insert(Uuid::new_v4(), ctx);
     }
 
-    pub fn get_last_matched_for_route(&self, key: &MatchKey) -> Option<Box<ContextModel>> {
-        self.last_matched.get(key).map(|entry| {
-            let mut ctx = entry.value().clone();
-            ctx.previous_context = None;
-            Box::new(ctx)
-        })
+    pub fn get_last_matched_for_route(
+        &self,
+        key: &MatchKey,
+        port: Option<u16>,
+    ) -> Option<Box<ContextModel>> {
+        self.last_matched
+            .get(&(key.clone(), port))
+            .map(|entry| {
+                let mut ctx = entry.value().clone();
+                ctx.previous_context = None;
+                Box::new(ctx)
+            })
     }
 
     pub fn record_unmatched(&self, ctx: ContextModel) {
@@ -45,21 +51,27 @@ impl CallTracker {
         self.unmatched.insert(Uuid::new_v4(), ctx);
     }
 
-    pub fn get_calls_for_route(&self, key: &MatchKey) -> Vec<ContextModel> {
+    pub fn get_calls_for_route(&self, key: &MatchKey, port: Option<u16>) -> Vec<ContextModel> {
         let calls: Vec<ContextModel> = self
             .matched
             .iter()
-            .filter(|entry| entry.value().route_model.match_key == *key)
+            .filter(|entry| {
+                let ctx = entry.value();
+                ctx.route_model.match_key == *key
+                    && (port.is_none() || ctx.port == port)
+            })
             .map(|entry| entry.value().clone())
             .collect();
         debug!(route = %key, count = calls.len(), "Retrieved calls for route");
         calls
     }
 
-    pub fn delete_calls_for_route(&self, key: &MatchKey) {
-        self.matched
-            .retain(|_, ctx| ctx.route_model.match_key != *key);
-        self.last_matched.remove(key);
+    pub fn delete_calls_for_route(&self, key: &MatchKey, port: Option<u16>) {
+        self.matched.retain(|_, ctx| {
+            ctx.route_model.match_key != *key
+                || (port.is_some() && ctx.port != port)
+        });
+        self.last_matched.remove(&(key.clone(), port));
         info!(route = %key, "Deleted calls for route");
     }
 
@@ -93,6 +105,10 @@ mod tests {
     use std::collections::HashMap;
 
     fn make_ctx(verb: &str, pattern: &str) -> ContextModel {
+        make_ctx_with_port(verb, pattern, None)
+    }
+
+    fn make_ctx_with_port(verb: &str, pattern: &str, port: Option<u16>) -> ContextModel {
         ContextModel {
             query_params: HashMap::new(),
             headers: HashMap::new(),
@@ -107,6 +123,7 @@ mod tests {
                 response: ResponseDefinition::default(),
             },
             previous_context: None,
+            port,
         }
     }
 
@@ -114,7 +131,7 @@ mod tests {
     fn new_tracker_has_no_calls() {
         let tracker = CallTracker::new();
         let key = MatchKey::new("GET", "/test");
-        assert!(tracker.get_calls_for_route(&key).is_empty());
+        assert!(tracker.get_calls_for_route(&key, None).is_empty());
         assert!(tracker.get_unmatched().is_empty());
     }
 
@@ -123,7 +140,7 @@ mod tests {
         let tracker = CallTracker::new();
         tracker.record_matched(make_ctx("GET", "/api/users"));
         let key = MatchKey::new("GET", "/api/users");
-        let calls = tracker.get_calls_for_route(&key);
+        let calls = tracker.get_calls_for_route(&key, None);
         assert_eq!(calls.len(), 1);
         assert_eq!(calls[0].route_model.match_key.verb, "GET");
     }
@@ -145,16 +162,46 @@ mod tests {
         tracker.record_matched(make_ctx("GET", "/b"));
         assert_eq!(
             tracker
-                .get_calls_for_route(&MatchKey::new("GET", "/a"))
+                .get_calls_for_route(&MatchKey::new("GET", "/a"), None)
                 .len(),
             2
         );
         assert_eq!(
             tracker
-                .get_calls_for_route(&MatchKey::new("GET", "/b"))
+                .get_calls_for_route(&MatchKey::new("GET", "/b"), None)
                 .len(),
             1
         );
+    }
+
+    #[test]
+    fn get_calls_filters_by_port() {
+        let tracker = CallTracker::new();
+        tracker.record_matched(make_ctx_with_port("GET", "/a", Some(18001)));
+        tracker.record_matched(make_ctx_with_port("GET", "/a", Some(18002)));
+        tracker.record_matched(make_ctx_with_port("GET", "/a", Some(18001)));
+        let key = MatchKey::new("GET", "/a");
+        assert_eq!(tracker.get_calls_for_route(&key, Some(18001)).len(), 2);
+        assert_eq!(tracker.get_calls_for_route(&key, Some(18002)).len(), 1);
+        assert_eq!(tracker.get_calls_for_route(&key, None).len(), 3);
+    }
+
+    #[test]
+    fn last_matched_is_isolated_per_port() {
+        let tracker = CallTracker::new();
+        let mut ctx_a = make_ctx_with_port("GET", "/a", Some(18001));
+        ctx_a.state = "session-a".to_string();
+        tracker.record_matched(ctx_a);
+
+        let mut ctx_b = make_ctx_with_port("GET", "/a", Some(18002));
+        ctx_b.state = "session-b".to_string();
+        tracker.record_matched(ctx_b);
+
+        let key = MatchKey::new("GET", "/a");
+        let last_a = tracker.get_last_matched_for_route(&key, Some(18001)).unwrap();
+        let last_b = tracker.get_last_matched_for_route(&key, Some(18002)).unwrap();
+        assert_eq!(last_a.state, "session-a");
+        assert_eq!(last_b.state, "session-b");
     }
 
     #[test]
@@ -162,13 +209,30 @@ mod tests {
         let tracker = CallTracker::new();
         tracker.record_matched(make_ctx("GET", "/a"));
         tracker.record_matched(make_ctx("GET", "/b"));
-        tracker.delete_calls_for_route(&MatchKey::new("GET", "/a"));
+        tracker.delete_calls_for_route(&MatchKey::new("GET", "/a"), None);
         assert!(tracker
-            .get_calls_for_route(&MatchKey::new("GET", "/a"))
+            .get_calls_for_route(&MatchKey::new("GET", "/a"), None)
             .is_empty());
         assert_eq!(
             tracker
-                .get_calls_for_route(&MatchKey::new("GET", "/b"))
+                .get_calls_for_route(&MatchKey::new("GET", "/b"), None)
+                .len(),
+            1
+        );
+    }
+
+    #[test]
+    fn delete_calls_scoped_to_port() {
+        let tracker = CallTracker::new();
+        tracker.record_matched(make_ctx_with_port("GET", "/a", Some(18001)));
+        tracker.record_matched(make_ctx_with_port("GET", "/a", Some(18002)));
+        tracker.delete_calls_for_route(&MatchKey::new("GET", "/a"), Some(18001));
+        assert!(tracker
+            .get_calls_for_route(&MatchKey::new("GET", "/a"), Some(18001))
+            .is_empty());
+        assert_eq!(
+            tracker
+                .get_calls_for_route(&MatchKey::new("GET", "/a"), Some(18002))
                 .len(),
             1
         );
@@ -181,7 +245,7 @@ mod tests {
         tracker.record_unmatched(make_ctx("POST", "/missing"));
         tracker.reset();
         assert!(tracker
-            .get_calls_for_route(&MatchKey::new("GET", "/a"))
+            .get_calls_for_route(&MatchKey::new("GET", "/a"), None)
             .is_empty());
         assert!(tracker.get_unmatched().is_empty());
     }
@@ -190,7 +254,7 @@ mod tests {
     fn get_last_matched_returns_none_when_no_calls() {
         let tracker = CallTracker::new();
         assert!(tracker
-            .get_last_matched_for_route(&MatchKey::new("GET", "/a"))
+            .get_last_matched_for_route(&MatchKey::new("GET", "/a"), None)
             .is_none());
     }
 
@@ -199,7 +263,7 @@ mod tests {
         let tracker = CallTracker::new();
         tracker.record_matched(make_ctx("GET", "/a"));
         assert!(tracker
-            .get_last_matched_for_route(&MatchKey::new("GET", "/a"))
+            .get_last_matched_for_route(&MatchKey::new("GET", "/a"), None)
             .is_some());
     }
 
@@ -210,7 +274,7 @@ mod tests {
         ctx.previous_context = Some(Box::new(make_ctx("GET", "/a")));
         tracker.record_matched(ctx);
         let result = tracker
-            .get_last_matched_for_route(&MatchKey::new("GET", "/a"))
+            .get_last_matched_for_route(&MatchKey::new("GET", "/a"), None)
             .unwrap();
         assert!(result.previous_context.is_none());
     }
@@ -219,9 +283,9 @@ mod tests {
     fn delete_calls_clears_last_matched() {
         let tracker = CallTracker::new();
         tracker.record_matched(make_ctx("GET", "/a"));
-        tracker.delete_calls_for_route(&MatchKey::new("GET", "/a"));
+        tracker.delete_calls_for_route(&MatchKey::new("GET", "/a"), None);
         assert!(tracker
-            .get_last_matched_for_route(&MatchKey::new("GET", "/a"))
+            .get_last_matched_for_route(&MatchKey::new("GET", "/a"), None)
             .is_none());
     }
 
@@ -231,7 +295,7 @@ mod tests {
         tracker.record_matched(make_ctx("GET", "/a"));
         tracker.reset();
         assert!(tracker
-            .get_last_matched_for_route(&MatchKey::new("GET", "/a"))
+            .get_last_matched_for_route(&MatchKey::new("GET", "/a"), None)
             .is_none());
     }
 }

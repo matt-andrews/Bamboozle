@@ -94,12 +94,18 @@ pub async fn get_routes(State(state): State<AppState>) -> Json<Vec<RouteDefiniti
 
 // ── GET /control/routes/:verb/:pattern/calls ─────────────────────────────────
 
+#[derive(Deserialize)]
+pub struct PortQuery {
+    pub port: Option<u16>,
+}
+
 #[utoipa::path(
     get,
     path = "/control/routes/{verb}/{pattern}/calls",
     params(
         ("verb" = String, Path, description = "HTTP verb"),
         ("pattern" = String, Path, description = "Route pattern (URL-encode slashes as %2F)"),
+        ("port" = Option<u16>, Query, description = "Filter calls to this session port only. Omit to return all calls."),
     ),
     responses(
         (status = 200, description = "All recorded calls to this route", body = Vec<ContextModel>),
@@ -109,10 +115,11 @@ pub async fn get_routes(State(state): State<AppState>) -> Json<Vec<RouteDefiniti
 pub async fn get_route_calls(
     State(state): State<AppState>,
     Path((verb, pattern)): Path<(String, String)>,
+    Query(q): Query<PortQuery>,
 ) -> impl IntoResponse {
     let calls = state
         .tracker
-        .get_calls_for_route(&MatchKey::new(verb, pattern));
+        .get_calls_for_route(&MatchKey::new(verb, pattern), q.port);
     Json(calls)
 }
 
@@ -124,6 +131,7 @@ pub async fn get_route_calls(
     params(
         ("verb" = String, Path, description = "HTTP verb"),
         ("pattern" = String, Path, description = "Route pattern (URL-encode slashes as %2F)"),
+        ("port" = Option<u16>, Query, description = "Restrict deletion to calls from this session port. Omit to delete all calls."),
     ),
     responses(
         (status = 200, description = "Call history cleared"),
@@ -133,10 +141,11 @@ pub async fn get_route_calls(
 pub async fn delete_route_calls(
     State(state): State<AppState>,
     Path((verb, pattern)): Path<(String, String)>,
+    Query(q): Query<PortQuery>,
 ) -> StatusCode {
     state
         .tracker
-        .delete_calls_for_route(&MatchKey::new(verb, pattern));
+        .delete_calls_for_route(&MatchKey::new(verb, pattern), q.port);
     StatusCode::OK
 }
 
@@ -158,6 +167,7 @@ pub struct AssertRequest {
 pub struct AssertQuery {
     #[serde(default = "AssertQuery::default_expect")]
     pub expect: i64,
+    pub port: Option<u16>,
 }
 
 impl AssertQuery {
@@ -173,6 +183,7 @@ impl AssertQuery {
         ("verb" = String, Path, description = "HTTP verb"),
         ("pattern" = String, Path, description = "Route pattern (URL-encode slashes as %2F)"),
         ("expect" = Option<i64>, Query, description = "Expected call count after filtering. -1 (default) accepts any count ≥ 1 when an expression is given, or any count otherwise."),
+        ("port" = Option<u16>, Query, description = "Scope assertion to calls from this session port only. Omit to assert across all calls."),
     ),
     request_body = AssertRequest,
     responses(
@@ -190,7 +201,7 @@ pub async fn assert_route(
 ) -> Result<StatusCode, AppError> {
     let calls = state
         .tracker
-        .get_calls_for_route(&MatchKey::new(verb, pattern));
+        .get_calls_for_route(&MatchKey::new(verb, pattern), q.port);
     let expr = body
         .expression
         .as_deref()

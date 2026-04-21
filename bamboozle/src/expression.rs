@@ -37,6 +37,7 @@ pub fn eval_expression(expr: &str, ctx: &ContextModel) -> Result<bool, EvalexprE
         "body"     => Value::String(body_str),
         "body_raw" => Value::String(ctx.body_raw.clone()),
         "state"    => Value::String(ctx.state.clone()),
+        "port"     => Value::Int(ctx.port.map(|p| p as i64).unwrap_or(0)),
     }?;
 
     context.set_function(
@@ -153,6 +154,7 @@ mod tests {
                 response: ResponseDefinition::default(),
             },
             previous_context: None,
+            port: None,
         }
     }
 
@@ -259,6 +261,20 @@ mod tests {
         ctx.state = "active".to_string();
         assert!(eval_expression(r#"state == "active""#, &ctx).unwrap());
         assert!(!eval_expression(r#"state == "inactive""#, &ctx).unwrap());
+    }
+
+    #[test]
+    fn port_variable_matches_context_port() {
+        let mut ctx = make_ctx();
+        ctx.port = Some(18042);
+        assert!(eval_expression("port == 18042", &ctx).unwrap());
+        assert!(!eval_expression("port == 18001", &ctx).unwrap());
+    }
+
+    #[test]
+    fn port_variable_is_zero_when_absent() {
+        let ctx = make_ctx();
+        assert!(eval_expression("port == 0", &ctx).unwrap());
     }
 
     #[test]

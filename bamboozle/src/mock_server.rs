@@ -35,6 +35,7 @@ async fn catch_all(
     let query_params = extract_query_params(&uri);
     let header_map = extract_headers(&headers);
     let (body_raw, body) = parse_body(&body_bytes, &headers);
+    let port = extract_port(&headers);
 
     match state.store.match_route(&verb, &path) {
         None => {
@@ -52,6 +53,7 @@ async fn catch_all(
                 },
                 state: String::new(),
                 previous_context: None,
+                port,
             };
             state.tracker.record_unmatched(ctx);
             StatusCode::NOT_FOUND.into_response()
@@ -60,7 +62,7 @@ async fn catch_all(
         Some((route_def, route_values)) => {
             let previous_context = state
                 .tracker
-                .get_last_matched_for_route(&route_def.match_key);
+                .get_last_matched_for_route(&route_def.match_key, port);
             let mut ctx = ContextModel {
                 query_params,
                 headers: header_map,
@@ -70,6 +72,7 @@ async fn catch_all(
                 route_model: route_def.clone(),
                 previous_context,
                 state: String::new(),
+                port,
             };
 
             if let Some(set_state) = &route_def.set_state {
@@ -104,6 +107,14 @@ fn extract_headers(headers: &HeaderMap) -> HashMap<String, String> {
         .iter()
         .map(|(k, v)| (k.as_str().to_string(), v.to_str().unwrap_or("").to_string()))
         .collect()
+}
+
+fn extract_port(headers: &HeaderMap) -> Option<u16> {
+    headers
+        .get("host")
+        .and_then(|v| v.to_str().ok())
+        .and_then(|host| host.rsplit_once(':'))
+        .and_then(|(_, p)| p.parse::<u16>().ok())
 }
 
 fn parse_body(body_bytes: &Bytes, headers: &HeaderMap) -> (String, serde_json::Value) {
@@ -428,10 +439,33 @@ mod tests {
             .unwrap();
         assert_eq!(
             tracker
-                .get_calls_for_route(&MatchKey::new("GET", "/tracked"))
+                .get_calls_for_route(&MatchKey::new("GET", "/tracked"), None)
                 .len(),
             1
         );
+    }
+
+    #[tokio::test]
+    async fn host_port_is_extracted_into_context() {
+        let state = AppState::new();
+        state
+            .store
+            .set_route(make_route("GET", "/ported", Some("ok"), "200"))
+            .unwrap();
+        let tracker = state.tracker.clone();
+        router(state)
+            .oneshot(
+                Request::builder()
+                    .uri("/ported")
+                    .header("host", "localhost:18042")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        let calls = tracker.get_calls_for_route(&MatchKey::new("GET", "/ported"), Some(18042));
+        assert_eq!(calls.len(), 1);
+        assert_eq!(calls[0].port, Some(18042));
     }
 
     #[tokio::test]
@@ -443,7 +477,7 @@ mod tests {
             .unwrap();
         let tracker = state.tracker.clone();
         make_request(state, "/thing").await;
-        let calls = tracker.get_calls_for_route(&MatchKey::new("GET", "/thing"));
+        let calls = tracker.get_calls_for_route(&MatchKey::new("GET", "/thing"), None);
         assert_eq!(calls.len(), 1);
         assert!(calls[0].previous_context.is_none());
     }
@@ -458,7 +492,7 @@ mod tests {
         let tracker = state.tracker.clone();
         make_request(state.clone(), "/thing").await;
         make_request(state, "/thing").await;
-        let calls = tracker.get_calls_for_route(&MatchKey::new("GET", "/thing"));
+        let calls = tracker.get_calls_for_route(&MatchKey::new("GET", "/thing"), None);
         assert_eq!(calls.len(), 2);
         assert!(calls.iter().any(|c| c.previous_context.is_some()));
     }
@@ -474,7 +508,7 @@ mod tests {
         make_request(state.clone(), "/thing").await;
         make_request(state.clone(), "/thing").await;
         make_request(state, "/thing").await;
-        let calls = tracker.get_calls_for_route(&MatchKey::new("GET", "/thing"));
+        let calls = tracker.get_calls_for_route(&MatchKey::new("GET", "/thing"), None);
         let call_with_prev = calls.iter().find(|c| c.previous_context.is_some()).unwrap();
         assert!(call_with_prev
             .previous_context
@@ -511,7 +545,7 @@ mod tests {
             .await
             .unwrap();
         assert_eq!(body_string(response.into_body()).await, "hello-state");
-        let calls = tracker.get_calls_for_route(&MatchKey::new("GET", "/stateful"));
+        let calls = tracker.get_calls_for_route(&MatchKey::new("GET", "/stateful"), None);
         assert_eq!(calls[0].state, "hello-state");
     }
 
