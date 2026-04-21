@@ -1,4 +1,4 @@
-import { test, expect, APIRequestContext } from '@playwright/test';
+import { test, expect } from '@playwright/test';
 import { BamboozleClient, MatchKey, BamboozleAssertBuilder } from '@bamboozle/sdk';
 
 const bamboozleClient: BamboozleClient = new BamboozleClient({ baseUrl: "http://localhost:19090" });
@@ -33,7 +33,7 @@ test('check for previous context', async ({ request }) => {
 });
 
 test('assert state on current req', async ({ request }) => {
-    const key: MatchKey = { verb: 'GET', pattern: 'playwright/check/for/previous/context' };
+    const key: MatchKey = { verb: 'GET', pattern: 'playwright/assert/state/on/current/req' };
     deleteState.push(key);
     await bamboozleClient.addRoute({
         match: key,
@@ -48,7 +48,7 @@ test('assert state on current req', async ({ request }) => {
     expect(await bamboozleClient.assert(key.verb, key.pattern, {
         expression: new BamboozleAssertBuilder()
             .with(({ context }) => context.state.equals("1"))
-    }))
+    })).toBeTruthy();
 });
 
 test('use previousContext to trigger 409', async ({ request }) => {
