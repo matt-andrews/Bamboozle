@@ -34,16 +34,19 @@ fn init_tracing() {
     };
 
     // OTEL layer is always compiled; only activates when the endpoint env var is set.
-    let otel_layer = std::env::var("OTEL_EXPORTER_OTLP_ENDPOINT").ok().map(|endpoint| {
-        use opentelemetry_otlp::WithExportConfig;
-        let exporter = opentelemetry_otlp::new_exporter()
-            .http()
-            .with_endpoint(endpoint);
-        let tracer = opentelemetry_otlp::new_pipeline()
-            .tracing()
-            .with_exporter(exporter)
-            .install_batch(opentelemetry_sdk::runtime::Tokio)
-            .expect("Failed to install OpenTelemetry OTLP tracer");
+    // The SDK reads OTEL_EXPORTER_OTLP_ENDPOINT automatically from the environment.
+    let otel_layer = std::env::var("OTEL_EXPORTER_OTLP_ENDPOINT").ok().map(|_| {
+        let exporter = opentelemetry_otlp::SpanExporter::builder()
+            .with_http()
+            .build()
+            .expect("Failed to build OTLP span exporter");
+        let provider = opentelemetry_sdk::trace::TracerProvider::builder()
+            .with_simple_exporter(exporter)
+            .build();
+        // Get SdkTracer directly — global::tracer() returns BoxedTracer which lacks PreSampledTracer.
+        use opentelemetry::trace::TracerProvider as _;
+        let tracer = provider.tracer("bamboozle");
+        opentelemetry::global::set_tracer_provider(provider);
         tracing_opentelemetry::layer().with_tracer(tracer)
     });
 
