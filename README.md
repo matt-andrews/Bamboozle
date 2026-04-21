@@ -162,6 +162,68 @@ Set `"loopback": true` on a response to echo the full request body back as the r
 }
 ```
 
+## Fault & latency simulation
+
+Add a `simulation` object to any route to inject artificial delay or failure. Routes without a `simulation` field behave normally.
+
+### Delay
+
+Three distributions are available:
+
+| Type | Fields | Behaviour |
+| ------ | ------- | --------- |
+| `fixed` | `ms` | Always delays by exactly `ms` milliseconds — fully deterministic |
+| `random` | `minMs`, `maxMs` | Uniform random delay in the range `[minMs, maxMs]` |
+| `gaussian` | `meanMs`, `stdDevMs` | Normally-distributed delay centred on `meanMs`; clamped to 0 |
+
+```json
+{
+  "match": { "verb": "GET", "pattern": "/orders" },
+  "response": { "status": "200", "content": "[]" },
+  "simulation": {
+    "delay": { "type": "random", "minMs": 100, "maxMs": 800 }
+  }
+}
+```
+
+Delay is implemented with `tokio::time::sleep` — the waiting task yields back to the executor, so other routes are served concurrently and no threads are blocked.
+
+### Faults
+
+Two fault modes are supported:
+
+| Type | Behaviour |
+| ------ | --------- |
+| `connectionReset` | Sends response headers then abruptly closes the connection — client sees a broken-pipe / connection-reset error |
+| `emptyResponse` | Returns `200 OK` with an empty body |
+
+```json
+{
+  "match": { "verb": "POST", "pattern": "/payments" },
+  "response": { "status": "200" },
+  "simulation": {
+    "fault": { "type": "connectionReset", "probability": 0.1 }
+  }
+}
+```
+
+`probability` is a float from `0.0` (never) to `1.0` (always, the default). Values less than 1.0 make the fault **transient** — useful for chaos-style testing where only a fraction of calls should fail.
+
+### Combining delay and fault
+
+Both fields may be set together. When both are present, the delay is always applied first, then the fault check runs — so you can simulate "slow then broken" scenarios:
+
+```json
+{
+  "match": { "verb": "GET", "pattern": "/slow-and-flaky" },
+  "response": { "status": "200", "content": "ok" },
+  "simulation": {
+    "delay": { "type": "gaussian", "meanMs": 300, "stdDevMs": 80 },
+    "fault": { "type": "emptyResponse", "probability": 0.25 }
+  }
+}
+```
+
 ## Route management
 
 | Method | Path | Description |
@@ -250,8 +312,6 @@ Scalar API reference is available at `http://localhost:9090/` when the container
 Bamboozle is built against a detailed design specification. The following capabilities are planned but not yet implemented:
 
 - **Request matching on content** — match routes based on headers, query parameters, and request body (JSON path conditions and schema validation), in addition to verb and path
-- **Delay simulation** — configurable fixed, random, and gaussian latency to test client timeout handling and retry behaviour
-- **Fault simulation** — connection reset and empty response injection to test client resilience against network failures
 - **Session isolation** — per-test namespace via a session header, enabling safe parallel test execution against a shared Bamboozle instance
 - **Route lifecycle options** — `times` to auto-deactivate a route after N matches, and `ttl` to auto-deactivate after N seconds
 - **Richer assertions** — structured assertion types including `calledAtLeast`, `calledAtMost`, `neverCalled`, and per-call body and header verification
