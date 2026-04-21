@@ -93,6 +93,81 @@ routes:
         Content-Type: text/plain
 ```
 
+## Logging
+
+Bamboozle is designed as a developer tool, so its logs are intentionally rich. By default it writes compact, coloured output to stdout.
+
+### Log level
+
+Control verbosity with `RUST_LOG`, which accepts the standard `env_logger` filter syntax:
+
+```bash
+# Info and above (default)
+RUST_LOG=info
+
+# Show debug output for route matching and expression evaluation
+RUST_LOG=debug
+
+# Silence everything except errors
+RUST_LOG=error
+```
+
+### Log format
+
+| Variable | Default | Description |
+| ---------- | --------- | ------------- |
+| `RUST_LOG` | `info` | Log level / filter — standard `env_logger` syntax |
+| `RUST_LOG_FORMAT` | `compact` | Output format: `compact`, `pretty`, or `json` |
+| `NO_COLOR` | unset | Set to any value to disable ANSI colour codes |
+
+`json` format emits one JSON object per line, suitable for ingestion by log shippers such as [Vector](https://vector.dev), [Promtail](https://grafana.com/docs/loki/latest/send-data/promtail/), or [Fluent Bit](https://fluentbit.io):
+
+```bash
+docker run -e RUST_LOG_FORMAT=json -p 8080:8080 -p 9090:9090 mattisthegreatest/bamboozle
+```
+
+### Forwarding to an external backend
+
+Bamboozle supports [OpenTelemetry OTLP](https://opentelemetry.io/docs/specs/otlp/) natively. Set `OTEL_EXPORTER_OTLP_ENDPOINT` to send traces to any OTLP-compatible backend — no additional libraries or sidecars required.
+
+| Variable | Description |
+| ---------- | ------------- |
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | OTLP HTTP endpoint. Setting this variable activates the exporter. |
+| `OTEL_EXPORTER_OTLP_HEADERS` | Comma-separated `key=value` pairs sent as HTTP headers — used for authentication. |
+
+**Grafana Cloud**
+
+```bash
+docker run \
+  -e OTEL_EXPORTER_OTLP_ENDPOINT=https://otlp-gateway-<zone>.grafana.net/otlp \
+  -e 'OTEL_EXPORTER_OTLP_HEADERS=Authorization=Basic <base64-token>' \
+  -p 8080:8080 -p 9090:9090 \
+  mattisthegreatest/bamboozle
+```
+
+**New Relic**
+
+```bash
+docker run \
+  -e OTEL_EXPORTER_OTLP_ENDPOINT=https://otlp.nr-data.net \
+  -e 'OTEL_EXPORTER_OTLP_HEADERS=Api-Key=<your-license-key>' \
+  -p 8080:8080 -p 9090:9090 \
+  mattisthegreatest/bamboozle
+```
+
+Console and OTLP output are active simultaneously when the endpoint is set, so you keep local visibility while shipping to a backend.
+
+### What gets logged
+
+| Event | Level | Details |
+| ------- | ----- | ------- |
+| Unmatched request | `warn` | Verb, path, and up to 3 fuzzy-matched route suggestions |
+| Assertion failed | `warn` | Expected count, matched count, total calls, expression |
+| Assertion passed | `debug` | Same fields as above |
+| Expression error | `debug` | Expression string and the specific evaluation failure |
+| Route registered / deleted | `info` | Route key |
+| Startup | `info` | Listening addresses |
+
 ## Route patterns
 
 Paths can include typed parameters that are captured and made available in response templates.

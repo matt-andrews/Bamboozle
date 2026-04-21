@@ -5,6 +5,7 @@ use axum::{
     Json,
 };
 use serde::Deserialize;
+use tracing::{debug, warn};
 use utoipa::ToSchema;
 
 use crate::{
@@ -188,9 +189,8 @@ pub async fn assert_route(
     Query(q): Query<AssertQuery>,
     Json(body): Json<AssertRequest>,
 ) -> Result<StatusCode, AppError> {
-    let calls = state
-        .tracker
-        .get_calls_for_route(&MatchKey::new(verb, pattern));
+    let match_key = MatchKey::new(verb, pattern);
+    let calls = state.tracker.get_calls_for_route(&match_key);
     let expr = body
         .expression
         .as_deref()
@@ -203,6 +203,13 @@ pub async fn assert_route(
                 Ok(true) => result.push(ctx),
                 Ok(false) => {}
                 Err(e) => {
+                    warn!(
+                        verb = %match_key.verb,
+                        pattern = %match_key.pattern,
+                        expression = expr,
+                        error = %e,
+                        "Expression error during assertion filtering"
+                    );
                     return Err(AppError::BadRequest(format!("Invalid expression: {e}")));
                 }
             }
@@ -222,8 +229,31 @@ pub async fn assert_route(
         true
     };
     if passed {
+        debug!(
+            verb = %match_key.verb,
+            pattern = %match_key.pattern,
+            matched_count = count,
+            expected = q.expect,
+            expression = expr.unwrap_or("<none>"),
+            "Assertion passed"
+        );
         Ok(StatusCode::OK)
     } else {
+        let condition = if q.expect >= 0 {
+            format!("expected exactly {}, got {}", q.expect, count)
+        } else {
+            format!("expected >= 1 match for expression, got {}", count)
+        };
+        warn!(
+            verb = %match_key.verb,
+            pattern = %match_key.pattern,
+            matched_count = count,
+            total_calls = calls.len(),
+            expected = q.expect,
+            expression = expr.unwrap_or("<none>"),
+            condition = %condition,
+            "Assertion failed"
+        );
         Ok(StatusCode::IM_A_TEAPOT)
     }
 }
