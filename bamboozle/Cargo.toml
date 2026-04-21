@@ -8,7 +8,7 @@ name = "bamboozle"
 path = "src/main.rs"
 
 [dependencies]
-axum = { version = "0.7", features = ["macros"] }
+axum = { version = "0.8", features = ["macros"] }
 tokio = { version = "1", features = ["rt-multi-thread", "net", "fs", "macros"] }
 tower-http = { version = "0.6", features = ["trace"] }
 serde = { version = "1", features = ["derive"] }
