@@ -8,6 +8,8 @@ use axum::{
 use futures::stream;
 use std::{collections::HashMap, time::Duration};
 
+use tracing::warn;
+
 use crate::{
     app_state::AppState,
     liquid_render::Renderer,
@@ -38,6 +40,21 @@ async fn catch_all(
 
     match state.store.match_route(&verb, &path) {
         None => {
+            let suggestions = state.store.suggest_routes(&verb, &path);
+            if suggestions.is_empty() {
+                warn!(
+                    verb = %verb,
+                    path = %path,
+                    "Unmatched request — no similar routes registered"
+                );
+            } else {
+                warn!(
+                    verb = %verb,
+                    path = %path,
+                    suggestions = %suggestions.join(", "),
+                    "Unmatched request — did you mean one of these routes?"
+                );
+            }
             let ctx = ContextModel {
                 query_params,
                 headers: header_map,

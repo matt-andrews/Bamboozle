@@ -13,15 +13,51 @@ mod tracking;
 use tokio::net::TcpListener;
 use tracing::info;
 
+fn init_tracing() {
+    use tracing_subscriber::{fmt, layer::SubscriberExt, util::SubscriberInitExt, EnvFilter};
+
+    let filter = EnvFilter::try_from_default_env()
+        .unwrap_or_else(|_| EnvFilter::new("info"));
+
+    let format = std::env::var("RUST_LOG_FORMAT")
+        .unwrap_or_default()
+        .to_ascii_lowercase();
+
+    // ANSI colors on by default; opt out with NO_COLOR=1 (https://no-color.org)
+    let ansi = std::env::var("NO_COLOR").is_err();
+
+    // Each format variant is a different concrete type; box to unify them.
+    let fmt_layer: Box<dyn tracing_subscriber::Layer<_> + Send + Sync> = match format.as_str() {
+        "json"   => Box::new(fmt::layer().json()),
+        "pretty" => Box::new(fmt::layer().pretty().with_ansi(ansi)),
+        _        => Box::new(fmt::layer().compact().with_ansi(ansi)),
+    };
+
+    // OTEL layer is always compiled; only activates when the endpoint env var is set.
+    let otel_layer = std::env::var("OTEL_EXPORTER_OTLP_ENDPOINT").ok().map(|endpoint| {
+        use opentelemetry_otlp::WithExportConfig;
+        let exporter = opentelemetry_otlp::new_exporter()
+            .http()
+            .with_endpoint(endpoint);
+        let tracer = opentelemetry_otlp::new_pipeline()
+            .tracing()
+            .with_exporter(exporter)
+            .install_batch(opentelemetry_sdk::runtime::Tokio)
+            .expect("Failed to install OpenTelemetry OTLP tracer");
+        tracing_opentelemetry::layer().with_tracer(tracer)
+    });
+
+    // Option<L> is a no-op layer when None — no branching needed.
+    tracing_subscriber::registry()
+        .with(filter)
+        .with(fmt_layer)
+        .with(otel_layer)
+        .init();
+}
+
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    tracing_subscriber::fmt()
-        .with_env_filter(
-            tracing_subscriber::EnvFilter::try_from_default_env()
-                .unwrap_or_else(|_| tracing_subscriber::EnvFilter::new("info")),
-        )
-        .with_ansi(false)
-        .init();
+    init_tracing();
 
     let config = config::AppConfig::from_env()?;
     let state = app_state::AppState::new();

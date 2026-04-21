@@ -1,7 +1,11 @@
 use dashmap::DashMap;
 use regex::Regex;
 use std::collections::HashMap;
+use strsim::jaro_winkler;
 use tracing::{debug, error, info, warn};
+
+const SUGGESTION_LIMIT: usize = 3;
+const SUGGESTION_THRESHOLD: f64 = 0.6;
 
 use crate::{
     error::{AppError, RouteError},
@@ -129,6 +133,39 @@ impl RouteStore {
             None => debug!(verb, path, "No route matched request"),
         }
         result
+    }
+
+    /// Returns up to `SUGGESTION_LIMIT` route labels (e.g. "GET|api/users/{id}") whose
+    /// patterns are most similar to the requested path, sorted by similarity descending.
+    pub fn suggest_routes(&self, verb: &str, path: &str) -> Vec<String> {
+        let normalized = MatchKey::normalize_pattern(path);
+        let verb_upper = verb.to_ascii_uppercase();
+
+        let mut scored: Vec<(f64, String)> = self
+            .routes
+            .iter()
+            .flat_map(|outer| {
+                let stored_verb = outer.key().clone();
+                outer
+                    .value()
+                    .iter()
+                    .map(|inner| {
+                        let pattern = &inner.value().normalized_pattern;
+                        let mut score = jaro_winkler(normalized.as_str(), pattern.as_str());
+                        if stored_verb == verb_upper {
+                            score = (score + 0.05).min(1.0);
+                        }
+                        (score, format!("{}|{}", stored_verb, pattern))
+                    })
+                    .collect::<Vec<_>>()
+            })
+            .filter(|(score, _)| *score >= SUGGESTION_THRESHOLD)
+            .collect();
+
+        scored
+            .sort_unstable_by(|a, b| b.0.partial_cmp(&a.0).unwrap_or(std::cmp::Ordering::Equal));
+        scored.truncate(SUGGESTION_LIMIT);
+        scored.into_iter().map(|(_, label)| label).collect()
     }
 
     pub fn get_all_routes(&self) -> Vec<RouteDefinition> {
