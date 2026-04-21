@@ -158,6 +158,7 @@ mod tests {
         RouteDefinition {
             match_key: MatchKey::new(verb, pattern),
             set_state: None,
+            simulation: None,
             response: ResponseDefinition::default(),
         }
     }

@@ -4,9 +4,12 @@ export type {
   AssertOptions,
   ClientOptions,
   ContextModel,
+  DelayConfig,
+  FaultConfig,
   MatchKey,
   ResponseDefinition,
   RouteDefinition,
+  SimulationConfig,
 } from "./types.js";
 export {
   BamboozleAssertBuilder,

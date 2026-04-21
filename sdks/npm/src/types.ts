@@ -12,10 +12,27 @@ export interface ResponseDefinition {
   loopback?: boolean;
 }
 
+export type DelayConfig =
+  | { type: 'fixed'; ms: number }
+  | { type: 'random'; minMs: number; maxMs: number }
+  | { type: 'gaussian'; meanMs: number; stdDevMs: number };
+
+export interface FaultConfig {
+  type: 'connectionReset' | 'emptyResponse';
+  /** 0.0–1.0. Defaults to 1.0 (always trigger). */
+  probability?: number;
+}
+
+export interface SimulationConfig {
+  delay?: DelayConfig;
+  fault?: FaultConfig;
+}
+
 export interface RouteDefinition {
   match: MatchKey;
   response: ResponseDefinition;
   setState?: string;
+  simulation?: SimulationConfig;
 }
 
 export interface ContextModel {

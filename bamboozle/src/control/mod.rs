@@ -13,6 +13,7 @@ use crate::{
         context::ContextModel,
         match_key::MatchKey,
         route::{ResponseDefinition, RouteDefinition},
+        simulation::{DelayConfig, FaultConfig, FaultKind, SimulationConfig},
     },
 };
 
@@ -40,6 +41,10 @@ pub mod handlers;
             RouteDefinition,
             ResponseDefinition,
             ContextModel,
+            SimulationConfig,
+            DelayConfig,
+            FaultConfig,
+            FaultKind,
             handlers::AssertRequest,
         )
     ),

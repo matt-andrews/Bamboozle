@@ -1,11 +1,12 @@
 use axum::{
-    body::Bytes,
+    body::{Body, Bytes},
     extract::State,
     http::{HeaderMap, Method, StatusCode, Uri},
     response::{IntoResponse, Response},
     Router,
 };
-use std::collections::HashMap;
+use futures::stream;
+use std::{collections::HashMap, time::Duration};
 
 use crate::{
     app_state::AppState,
@@ -13,6 +14,7 @@ use crate::{
         context::ContextModel,
         match_key::MatchKey,
         route::{ResponseDefinition, RouteDefinition},
+        simulation::FaultKind,
     },
 };
 
@@ -67,6 +69,7 @@ async fn catch_all(
                 route_model: RouteDefinition {
                     match_key: MatchKey::new(verb, path),
                     set_state: None,
+                    simulation: None,
                     response: ResponseDefinition::default(),
                 },
                 state: String::new(),
@@ -96,6 +99,38 @@ async fn catch_all(
             }
 
             state.tracker.record_matched(ctx.clone());
+
+            if let Some(sim) = &route_def.simulation {
+                if let Some(delay) = &sim.delay {
+                    tokio::time::sleep(Duration::from_millis(delay.sample_ms())).await;
+                }
+                if let Some(fault) = &sim.fault {
+                    if fault.should_trigger() {
+                        return match &fault.kind {
+                            FaultKind::ConnectionReset => {
+                                let body = Body::from_stream(stream::once(std::future::ready(
+                                    Err::<Bytes, std::io::Error>(std::io::Error::new(
+                                        std::io::ErrorKind::ConnectionReset,
+                                        "simulated connection reset",
+                                    )),
+                                )));
+                                Response::builder()
+                                    .status(200)
+                                    .body(body)
+                                    .unwrap_or_else(|_| {
+                                        StatusCode::INTERNAL_SERVER_ERROR.into_response()
+                                    })
+                            }
+                            FaultKind::EmptyResponse => Response::builder()
+                                .status(200)
+                                .body(Body::empty())
+                                .unwrap_or_else(|_| {
+                                    StatusCode::INTERNAL_SERVER_ERROR.into_response()
+                                }),
+                        };
+                    }
+                }
+            }
 
             let status_str =
                 state
@@ -150,6 +185,7 @@ mod tests {
         RouteDefinition {
             match_key: MatchKey::new(verb, pattern),
             set_state: None,
+            simulation: None,
             response: ResponseDefinition {
                 status: status.to_string(),
                 content: content.map(|s| s.to_string()),
@@ -256,6 +292,7 @@ mod tests {
             .set_route(RouteDefinition {
                 match_key: MatchKey::new("POST", "/echo"),
                 set_state: None,
+                simulation: None,
                 response: ResponseDefinition {
                     status: "200".to_string(),
                     loopback: Some(true),
@@ -314,6 +351,7 @@ mod tests {
                     pattern: "/thing/{thingName}/{thingVersion}".to_string(),
                 },
                 set_state: None,
+                simulation: None,
                 response: ResponseDefinition {
                     status: "200".to_string(),
                     content: Some(r#"{"id":"{{ routeValues.thingName }}"}"#.to_string()),
@@ -438,6 +476,7 @@ mod tests {
             .set_route(RouteDefinition {
                 match_key: MatchKey::new("GET", "/stateful"),
                 set_state: Some("hello-state".to_string()),
+                simulation: None,
                 response: ResponseDefinition {
                     status: "200".to_string(),
                     content: Some("{{ state }}".to_string()),
@@ -471,6 +510,7 @@ mod tests {
                     "{% if previousContext == nil %}0{% else %}{{ previousContext.state }}{% endif %}"
                         .to_string(),
                 ),
+                simulation: None,
                 response: ResponseDefinition {
                     status: "200".to_string(),
                     content: Some("{{ state }}".to_string()),
@@ -489,5 +529,196 @@ mod tests {
             .await
             .unwrap();
         assert_eq!(body_string(response.into_body()).await, "0");
+    }
+
+    #[tokio::test]
+    async fn simulation_none_has_no_effect() {
+        let state = AppState::new();
+        state
+            .store
+            .set_route(make_route("GET", "/plain", Some("ok"), "200"))
+            .unwrap();
+        let response = router(state)
+            .oneshot(Request::builder().uri("/plain").body(Body::empty()).unwrap())
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+        assert_eq!(body_string(response.into_body()).await, "ok");
+    }
+
+    #[tokio::test]
+    async fn fixed_delay_applies() {
+        use crate::models::simulation::{DelayConfig, SimulationConfig};
+        use std::time::Instant;
+
+        let state = AppState::new();
+        state
+            .store
+            .set_route(RouteDefinition {
+                match_key: MatchKey::new("GET", "/slow"),
+                set_state: None,
+                simulation: Some(SimulationConfig {
+                    delay: Some(DelayConfig::Fixed { ms: 50 }),
+                    fault: None,
+                }),
+                response: ResponseDefinition {
+                    status: "200".to_string(),
+                    content: Some("ok".to_string()),
+                    ..Default::default()
+                },
+            })
+            .unwrap();
+        let start = Instant::now();
+        router(state)
+            .oneshot(Request::builder().uri("/slow").body(Body::empty()).unwrap())
+            .await
+            .unwrap();
+        assert!(start.elapsed() >= Duration::from_millis(50));
+    }
+
+    #[tokio::test]
+    async fn fault_empty_response_returns_200_empty_body() {
+        use crate::models::simulation::{FaultConfig, FaultKind, SimulationConfig};
+
+        let state = AppState::new();
+        state
+            .store
+            .set_route(RouteDefinition {
+                match_key: MatchKey::new("GET", "/empty-fault"),
+                set_state: None,
+                simulation: Some(SimulationConfig {
+                    delay: None,
+                    fault: Some(FaultConfig {
+                        kind: FaultKind::EmptyResponse,
+                        probability: 1.0,
+                    }),
+                }),
+                response: ResponseDefinition {
+                    status: "200".to_string(),
+                    content: Some("should not appear".to_string()),
+                    ..Default::default()
+                },
+            })
+            .unwrap();
+        let response = router(state)
+            .oneshot(
+                Request::builder()
+                    .uri("/empty-fault")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+        assert_eq!(body_string(response.into_body()).await, "");
+    }
+
+    #[tokio::test]
+    async fn fault_connection_reset_errors_on_body_read() {
+        use crate::models::simulation::{FaultConfig, FaultKind, SimulationConfig};
+
+        let state = AppState::new();
+        state
+            .store
+            .set_route(RouteDefinition {
+                match_key: MatchKey::new("GET", "/reset-fault"),
+                set_state: None,
+                simulation: Some(SimulationConfig {
+                    delay: None,
+                    fault: Some(FaultConfig {
+                        kind: FaultKind::ConnectionReset,
+                        probability: 1.0,
+                    }),
+                }),
+                response: ResponseDefinition {
+                    status: "200".to_string(),
+                    content: Some("should not appear".to_string()),
+                    ..Default::default()
+                },
+            })
+            .unwrap();
+        let response = router(state)
+            .oneshot(
+                Request::builder()
+                    .uri("/reset-fault")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+        let result = axum::body::to_bytes(response.into_body(), usize::MAX).await;
+        assert!(result.is_err(), "body read should error for connection reset");
+    }
+
+    #[tokio::test]
+    async fn fault_probability_zero_never_triggers() {
+        use crate::models::simulation::{FaultConfig, FaultKind, SimulationConfig};
+
+        let state = AppState::new();
+        state
+            .store
+            .set_route(RouteDefinition {
+                match_key: MatchKey::new("GET", "/no-fault"),
+                set_state: None,
+                simulation: Some(SimulationConfig {
+                    delay: None,
+                    fault: Some(FaultConfig {
+                        kind: FaultKind::EmptyResponse,
+                        probability: 0.0,
+                    }),
+                }),
+                response: ResponseDefinition {
+                    status: "200".to_string(),
+                    content: Some("normal".to_string()),
+                    ..Default::default()
+                },
+            })
+            .unwrap();
+        for _ in 0..10 {
+            let response = router(state.clone())
+                .oneshot(Request::builder().uri("/no-fault").body(Body::empty()).unwrap())
+                .await
+                .unwrap();
+            assert_eq!(body_string(response.into_body()).await, "normal");
+        }
+    }
+
+    #[tokio::test]
+    async fn fault_probability_one_always_triggers() {
+        use crate::models::simulation::{FaultConfig, FaultKind, SimulationConfig};
+
+        let state = AppState::new();
+        state
+            .store
+            .set_route(RouteDefinition {
+                match_key: MatchKey::new("GET", "/always-fault"),
+                set_state: None,
+                simulation: Some(SimulationConfig {
+                    delay: None,
+                    fault: Some(FaultConfig {
+                        kind: FaultKind::EmptyResponse,
+                        probability: 1.0,
+                    }),
+                }),
+                response: ResponseDefinition {
+                    status: "200".to_string(),
+                    content: Some("should not appear".to_string()),
+                    ..Default::default()
+                },
+            })
+            .unwrap();
+        for _ in 0..5 {
+            let response = router(state.clone())
+                .oneshot(
+                    Request::builder()
+                        .uri("/always-fault")
+                        .body(Body::empty())
+                        .unwrap(),
+                )
+                .await
+                .unwrap();
+            assert_eq!(body_string(response.into_body()).await, "");
+        }
     }
 }
