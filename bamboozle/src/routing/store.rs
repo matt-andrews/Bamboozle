@@ -285,4 +285,65 @@ mod tests {
         assert!(store.get_all_routes().is_empty());
         assert!(store.match_route("GET", "/a").is_none());
     }
+
+    #[test]
+    fn suggest_routes_returns_similar_route() {
+        let store = RouteStore::new();
+        store.set_route(make_route("GET", "/api/users")).unwrap();
+        store.set_route(make_route("GET", "/api/orders")).unwrap();
+        let suggestions = store.suggest_routes("GET", "/api/users");
+        assert!(!suggestions.is_empty(), "expected at least one suggestion");
+        assert!(
+            suggestions[0].contains("api/users"),
+            "closest match should be api/users, got {:?}",
+            suggestions
+        );
+    }
+
+    #[test]
+    fn suggest_routes_boosts_same_verb() {
+        let store = RouteStore::new();
+        store.set_route(make_route("GET", "/api/users")).unwrap();
+        store.set_route(make_route("POST", "/api/users")).unwrap();
+        // Same path requested with GET — GET|api/users should rank first due to verb boost.
+        let suggestions = store.suggest_routes("GET", "/api/users");
+        assert!(!suggestions.is_empty());
+        assert!(
+            suggestions[0].starts_with("GET|"),
+            "GET route should rank above POST due to verb boost, got {:?}",
+            suggestions
+        );
+    }
+
+    #[test]
+    fn suggest_routes_returns_empty_when_no_similar_routes() {
+        let store = RouteStore::new();
+        store.set_route(make_route("GET", "/completely/different/path")).unwrap();
+        // A totally unrelated short path should fall below the similarity threshold.
+        let suggestions = store.suggest_routes("POST", "/xyz");
+        assert!(suggestions.is_empty(), "expected no suggestions, got {:?}", suggestions);
+    }
+
+    #[test]
+    fn suggest_routes_caps_results_at_limit() {
+        let store = RouteStore::new();
+        store.set_route(make_route("GET", "/api/users")).unwrap();
+        store.set_route(make_route("GET", "/api/user")).unwrap();
+        store.set_route(make_route("GET", "/api/users/list")).unwrap();
+        store.set_route(make_route("GET", "/api/users/search")).unwrap();
+        let suggestions = store.suggest_routes("GET", "/api/users");
+        assert!(
+            suggestions.len() <= SUGGESTION_LIMIT,
+            "expected at most {} suggestions, got {}",
+            SUGGESTION_LIMIT,
+            suggestions.len()
+        );
+    }
+
+    #[test]
+    fn suggest_routes_returns_empty_when_store_is_empty() {
+        let store = RouteStore::new();
+        let suggestions = store.suggest_routes("GET", "/api/users");
+        assert!(suggestions.is_empty());
+    }
 }

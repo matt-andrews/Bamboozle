@@ -33,28 +33,42 @@ fn init_tracing() {
         _        => Box::new(fmt::layer().compact().with_ansi(ansi)),
     };
 
-    // OTEL layer is always compiled; only activates when the endpoint env var is set.
-    // The SDK reads OTEL_EXPORTER_OTLP_ENDPOINT automatically from the environment.
-    let otel_layer = std::env::var("OTEL_EXPORTER_OTLP_ENDPOINT").ok().map(|_| {
-        let exporter = opentelemetry_otlp::SpanExporter::builder()
-            .with_http()
-            .build()
-            .expect("Failed to build OTLP span exporter");
-        let provider = opentelemetry_sdk::trace::TracerProvider::builder()
-            .with_simple_exporter(exporter)
-            .build();
-        // Get SdkTracer directly — global::tracer() returns BoxedTracer which lacks PreSampledTracer.
-        use opentelemetry::trace::TracerProvider as _;
-        let tracer = provider.tracer("bamboozle");
-        opentelemetry::global::set_tracer_provider(provider);
-        tracing_opentelemetry::layer().with_tracer(tracer)
-    });
+    #[cfg(feature = "otel")]
+    {
+        // OTEL layer only activates when the endpoint env var is set.
+        // On build error, fall back to console-only and print a warning — don't crash.
+        let otel_layer = std::env::var("OTEL_EXPORTER_OTLP_ENDPOINT").ok().and_then(|_| {
+            match opentelemetry_otlp::SpanExporter::builder().with_http().build() {
+                Ok(exporter) => {
+                    let provider = opentelemetry_sdk::trace::TracerProvider::builder()
+                        .with_simple_exporter(exporter)
+                        .build();
+                    use opentelemetry::trace::TracerProvider as _;
+                    let tracer = provider.tracer("bamboozle");
+                    opentelemetry::global::set_tracer_provider(provider);
+                    Some(tracing_opentelemetry::layer().with_tracer(tracer))
+                }
+                Err(e) => {
+                    // Tracing isn't initialized yet so we can't use warn! here.
+                    eprintln!("warning: failed to initialize OTLP exporter ({e}), falling back to console-only logging");
+                    None
+                }
+            }
+        });
 
-    // Option<L> is a no-op layer when None — no branching needed.
+        tracing_subscriber::registry()
+            .with(filter)
+            .with(fmt_layer)
+            .with(otel_layer)
+            .init();
+
+        return;
+    }
+
+    #[cfg(not(feature = "otel"))]
     tracing_subscriber::registry()
         .with(filter)
         .with(fmt_layer)
-        .with(otel_layer)
         .init();
 }
 
@@ -77,6 +91,10 @@ async fn main() -> anyhow::Result<()> {
         axum::serve(mock_listener, mock_server::router(state.clone())),
         axum::serve(control_listener, control::router(state.clone())),
     )?;
+
+    // Flush any buffered OTLP spans before exiting.
+    #[cfg(feature = "otel")]
+    opentelemetry::global::shutdown_tracer_provider();
 
     Ok(())
 }
