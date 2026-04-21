@@ -30,7 +30,7 @@ pub async fn post_routes(
     State(state): State<AppState>,
     Json(route): Json<RouteDefinition>,
 ) -> Result<Json<RouteDefinition>, AppError> {
-    let response = state.store.set_route(route.clone())?;
+    let response = state.store.set_route(route)?;
     Ok(Json(response))
 }
 
@@ -49,15 +49,9 @@ pub async fn put_routes(
     State(state): State<AppState>,
     Json(route): Json<RouteDefinition>,
 ) -> Result<Json<RouteDefinition>, AppError> {
-    // Normalize before deletion so PUT upserts the same canonical key that
-    // `set_route` uses internally.
-    let normalized_match_key = MatchKey::new(
-        route.match_key.verb.clone(),
-        route.match_key.pattern.clone(),
-    );
-    // Ignore NotFound — PUT is idempotent
-    let _ = state.store.delete_route(&normalized_match_key);
-    let response = state.store.set_route(route.clone())?;
+    // Ignore NotFound — PUT is idempotent. delete_route normalizes internally.
+    let _ = state.store.delete_route(&route.match_key);
+    let response = state.store.set_route(route)?;
     Ok(Json(response))
 }
 
@@ -162,12 +156,14 @@ pub struct AssertRequest {
 
 #[derive(Deserialize)]
 pub struct AssertQuery {
-    #[serde(default = "default_expect")]
+    #[serde(default = "AssertQuery::default_expect")]
     pub expect: i64,
 }
 
-fn default_expect() -> i64 {
-    -1
+impl AssertQuery {
+    fn default_expect() -> i64 {
+        -1
+    }
 }
 
 #[utoipa::path(

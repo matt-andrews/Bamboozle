@@ -1,7 +1,7 @@
 use regex::Regex;
 use std::collections::HashMap;
 
-pub fn normalize_url(url: &str) -> String {
+fn normalize_url(url: &str) -> String {
     let trimmed = url.trim_matches('/');
     let mut result = String::with_capacity(trimmed.len());
     let mut prev_slash = false;
@@ -68,12 +68,9 @@ pub fn compile_pattern(pattern: &str) -> Result<Regex, regex::Error> {
                     if regex_body.ends_with('/') {
                         regex_body.pop();
                     }
-                    regex_body.push_str(&format!("(?:/(?P<{}>{}))? ", param_name, value_pat));
-                    // Remove the trailing space we accidentally wrote
-                    let len = regex_body.len();
-                    regex_body.truncate(len - 1);
+                    regex_body.push_str(&format!("(?:/(?P<{param_name}>{value_pat}))?"));
                 } else {
-                    regex_body.push_str(&format!("(?P<{}>{})", param_name, value_pat));
+                    regex_body.push_str(&format!("(?P<{param_name}>{value_pat})"));
                 }
             } else {
                 // No closing brace — treat the rest as literal
@@ -123,7 +120,7 @@ pub fn try_match_route(
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::{compile_pattern, normalize_url, try_match_route};
 
     #[test]
     fn static_route_exact_match() {

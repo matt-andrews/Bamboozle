@@ -2,7 +2,13 @@ use std::path::Path;
 use tokio::fs;
 use tracing::{error, warn};
 
-use crate::{app_state::AppState, config::AppConfig, models::config_file::ConfigLoaderModel};
+use crate::{app_state::AppState, config::AppConfig, models::route::RouteDefinition};
+
+#[derive(Debug, serde::Deserialize, Default)]
+struct ConfigLoaderModel {
+    #[serde(default)]
+    routes: Vec<RouteDefinition>,
+}
 
 pub async fn load(config: &AppConfig, state: &AppState) -> anyhow::Result<()> {
     for folder in &config.route_config_folders {
