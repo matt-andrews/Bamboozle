@@ -40,6 +40,7 @@ export interface ContextModel {
   headers: Record<string, string>;
   routeValues: Record<string, string>;
   routeModel: RouteDefinition;
+  port?: string
 }
 
 export interface AssertOptions {
@@ -47,6 +48,7 @@ export interface AssertOptions {
   expression?: IBamboozleAssertBuilder;
   /** Expected call count. -1 means ≥1 when expression is set, or any count otherwise. Default: -1 */
   expect?: number;
+  port?: string;
 }
 
 export interface ClientOptions {

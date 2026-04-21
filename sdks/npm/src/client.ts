@@ -43,6 +43,9 @@ export class BamboozleClient {
     if (options.expect !== undefined) {
       url.searchParams.set("expect", String(options.expect));
     }
+    if (options.port !== undefined) {
+      url.searchParams.set("port", String(options.port));
+    }
     const body = options.expression !== undefined ? { expression: options.expression.build() } : { expression: "" };
 
     const init: RequestInit = { method: "POST" };
