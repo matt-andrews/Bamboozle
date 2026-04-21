@@ -152,7 +152,7 @@ impl RouteStore {
                     let pattern = &inner.value().normalized_pattern;
                     let mut score = jaro_winkler(normalized.as_str(), pattern.as_str());
                     if stored_verb == verb_upper {
-                        score = (score + 0.05).min(1.0);
+                        score += 0.05;
                     }
                     (score, format!("{}|{}", stored_verb, pattern))
                 }).collect::<Vec<_>>()
