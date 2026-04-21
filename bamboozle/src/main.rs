@@ -28,16 +28,19 @@ async fn main() -> anyhow::Result<()> {
 
     config_loader::load(&config, &state).await?;
 
-    let mock_listener = TcpListener::bind("0.0.0.0:8080").await?;
     let control_listener = TcpListener::bind("0.0.0.0:9090").await?;
-
-    info!("Mock server listening on :8080");
     info!("Control server listening on :9090");
 
-    tokio::try_join!(
-        axum::serve(mock_listener, mock_server::router(state.clone())),
-        axum::serve(control_listener, control::router(state.clone())),
-    )?;
+    for &port in &config.mock_ports {
+        let listener = TcpListener::bind(format!("0.0.0.0:{port}")).await?;
+        info!("Mock server listening on :{port}");
+        let router = mock_server::router(state.clone());
+        tokio::spawn(async move {
+            axum::serve(listener, router).await.expect("mock server failed");
+        });
+    }
+
+    axum::serve(control_listener, control::router(state.clone())).await?;
 
     Ok(())
 }

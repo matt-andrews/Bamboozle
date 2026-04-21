@@ -18,4 +18,5 @@ RUN touch src/main.rs && cargo build --release
 FROM scratch
 COPY --from=builder /app/target/release/bamboozle /bamboozle
 EXPOSE 8080 9090
+# Override mock port(s) with EXPOSE_PORTS=8000-9000 (range), 8080,8081 (list), or 8080 (single)
 ENTRYPOINT ["/bamboozle"]
