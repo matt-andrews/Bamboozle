@@ -315,6 +315,83 @@ test.describe('assert match complex body', () => {
   }
 });
 
+test.describe('assert count qualifiers', () => {
+  let deleteState: MatchKey[] = [];
+  test.afterEach(async () => {
+    for (let key of deleteState) {
+      try {
+        await bamboozleClient.clearCalls(key.verb, key.pattern);
+        await bamboozleClient.deleteRoute(key.verb, key.pattern);
+      }
+      catch { }
+    }
+    deleteState = [];
+  });
+
+  test('calledExactly=1 after 1 call passes', async ({ request }) => {
+    const key: MatchKey = { verb: 'GET', pattern: 'playwright/assert/count/exactly/pass' };
+    deleteState.push(key);
+    await addRoute(key);
+    await request.get(`http://localhost:18080/${key.pattern}`);
+    expect(await bamboozleClient.assert(key.verb, key.pattern, { calledExactly: 1 })).toBeTruthy();
+  });
+
+  test('calledExactly=2 after 1 call fails', async ({ request }) => {
+    const key: MatchKey = { verb: 'GET', pattern: 'playwright/assert/count/exactly/fail' };
+    deleteState.push(key);
+    await addRoute(key);
+    await request.get(`http://localhost:18080/${key.pattern}`);
+    expect(await bamboozleClient.assert(key.verb, key.pattern, { calledExactly: 2 })).toBeFalsy();
+  });
+
+  test('calledAtLeast=1 after 1 call passes', async ({ request }) => {
+    const key: MatchKey = { verb: 'GET', pattern: 'playwright/assert/count/atleast/pass' };
+    deleteState.push(key);
+    await addRoute(key);
+    await request.get(`http://localhost:18080/${key.pattern}`);
+    expect(await bamboozleClient.assert(key.verb, key.pattern, { calledAtLeast: 1 })).toBeTruthy();
+  });
+
+  test('calledAtLeast=2 after 1 call fails', async ({ request }) => {
+    const key: MatchKey = { verb: 'GET', pattern: 'playwright/assert/count/atleast/fail' };
+    deleteState.push(key);
+    await addRoute(key);
+    await request.get(`http://localhost:18080/${key.pattern}`);
+    expect(await bamboozleClient.assert(key.verb, key.pattern, { calledAtLeast: 2 })).toBeFalsy();
+  });
+
+  test('calledAtMost=1 after 1 call passes', async ({ request }) => {
+    const key: MatchKey = { verb: 'GET', pattern: 'playwright/assert/count/atmost/pass' };
+    deleteState.push(key);
+    await addRoute(key);
+    await request.get(`http://localhost:18080/${key.pattern}`);
+    expect(await bamboozleClient.assert(key.verb, key.pattern, { calledAtMost: 1 })).toBeTruthy();
+  });
+
+  test('calledAtMost=0 after 1 call fails', async ({ request }) => {
+    const key: MatchKey = { verb: 'GET', pattern: 'playwright/assert/count/atmost/fail' };
+    deleteState.push(key);
+    await addRoute(key);
+    await request.get(`http://localhost:18080/${key.pattern}`);
+    expect(await bamboozleClient.assert(key.verb, key.pattern, { calledAtMost: 0 })).toBeFalsy();
+  });
+
+  test('neverCalled passes when route has 0 calls', async () => {
+    const key: MatchKey = { verb: 'GET', pattern: 'playwright/assert/count/nevercalled/pass' };
+    deleteState.push(key);
+    await addRoute(key);
+    expect(await bamboozleClient.assert(key.verb, key.pattern, { neverCalled: true })).toBeTruthy();
+  });
+
+  test('neverCalled fails after 1 call', async ({ request }) => {
+    const key: MatchKey = { verb: 'GET', pattern: 'playwright/assert/count/nevercalled/fail' };
+    deleteState.push(key);
+    await addRoute(key);
+    await request.get(`http://localhost:18080/${key.pattern}`);
+    expect(await bamboozleClient.assert(key.verb, key.pattern, { neverCalled: true })).toBeFalsy();
+  });
+});
+
 async function reqFactory(verb: string, location: string, request: APIRequestContext, body: any = {}) {
   if (verb === 'GET') {
     return await request.get(location);

@@ -40,8 +40,17 @@ export class BamboozleClient {
 
   async assert(verb: string, pattern: string, options: AssertOptions = {}): Promise<boolean> {
     const url = new URL(`${this.#baseUrl}${this.#routePath(verb, pattern)}/assert`);
-    if (options.expect !== undefined) {
-      url.searchParams.set("expect", String(options.expect));
+    if (options.neverCalled === true) {
+      url.searchParams.set("never_called", "true");
+    }
+    if (options.calledExactly !== undefined) {
+      url.searchParams.set("called_exactly", String(options.calledExactly));
+    }
+    if (options.calledAtLeast !== undefined) {
+      url.searchParams.set("called_at_least", String(options.calledAtLeast));
+    }
+    if (options.calledAtMost !== undefined) {
+      url.searchParams.set("called_at_most", String(options.calledAtMost));
     }
     const body = options.expression !== undefined ? { expression: options.expression.build() } : { expression: "" };
 
