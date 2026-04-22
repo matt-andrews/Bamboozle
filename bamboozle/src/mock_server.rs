@@ -989,12 +989,7 @@ mod tests {
         let state = AppState::new();
         state
             .store
-            .set_route(make_route(
-                "GET",
-                "/data",
-                Some(r#"{"id":1}"#),
-                "200",
-            ))
+            .set_route(make_route("GET", "/data", Some(r#"{"id":1}"#), "200"))
             .unwrap();
         let response = router(state)
             .oneshot(Request::builder().uri("/data").body(Body::empty()).unwrap())
@@ -1109,17 +1104,14 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_eq!(
-            content_type_header(&response).as_deref(),
-            Some("text/html")
-        );
+        assert_eq!(content_type_header(&response).as_deref(), Some("text/html"));
     }
 
     #[tokio::test]
     async fn binary_file_png_extension_infers_image_png() {
         let dir = std::env::temp_dir();
         let file_path = dir.join("bamboozle_test_ct.png");
-        std::fs::write(&file_path, &[0x89, 0x50, 0x4E, 0x47]).unwrap();
+        std::fs::write(&file_path, [0x89, 0x50, 0x4E, 0x47]).unwrap();
 
         let state = AppState::new();
         state
@@ -1144,17 +1136,14 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_eq!(
-            content_type_header(&response).as_deref(),
-            Some("image/png")
-        );
+        assert_eq!(content_type_header(&response).as_deref(), Some("image/png"));
     }
 
     #[tokio::test]
     async fn binary_file_unknown_extension_infers_octet_stream() {
         let dir = std::env::temp_dir();
         let file_path = dir.join("bamboozle_test_ct.xyz");
-        std::fs::write(&file_path, &[0x00, 0x01, 0x02]).unwrap();
+        std::fs::write(&file_path, [0x00, 0x01, 0x02]).unwrap();
 
         let state = AppState::new();
         state
