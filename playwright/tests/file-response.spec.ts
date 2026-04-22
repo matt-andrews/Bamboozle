@@ -30,6 +30,7 @@ test.describe('contentFile serves Liquid-rendered file content', () => {
         expect(response.status()).toBe(200);
         expect(await response.text()).toBe('Hello World!');
         expect(await bamboozleClient.assert(key.verb, key.pattern, { calledExactly: 1 })).toBeTruthy();
+        expect(response.headers()["content-type"]).toBe("text/plain");
     });
 
     test('renders Liquid template from file with different route values', async ({ request }) => {
@@ -46,6 +47,7 @@ test.describe('contentFile serves Liquid-rendered file content', () => {
         const response = await request.get('http://localhost:18080/playwright/file/greeting/alt/Alice');
         expect(response.status()).toBe(200);
         expect(await response.text()).toBe('Hello Alice!');
+        expect(response.headers()["content-type"]).toBe("text/plain");
     });
 });
 
@@ -68,7 +70,6 @@ test.describe('binaryFile serves raw bytes', () => {
             match: key,
             response: {
                 status: '200',
-                headers: { 'Content-Type': 'image/png' },
                 binaryFile: '/test_configs/assets/sample.bin',
             },
         });
@@ -83,6 +84,7 @@ test.describe('binaryFile serves raw bytes', () => {
         expect(body[2]).toBe(0x4e);
         expect(body[3]).toBe(0x47);
         expect(await bamboozleClient.assert(key.verb, key.pattern, { calledExactly: 1 })).toBeTruthy();
+        expect(response.headers()["content-type"]).toBe("application/octet-stream");
     });
 
     test('binary content is not processed as Liquid template', async ({ request }) => {
@@ -101,6 +103,7 @@ test.describe('binaryFile serves raw bytes', () => {
         const body = await response.body();
         // Raw bytes must be returned without modification
         expect(Buffer.from([0x89, 0x50, 0x4e, 0x47]).equals(body)).toBeTruthy();
+        expect(response.headers()["content-type"]).toBe("application/octet-stream");
     });
 });
 
