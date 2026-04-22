@@ -185,10 +185,10 @@ async fn build_response(
     let body = if route_def.response.loopback {
         Body::from(ctx.body_raw.clone())
     } else if let Some(path) = &route_def.response.binary_file {
-        match tokio::fs::read(path).await {
-            Ok(bytes) => Body::from(bytes),
+        match tokio::fs::File::open(path).await {
+            Ok(file) => Body::from_stream(tokio_util::io::ReaderStream::new(file)),
             Err(e) => {
-                tracing::error!(path = %path, error = %e, "Failed to read binary file");
+                tracing::error!(path = %path, error = %e, "Failed to open binary file");
                 return StatusCode::INTERNAL_SERVER_ERROR.into_response();
             }
         }

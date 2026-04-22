@@ -269,7 +269,7 @@ If a file cannot be read at request time, the mock server returns `500 Internal 
 
 ### Response body options are mutually exclusive
 
-Each route may use exactly one of `content`, `contentFile`, `binaryFile`, or `loopback`. Specifying more than one returns `400 Bad Request` when the route is registered.
+Each route may use at most one of `content`, `contentFile`, `binaryFile`, or `loopback`. Specifying more than one returns `400 Bad Request` when the route is registered.
 
 ## Loopback mode
 
