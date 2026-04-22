@@ -50,8 +50,8 @@ When a pattern contains `{`, `}`, or `/`, URL-encode those characters in the pat
 
 | Pattern | Encoded |
 |---|---|
-| `/orders/{id}` | `/orders%2F%7Bid%7D` |
-| `/users/{id}/orders` | `/users%2F%7Bid%7D%2Forders` |
+| `/orders/{id}` | `orders%2F%7Bid%7D` |
+| `/users/{id}/orders` | `users%2F%7Bid%7D%2Forders` |
 
 ## Reset everything
 

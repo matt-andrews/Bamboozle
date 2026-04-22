@@ -27,5 +27,3 @@ await client.reset();
 ```
 
 The SDK exports `BamboozleClient`, `BamboozleAssertBuilder` (fluent expression builder), and all control API types as TypeScript interfaces.
-
-**Source:** [`sdks/npm/`](npm/)

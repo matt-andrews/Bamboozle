@@ -9,7 +9,7 @@
 
 </div>
 
-Bamboozle is a container-native HTTP mock server for integration testing. It runs as a self-contained Docker image so that your tests talk to over real HTTP, and you can assert with confidence that your application is making the expected HTTP requests.
+Bamboozle is a container-native HTTP mock server for integration testing. It runs as a self-contained Docker image so that your tests talk to it over real HTTP, and you can assert with confidence that your application is making the expected HTTP requests.
 
 ```bash
 docker run -p 8080:8080 -p 9090:9090 mattisthegreatest/bamboozle
