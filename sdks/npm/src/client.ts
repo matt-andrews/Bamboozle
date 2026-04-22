@@ -42,11 +42,14 @@ export class BamboozleClient {
     const url = new URL(`${this.#baseUrl}${this.#routePath(verb, pattern)}/assert`);
     if (options.neverCalled === true) {
       url.searchParams.set("never_called", "true");
-    } else if (options.calledExactly !== undefined) {
+    }
+    if (options.calledExactly !== undefined) {
       url.searchParams.set("called_exactly", String(options.calledExactly));
-    } else if (options.calledAtLeast !== undefined) {
+    }
+    if (options.calledAtLeast !== undefined) {
       url.searchParams.set("called_at_least", String(options.calledAtLeast));
-    } else if (options.calledAtMost !== undefined) {
+    }
+    if (options.calledAtMost !== undefined) {
       url.searchParams.set("called_at_most", String(options.calledAtMost));
     }
     const body = options.expression !== undefined ? { expression: options.expression.build() } : { expression: "" };

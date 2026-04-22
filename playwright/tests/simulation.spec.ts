@@ -167,6 +167,6 @@ test.describe('calls are recorded even when fault triggers', () => {
         await request.get(`http://localhost:18080/${key.pattern}`);
         await request.get(`http://localhost:18080/${key.pattern}`);
 
-        expect(await bamboozleClient.assert(key.verb, key.pattern, { expect: 2 })).toBeTruthy();
+        expect(await bamboozleClient.assert(key.verb, key.pattern, { calledExactly: 2 })).toBeTruthy();
     });
 });

@@ -322,7 +322,7 @@ URL-encode the pattern if it contains path characters — e.g. `orders/{id}` bec
 ### Assert on calls
 
 ```http
-POST http://localhost:9090/control/routes/GET/version/assert?calledExactly=1
+POST http://localhost:9090/control/routes/GET/version/assert?called_exactly=1
 Content-Type: application/json
 
 {}

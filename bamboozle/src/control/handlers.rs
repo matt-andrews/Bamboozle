@@ -219,19 +219,55 @@ pub async fn assert_route(
         calls.iter().collect()
     };
 
+    for (name, val) in [
+        ("called_exactly", q.called_exactly),
+        ("called_at_least", q.called_at_least),
+        ("called_at_most", q.called_at_most),
+    ] {
+        if let Some(n) = val {
+            if n < 0 {
+                return Err(AppError::BadRequest(format!("{name} must be >= 0")));
+            }
+        }
+    }
+
     let count = filtered.len() as i64;
-    let (passed, condition) = if q.never_called {
-        (count == 0, format!("expected 0 calls, got {count}"))
-    } else if let Some(n) = q.called_exactly {
-        (count == n, format!("expected exactly {n}, got {count}"))
-    } else if let Some(n) = q.called_at_least {
-        (count >= n, format!("expected at least {n}, got {count}"))
-    } else if let Some(n) = q.called_at_most {
-        (count <= n, format!("expected at most {n}, got {count}"))
+    let any_qualifier = q.never_called
+        || q.called_exactly.is_some()
+        || q.called_at_least.is_some()
+        || q.called_at_most.is_some();
+
+    let mut failing: Vec<String> = Vec::new();
+    if q.never_called && count != 0 {
+        failing.push(format!("expected 0 calls (never_called), got {count}"));
+    }
+    if let Some(n) = q.called_exactly {
+        if count != n {
+            failing.push(format!("expected exactly {n}, got {count}"));
+        }
+    }
+    if let Some(n) = q.called_at_least {
+        if count < n {
+            failing.push(format!("expected at least {n}, got {count}"));
+        }
+    }
+    if let Some(n) = q.called_at_most {
+        if count > n {
+            failing.push(format!("expected at most {n}, got {count}"));
+        }
+    }
+
+    let passed = if any_qualifier {
+        failing.is_empty()
     } else if expr.is_some() {
-        (count >= 1, format!("expected >= 1 match for expression, got {count}"))
+        count >= 1
     } else {
-        (true, String::new())
+        true
+    };
+    let condition = if !passed && !any_qualifier {
+        format!("expected >= 1 match for expression, got {count}")
+    } else {
+        failing.join("; ")
     };
     if passed {
         debug!(
