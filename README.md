@@ -6,9 +6,6 @@
   [![Image Size](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/matt-andrews/Bamboozle/badges/badge-docker-size.json?v=1&cacheSeconds=3600)](https://github.com/matt-andrews/Bamboozle/pkgs/container/bamboozle)
 </div>
 
-> [!WARNING]
-> This project is still in a super-pre-release state. Use at your own risk.
-
 Bamboozle is a container-native HTTP mock server for integration testing. It intercepts real HTTP traffic, allowing you to test your full client stack — serialisation, authentication headers, retry logic, circuit breakers — without any live dependency.
 
 Unlike in-process mocking libraries, Bamboozle runs as a self-contained Docker container that is fully programmable at runtime from your test code, or configurable from startup files.
@@ -162,8 +159,8 @@ Console and OTLP output are active simultaneously when the endpoint is set, so y
 | Event | Level | Details |
 | ------- | ----- | ------- |
 | Unmatched request | `warn` | Verb, path, and up to 3 fuzzy-matched route suggestions |
-| Assertion failed | `warn` | Expected count, matched count, total calls, expression |
-| Assertion passed | `debug` | Same fields as above |
+| Assertion failed | `warn` | Condition, matched count, total calls, expression |
+| Assertion passed | `debug` | Matched count, expression |
 | Expression error | `debug` | Expression string and the specific evaluation failure |
 | Route registered / deleted | `info` | Route key |
 | Startup | `info` | Listening addresses |
@@ -325,13 +322,22 @@ URL-encode the pattern if it contains path characters — e.g. `orders/{id}` bec
 ### Assert on calls
 
 ```http
-POST http://localhost:9090/control/routes/GET/version/assert?expect=1
+POST http://localhost:9090/control/routes/GET/version/assert?called_exactly=1
 Content-Type: application/json
 
 {}
 ```
 
-`expect` is the required call count. Use `-1` to assert that at least one call was made regardless of count.
+Use query parameters to declare how many times the route (or matching calls) should have been invoked:
+
+| Parameter | Description |
+| ----------- | ------------- |
+| `called_exactly=n` | Pass only if the filtered call count equals exactly `n` |
+| `called_at_least=n` | Pass only if the filtered call count is at least `n` |
+| `called_at_most=n` | Pass only if the filtered call count is at most `n` |
+| `never_called=true` | Pass only if the route was never called (equivalent to `called_exactly=0`) |
+
+When no count parameter is given, the assertion uses a default rule: if an `expression` is provided, at least one matching call must exist; otherwise the assertion always passes.
 
 Returns `200 OK` on pass, `418 I'm a Teapot` on failure, `400 Bad Request` for an invalid expression.
 
@@ -356,8 +362,6 @@ Available expression tokens:
 | `contains(s, sub)` | Substring match |
 | `starts_with(s, prefix)` | Prefix match |
 | `ends_with(s, suffix)` | Suffix match |
-
-> The assertion model is intentionally minimal in the current release. Richer structured conditions — `calledAtLeast`, `calledAtMost`, `neverCalled`, body shape verification, and per-call header checks — are planned.
 
 ### Unmatched calls
 
@@ -389,5 +393,4 @@ Bamboozle is built against a detailed design specification. The following capabi
 - **Request matching on content** — match routes based on headers, query parameters, and request body (JSON path conditions and schema validation), in addition to verb and path
 - **Session isolation** — per-test namespace via a session header, enabling safe parallel test execution against a shared Bamboozle instance
 - **Route lifecycle options** — `times` to auto-deactivate a route after N matches, and `ttl` to auto-deactivate after N seconds
-- **Richer assertions** — structured assertion types including `calledAtLeast`, `calledAtMost`, `neverCalled`, and per-call body and header verification
 - **TestContainers modules** — first-class companion libraries to integrate Bamboozle into test suites with minimal boilerplate

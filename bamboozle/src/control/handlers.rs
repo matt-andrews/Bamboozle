@@ -157,14 +157,11 @@ pub struct AssertRequest {
 
 #[derive(Deserialize)]
 pub struct AssertQuery {
-    #[serde(default = "AssertQuery::default_expect")]
-    pub expect: i64,
-}
-
-impl AssertQuery {
-    fn default_expect() -> i64 {
-        -1
-    }
+    pub called_exactly: Option<i64>,
+    pub called_at_least: Option<i64>,
+    pub called_at_most: Option<i64>,
+    #[serde(default)]
+    pub never_called: bool,
 }
 
 #[utoipa::path(
@@ -173,7 +170,10 @@ impl AssertQuery {
     params(
         ("verb" = String, Path, description = "HTTP verb"),
         ("pattern" = String, Path, description = "Route pattern (URL-encode slashes as %2F)"),
-        ("expect" = Option<i64>, Query, description = "Expected call count after filtering. -1 (default) accepts any count ≥ 1 when an expression is given, or any count otherwise."),
+        ("called_exactly" = Option<i64>, Query, description = "Assert the filtered call count equals exactly n."),
+        ("called_at_least" = Option<i64>, Query, description = "Assert the filtered call count is at least n."),
+        ("called_at_most" = Option<i64>, Query, description = "Assert the filtered call count is at most n."),
+        ("never_called" = Option<bool>, Query, description = "Assert the route was never called (equivalent to called_exactly=0)."),
     ),
     request_body = AssertRequest,
     responses(
@@ -219,37 +219,71 @@ pub async fn assert_route(
         calls.iter().collect()
     };
 
+    for (name, val) in [
+        ("called_exactly", q.called_exactly),
+        ("called_at_least", q.called_at_least),
+        ("called_at_most", q.called_at_most),
+    ] {
+        if let Some(n) = val {
+            if n < 0 {
+                return Err(AppError::BadRequest(format!("{name} must be >= 0")));
+            }
+        }
+    }
+
     let count = filtered.len() as i64;
-    let passed = if q.expect >= 0 {
-        count == q.expect
+    let any_qualifier = q.never_called
+        || q.called_exactly.is_some()
+        || q.called_at_least.is_some()
+        || q.called_at_most.is_some();
+
+    let mut failing: Vec<String> = Vec::new();
+    if q.never_called && count != 0 {
+        failing.push(format!("expected 0 calls (never_called), got {count}"));
+    }
+    if let Some(n) = q.called_exactly {
+        if count != n {
+            failing.push(format!("expected exactly {n}, got {count}"));
+        }
+    }
+    if let Some(n) = q.called_at_least {
+        if count < n {
+            failing.push(format!("expected at least {n}, got {count}"));
+        }
+    }
+    if let Some(n) = q.called_at_most {
+        if count > n {
+            failing.push(format!("expected at most {n}, got {count}"));
+        }
+    }
+
+    let passed = if any_qualifier {
+        failing.is_empty()
     } else if expr.is_some() {
-        // expression given but no explicit expect → require at least one match
         count >= 1
     } else {
         true
+    };
+    let condition = if !passed && !any_qualifier {
+        format!("expected >= 1 match for expression, got {count}")
+    } else {
+        failing.join("; ")
     };
     if passed {
         debug!(
             verb = %match_key.verb,
             pattern = %match_key.pattern,
             matched_count = count,
-            expected = q.expect,
             expression = expr.unwrap_or("<none>"),
             "Assertion passed"
         );
         Ok(StatusCode::OK)
     } else {
-        let condition = if q.expect >= 0 {
-            format!("expected exactly {}, got {}", q.expect, count)
-        } else {
-            format!("expected >= 1 match for expression, got {}", count)
-        };
         warn!(
             verb = %match_key.verb,
             pattern = %match_key.pattern,
             matched_count = count,
             total_calls = calls.len(),
-            expected = q.expect,
             expression = expr.unwrap_or("<none>"),
             condition = %condition,
             "Assertion failed"

@@ -51,7 +51,7 @@ test.describe('request body can do complex json', () => {
             expect(init).toBeDefined();
             expect(init.hello).toEqual("world");
             expect(init.number).toEqual("24"); //in the LT content we convert to string
-            expect(await bamboozleClient.assert(key.verb, key.pattern, { expect: 1 })).toBeTruthy();
+            expect(await bamboozleClient.assert(key.verb, key.pattern, { calledExactly: 1 })).toBeTruthy();
         });
     }
 });
@@ -91,7 +91,7 @@ test.describe('request body loopback should match original', () => {
             expect(init).toBeDefined();
             expect(init.hello).toEqual("world");
             expect(init.number).toEqual(24);
-            expect(await bamboozleClient.assert(key.verb, key.pattern, { expect: 1 })).toBeTruthy();
+            expect(await bamboozleClient.assert(key.verb, key.pattern, { calledExactly: 1 })).toBeTruthy();
         });
     }
 });
