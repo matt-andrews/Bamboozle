@@ -22,7 +22,20 @@ pub struct ResponseDefinition {
     pub status: String,
     #[serde(default)]
     pub headers: HashMap<String, String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub content: Option<String>,
+    #[serde(
+        rename = "contentFile",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub content_file: Option<String>,
+    #[serde(
+        rename = "binaryFile",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub binary_file: Option<String>,
     #[serde(default)]
     pub loopback: bool,
 }

@@ -213,6 +213,64 @@ Example — echo the captured ID back in a JSON response:
 }
 ```
 
+## File-based responses
+
+Instead of writing response content inline, you can point a route at a file on disk. This is useful for large payloads, binary assets, or content you want to share across multiple routes.
+
+### Text files with template support (`contentFile`)
+
+`contentFile` is a drop-in replacement for `content`. The file is read at request time and passed through the Liquid template engine with the full request context available — route values, query params, headers, body, and state all work exactly as they do with inline `content`.
+
+```json
+{
+  "match": { "verb": "GET", "pattern": "/greet/{name}" },
+  "response": {
+    "status": "200",
+    "contentFile": "/etc/bamboozle/templates/greeting.txt"
+  }
+}
+```
+
+Where `greeting.txt` contains:
+
+```
+Hello {{ routeValues.name }}!
+```
+
+A `GET /greet/World` request returns `Hello World!`.
+
+### Binary files (`binaryFile`)
+
+`binaryFile` serves the raw bytes of a file without any template processing — no Liquid parsing is applied. Use this for images, archives, PDFs, or any other binary asset.
+
+```json
+{
+  "match": { "verb": "GET", "pattern": "/logo.png" },
+  "response": {
+    "status": "200",
+    "headers": { "Content-Type": "image/png" },
+    "binaryFile": "/etc/bamboozle/assets/logo.png"
+  }
+}
+```
+
+### Mounting files into the container
+
+File paths are resolved inside the container, so mount the directory containing your assets as a volume:
+
+```bash
+docker run \
+  -v ./assets:/etc/bamboozle/assets \
+  -p 8080:8080 -p 9090:9090 \
+  mattisthegreatest/bamboozle
+```
+
+If a file cannot be read at request time, the mock server returns `500 Internal Server Error` and logs the path and I/O error.
+
+### Response body options are mutually exclusive
+
+Each route may use at most one of `content`, `contentFile`, `binaryFile`, or `loopback`. Specifying more than one returns `400 Bad Request` when the route is registered.
+
 ## Loopback mode
 
 Set `"loopback": true` on a response to echo the full request body back as the response body. Useful for verifying that your client sends the expected payload.
