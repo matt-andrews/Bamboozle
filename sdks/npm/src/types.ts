@@ -45,8 +45,14 @@ export interface ContextModel {
 export interface AssertOptions {
   /** Boolean evalexpr expression evaluated against each recorded call */
   expression?: IBamboozleAssertBuilder;
-  /** Expected call count. -1 means ≥1 when expression is set, or any count otherwise. Default: -1 */
-  expect?: number;
+  /** Assert the filtered call count equals exactly n */
+  calledExactly?: number;
+  /** Assert the filtered call count is at least n */
+  calledAtLeast?: number;
+  /** Assert the filtered call count is at most n */
+  calledAtMost?: number;
+  /** Assert the route was never called */
+  neverCalled?: boolean;
 }
 
 export interface ClientOptions {
