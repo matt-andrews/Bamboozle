@@ -17,6 +17,31 @@ struct StoredRoute {
     definition: RouteDefinition,
     compiled_regex: Regex,
     normalized_pattern: String,
+    constraint_specificity: usize,
+}
+
+/// Counts parameters in `pattern` that carry a specific constraint (anything other
+/// than `:string` or untyped), so the router can prefer e.g. `{id:int}` over
+/// `{id:string}` when both patterns are otherwise equally ranked.
+fn constraint_specificity(pattern: &str) -> usize {
+    let mut count = 0;
+    let mut remaining = pattern;
+    while let Some(start) = remaining.find('{') {
+        let rest = &remaining[start..];
+        let end = match rest.find('}') {
+            Some(i) => i,
+            None => break,
+        };
+        let inner = rest[1..end].trim_end_matches('?');
+        if let Some(colon) = inner.find(':') {
+            let constraint = &inner[colon + 1..];
+            if constraint != "string" {
+                count += 1;
+            }
+        }
+        remaining = &remaining[start + end + 1..];
+    }
+    count
 }
 
 pub struct RouteStore {
@@ -66,11 +91,13 @@ impl RouteStore {
             return Err(AppError::AlreadyExists(key_str));
         }
 
+        let specificity = constraint_specificity(&pattern);
         verb_map.insert(
             lookup_key,
             StoredRoute {
                 definition: def.clone(),
                 compiled_regex: compiled,
+                constraint_specificity: specificity,
                 normalized_pattern: pattern,
             },
         );
@@ -110,16 +137,24 @@ impl RouteStore {
     ) -> Option<(RouteDefinition, HashMap<String, String>)> {
         let result = self.routes.get(verb).and_then(|verb_map| {
             let mut entries: Vec<_> = verb_map.iter().collect();
-            // Static routes before parameterized; longer patterns before shorter.
+            // Static routes before parameterized; among equal param counts, more
+            // specific constraints (e.g. :int) before catch-all ones (e.g. :string);
+            // then longer patterns before shorter.
             entries.sort_unstable_by(|a, b| {
                 let a_params = a.value().normalized_pattern.matches('{').count();
                 let b_params = b.value().normalized_pattern.matches('{').count();
-                a_params.cmp(&b_params).then_with(|| {
-                    b.value()
-                        .normalized_pattern
-                        .len()
-                        .cmp(&a.value().normalized_pattern.len())
-                })
+                a_params.cmp(&b_params)
+                    .then_with(|| {
+                        b.value()
+                            .constraint_specificity
+                            .cmp(&a.value().constraint_specificity)
+                    })
+                    .then_with(|| {
+                        b.value()
+                            .normalized_pattern
+                            .len()
+                            .cmp(&a.value().normalized_pattern.len())
+                    })
             });
             entries.iter().find_map(|entry| {
                 let stored = entry.value();
@@ -281,6 +316,40 @@ mod tests {
         store.reset();
         assert!(store.get_all_routes().is_empty());
         assert!(store.match_route("GET", "/a").is_none());
+    }
+
+    #[test]
+    fn typed_int_param_wins_over_string_when_value_is_numeric() {
+        let store = RouteStore::new();
+        store
+            .set_route(make_route("GET", "/items/{id:int}"))
+            .unwrap();
+        store
+            .set_route(make_route("GET", "/items/{id:string}"))
+            .unwrap();
+
+        let (int_def, _) = store.match_route("GET", "/items/42").unwrap();
+        assert!(
+            int_def.match_key.pattern.contains(":int"),
+            "expected :int route to win for numeric value, got {:?}",
+            int_def.match_key.pattern
+        );
+
+        let (str_def, _) = store.match_route("GET", "/items/hello").unwrap();
+        assert!(
+            str_def.match_key.pattern.contains(":string"),
+            "expected :string route to win for non-numeric value, got {:?}",
+            str_def.match_key.pattern
+        );
+    }
+
+    #[test]
+    fn typed_int_param_rejects_non_numeric_with_no_string_fallback() {
+        let store = RouteStore::new();
+        store
+            .set_route(make_route("GET", "/items/{id:int}"))
+            .unwrap();
+        assert!(store.match_route("GET", "/items/abc").is_none());
     }
 
     #[test]
