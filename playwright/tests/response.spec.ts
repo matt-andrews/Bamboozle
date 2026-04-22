@@ -52,6 +52,7 @@ test.describe('request body can do complex json', () => {
             expect(init.hello).toEqual("world");
             expect(init.number).toEqual("24"); //in the LT content we convert to string
             expect(await bamboozleClient.assert(key.verb, key.pattern, { calledExactly: 1 })).toBeTruthy();
+            expect(initReq.headers()["content-type"]).toBe("application/json");
         });
     }
 });
@@ -77,9 +78,6 @@ test.describe('request body loopback should match original', () => {
                 match: key,
                 response: {
                     status: "200",
-                    headers: {
-                        "Content-Type": "application/json"
-                    },
                     loopback: true
                 }
             });
@@ -92,6 +90,7 @@ test.describe('request body loopback should match original', () => {
             expect(init.hello).toEqual("world");
             expect(init.number).toEqual(24);
             expect(await bamboozleClient.assert(key.verb, key.pattern, { calledExactly: 1 })).toBeTruthy();
+            expect(initReq.headers()["content-type"]).toBe("application/json");
         });
     }
 });
@@ -125,6 +124,7 @@ test.describe('route matching', () => {
 
         expect(await response1.text()).toBe("24");
         expect(response2.status()).toBe(404);
+        expect(response2.headers()["content-type"]).toBe(undefined);
     });
     test('route matching with strongly typed route params int vs string', async ({ request }) => {
         const key1: MatchKey = { verb: 'GET', pattern: 'playwright/route/matching/strong/typed/params/int/vs/string/{param1:int}' };
