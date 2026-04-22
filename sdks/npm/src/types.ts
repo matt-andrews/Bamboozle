@@ -9,6 +9,8 @@ export interface ResponseDefinition {
   status?: string;
   headers?: Record<string, string>;
   content?: string;
+  contentFile?: string;
+  binaryFile?: string;
   loopback?: boolean;
 }
 
