@@ -426,9 +426,6 @@ async function addRoute(key: MatchKey) {
     match: key,
     response: {
       status: "200",
-      headers: {
-        "Content-Type": "application/json"
-      },
       content: `
         [
           {% for kvp in queryParams %} 
