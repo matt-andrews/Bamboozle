@@ -174,6 +174,42 @@ fn fault_response(kind: &FaultKind) -> Response {
     }
 }
 
+fn infer_content_type_from_path(path: &str, binary: bool) -> &'static str {
+    let ext = std::path::Path::new(path)
+        .extension()
+        .and_then(|e| e.to_str())
+        .unwrap_or("");
+    match ext.to_ascii_lowercase().as_str() {
+        "json" => "application/json",
+        "html" | "htm" => "text/html",
+        "xml" => "application/xml",
+        "txt" => "text/plain",
+        "csv" => "text/csv",
+        "png" => "image/png",
+        "jpg" | "jpeg" => "image/jpeg",
+        "gif" => "image/gif",
+        "svg" => "image/svg+xml",
+        "webp" => "image/webp",
+        "pdf" => "application/pdf",
+        "zip" => "application/zip",
+        "js" => "application/javascript",
+        "css" => "text/css",
+        _ => {
+            if binary {
+                "application/octet-stream"
+            } else {
+                "text/plain"
+            }
+        }
+    }
+}
+
+fn is_json_content(s: &str) -> bool {
+    let trimmed = s.trim();
+    (trimmed.starts_with('{') || trimmed.starts_with('['))
+        && serde_json::from_str::<serde_json::Value>(trimmed).is_ok()
+}
+
 async fn build_response(
     route_def: &RouteDefinition,
     ctx: &ContextModel,
@@ -182,36 +218,64 @@ async fn build_response(
     let status_str = renderer.render_or_fallback(&route_def.response.status, ctx, "200");
     let status_code: u16 = status_str.trim().parse().unwrap_or(200);
 
-    let body = if route_def.response.loopback {
-        Body::from(ctx.body_raw.clone())
+    let (body, inferred_ct): (Body, Option<String>) = if route_def.response.loopback {
+        let ct = ctx
+            .headers
+            .iter()
+            .find(|(k, _)| k.eq_ignore_ascii_case("content-type"))
+            .map(|(_, v)| v.clone());
+        (Body::from(ctx.body_raw.clone()), ct)
     } else if let Some(path) = &route_def.response.binary_file {
+        let ct = infer_content_type_from_path(path, true).to_string();
         match tokio::fs::File::open(path).await {
-            Ok(file) => Body::from_stream(tokio_util::io::ReaderStream::new(file)),
+            Ok(file) => (
+                Body::from_stream(tokio_util::io::ReaderStream::new(file)),
+                Some(ct),
+            ),
             Err(e) => {
                 tracing::error!(path = %path, error = %e, "Failed to open binary file");
                 return StatusCode::INTERNAL_SERVER_ERROR.into_response();
             }
         }
     } else if let Some(path) = &route_def.response.content_file {
+        let ct = infer_content_type_from_path(path, false).to_string();
         match tokio::fs::read_to_string(path).await {
-            Ok(text) => Body::from(renderer.render_or_fallback(&text, ctx, "")),
+            Ok(text) => (
+                Body::from(renderer.render_or_fallback(&text, ctx, "")),
+                Some(ct),
+            ),
             Err(e) => {
                 tracing::error!(path = %path, error = %e, "Failed to read content file");
                 return StatusCode::INTERNAL_SERVER_ERROR.into_response();
             }
         }
     } else {
-        Body::from(
-            route_def
-                .response
-                .content
-                .as_deref()
-                .map(|t| renderer.render_or_fallback(t, ctx, ""))
-                .unwrap_or_default(),
-        )
+        let text = route_def
+            .response
+            .content
+            .as_deref()
+            .map(|t| renderer.render_or_fallback(t, ctx, ""))
+            .unwrap_or_default();
+        let ct = if is_json_content(&text) {
+            "application/json"
+        } else {
+            "text/plain"
+        };
+        (Body::from(text), Some(ct.to_string()))
     };
 
+    let user_has_ct = route_def
+        .response
+        .headers
+        .keys()
+        .any(|k| k.eq_ignore_ascii_case("content-type"));
+
     let mut builder = Response::builder().status(status_code);
+    if !user_has_ct {
+        if let Some(ct) = inferred_ct {
+            builder = builder.header("content-type", ct);
+        }
+    }
     for (key, val_template) in &route_def.response.headers {
         let val = renderer.render_or_fallback(val_template, ctx, "");
         builder = builder.header(key.as_str(), val.as_str());
@@ -910,5 +974,282 @@ mod tests {
             .await
             .unwrap();
         assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    }
+
+    fn content_type_header(response: &Response) -> Option<String> {
+        response
+            .headers()
+            .get("content-type")
+            .and_then(|v| v.to_str().ok())
+            .map(|s| s.to_string())
+    }
+
+    #[tokio::test]
+    async fn inline_json_content_infers_application_json() {
+        let state = AppState::new();
+        state
+            .store
+            .set_route(make_route(
+                "GET",
+                "/data",
+                Some(r#"{"id":1}"#),
+                "200",
+            ))
+            .unwrap();
+        let response = router(state)
+            .oneshot(Request::builder().uri("/data").body(Body::empty()).unwrap())
+            .await
+            .unwrap();
+        assert_eq!(
+            content_type_header(&response).as_deref(),
+            Some("application/json")
+        );
+    }
+
+    #[tokio::test]
+    async fn inline_json_array_infers_application_json() {
+        let state = AppState::new();
+        state
+            .store
+            .set_route(make_route("GET", "/items", Some(r#"[1,2,3]"#), "200"))
+            .unwrap();
+        let response = router(state)
+            .oneshot(
+                Request::builder()
+                    .uri("/items")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(
+            content_type_header(&response).as_deref(),
+            Some("application/json")
+        );
+    }
+
+    #[tokio::test]
+    async fn inline_plain_text_infers_text_plain() {
+        let state = AppState::new();
+        state
+            .store
+            .set_route(make_route("GET", "/msg", Some("hello world"), "200"))
+            .unwrap();
+        let response = router(state)
+            .oneshot(Request::builder().uri("/msg").body(Body::empty()).unwrap())
+            .await
+            .unwrap();
+        assert_eq!(
+            content_type_header(&response).as_deref(),
+            Some("text/plain")
+        );
+    }
+
+    #[tokio::test]
+    async fn content_file_json_extension_infers_application_json() {
+        let dir = std::env::temp_dir();
+        let file_path = dir.join("bamboozle_test_ct.json");
+        std::fs::write(&file_path, r#"{"ok":true}"#).unwrap();
+
+        let state = AppState::new();
+        state
+            .store
+            .set_route(RouteDefinition {
+                match_key: MatchKey::new("GET", "/ct-json"),
+                set_state: None,
+                simulation: None,
+                response: ResponseDefinition {
+                    status: "200".to_string(),
+                    content_file: Some(file_path.to_string_lossy().into_owned()),
+                    ..Default::default()
+                },
+            })
+            .unwrap();
+        let response = router(state)
+            .oneshot(
+                Request::builder()
+                    .uri("/ct-json")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(
+            content_type_header(&response).as_deref(),
+            Some("application/json")
+        );
+    }
+
+    #[tokio::test]
+    async fn content_file_html_extension_infers_text_html() {
+        let dir = std::env::temp_dir();
+        let file_path = dir.join("bamboozle_test_ct.html");
+        std::fs::write(&file_path, "<h1>Hello</h1>").unwrap();
+
+        let state = AppState::new();
+        state
+            .store
+            .set_route(RouteDefinition {
+                match_key: MatchKey::new("GET", "/ct-html"),
+                set_state: None,
+                simulation: None,
+                response: ResponseDefinition {
+                    status: "200".to_string(),
+                    content_file: Some(file_path.to_string_lossy().into_owned()),
+                    ..Default::default()
+                },
+            })
+            .unwrap();
+        let response = router(state)
+            .oneshot(
+                Request::builder()
+                    .uri("/ct-html")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(
+            content_type_header(&response).as_deref(),
+            Some("text/html")
+        );
+    }
+
+    #[tokio::test]
+    async fn binary_file_png_extension_infers_image_png() {
+        let dir = std::env::temp_dir();
+        let file_path = dir.join("bamboozle_test_ct.png");
+        std::fs::write(&file_path, &[0x89, 0x50, 0x4E, 0x47]).unwrap();
+
+        let state = AppState::new();
+        state
+            .store
+            .set_route(RouteDefinition {
+                match_key: MatchKey::new("GET", "/ct-png"),
+                set_state: None,
+                simulation: None,
+                response: ResponseDefinition {
+                    status: "200".to_string(),
+                    binary_file: Some(file_path.to_string_lossy().into_owned()),
+                    ..Default::default()
+                },
+            })
+            .unwrap();
+        let response = router(state)
+            .oneshot(
+                Request::builder()
+                    .uri("/ct-png")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(
+            content_type_header(&response).as_deref(),
+            Some("image/png")
+        );
+    }
+
+    #[tokio::test]
+    async fn binary_file_unknown_extension_infers_octet_stream() {
+        let dir = std::env::temp_dir();
+        let file_path = dir.join("bamboozle_test_ct.xyz");
+        std::fs::write(&file_path, &[0x00, 0x01, 0x02]).unwrap();
+
+        let state = AppState::new();
+        state
+            .store
+            .set_route(RouteDefinition {
+                match_key: MatchKey::new("GET", "/ct-bin"),
+                set_state: None,
+                simulation: None,
+                response: ResponseDefinition {
+                    status: "200".to_string(),
+                    binary_file: Some(file_path.to_string_lossy().into_owned()),
+                    ..Default::default()
+                },
+            })
+            .unwrap();
+        let response = router(state)
+            .oneshot(
+                Request::builder()
+                    .uri("/ct-bin")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(
+            content_type_header(&response).as_deref(),
+            Some("application/octet-stream")
+        );
+    }
+
+    #[tokio::test]
+    async fn user_specified_content_type_overrides_inferred() {
+        let state = AppState::new();
+        state
+            .store
+            .set_route(RouteDefinition {
+                match_key: MatchKey::new("GET", "/override"),
+                set_state: None,
+                simulation: None,
+                response: ResponseDefinition {
+                    status: "200".to_string(),
+                    content: Some(r#"{"id":1}"#.to_string()),
+                    headers: HashMap::from([(
+                        "Content-Type".to_string(),
+                        "text/plain".to_string(),
+                    )]),
+                    ..Default::default()
+                },
+            })
+            .unwrap();
+        let response = router(state)
+            .oneshot(
+                Request::builder()
+                    .uri("/override")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(
+            content_type_header(&response).as_deref(),
+            Some("text/plain")
+        );
+    }
+
+    #[tokio::test]
+    async fn loopback_mirrors_request_content_type() {
+        let state = AppState::new();
+        state
+            .store
+            .set_route(RouteDefinition {
+                match_key: MatchKey::new("POST", "/echo-ct"),
+                set_state: None,
+                simulation: None,
+                response: ResponseDefinition {
+                    status: "200".to_string(),
+                    loopback: true,
+                    ..Default::default()
+                },
+            })
+            .unwrap();
+        let response = router(state)
+            .oneshot(
+                Request::builder()
+                    .method("POST")
+                    .uri("/echo-ct")
+                    .header("content-type", "application/json")
+                    .body(Body::from(r#"{"x":1}"#))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(
+            content_type_header(&response).as_deref(),
+            Some("application/json")
+        );
     }
 }
