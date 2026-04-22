@@ -39,13 +39,13 @@ impl DelayConfig {
                 } else {
                     (*max_ms, *min_ms)
                 };
-                rand::thread_rng().gen_range(start..=end)
+                rand::rng().random_range(start..=end)
             }
             Self::Gaussian {
                 mean_ms,
                 std_dev_ms,
             } => Normal::new(*mean_ms, *std_dev_ms)
-                .map(|dist| dist.sample(&mut rand::thread_rng()).max(0.0) as u64)
+                .map(|dist| dist.sample(&mut rand::rng()).max(0.0) as u64)
                 .unwrap_or(*mean_ms as u64),
         }
     }
@@ -70,7 +70,7 @@ impl FaultConfig {
         } else if self.probability <= 0.0 {
             false
         } else {
-            rand::thread_rng().gen_bool(self.probability)
+            rand::rng().random_bool(self.probability)
         }
     }
 }
