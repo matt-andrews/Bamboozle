@@ -155,7 +155,7 @@ test.describe('route matching', () => {
         expect(await response1.text()).toBe("int: 24");
         expect(await response2.text()).toBe("string: twentyfour");
     });
-})
+});
 
 async function reqFactory(verb: string, location: string, request: APIRequestContext, body: any = {}) {
     if (verb === 'GET') {

@@ -17,12 +17,22 @@ struct StoredRoute {
     definition: RouteDefinition,
     compiled_regex: Regex,
     normalized_pattern: String,
+    param_count: usize,
     constraint_specificity: usize,
 }
 
-/// Counts parameters in `pattern` that carry a specific constraint (anything other
-/// than `:string` or untyped), so the router can prefer e.g. `{id:int}` over
-/// `{id:string}` when both patterns are otherwise equally ranked.
+fn is_narrowing_constraint(constraint: &str) -> bool {
+    matches!(
+        constraint,
+        "int" | "long" | "double" | "decimal" | "float" | "bool" | "guid" | "alpha" | "datetime"
+    )
+}
+
+/// Counts parameters in `pattern` that carry a recognized narrowing constraint
+/// (matching what `regex_gen::constraint_pattern` actually restricts), so the
+/// router can prefer e.g. `{id:int}` over `{id:string}` when both patterns are
+/// otherwise equally ranked. Unknown constraints fall back to `[^/]+` just like
+/// `:string`, so they are not counted.
 fn constraint_specificity(pattern: &str) -> usize {
     let mut count = 0;
     let mut remaining = pattern;
@@ -34,14 +44,21 @@ fn constraint_specificity(pattern: &str) -> usize {
         };
         let inner = rest[1..end].trim_end_matches('?');
         if let Some(colon) = inner.find(':') {
-            let constraint = &inner[colon + 1..];
-            if constraint != "string" {
+            let constraint = inner[colon + 1..].to_ascii_lowercase();
+            if is_narrowing_constraint(&constraint) {
                 count += 1;
             }
         }
         remaining = &remaining[start + end + 1..];
     }
     count
+}
+
+/// Counts `{param}` tokens in `pattern`, used to sort static routes before
+/// parameterized ones. Cached in `StoredRoute` to avoid re-scanning on every
+/// sort during `match_route`.
+fn param_count(pattern: &str) -> usize {
+    pattern.matches('{').count()
 }
 
 pub struct RouteStore {
@@ -92,11 +109,13 @@ impl RouteStore {
         }
 
         let specificity = constraint_specificity(&pattern);
+        let params = param_count(&pattern);
         verb_map.insert(
             lookup_key,
             StoredRoute {
                 definition: def.clone(),
                 compiled_regex: compiled,
+                param_count: params,
                 constraint_specificity: specificity,
                 normalized_pattern: pattern,
             },
@@ -141,9 +160,9 @@ impl RouteStore {
             // specific constraints (e.g. :int) before catch-all ones (e.g. :string);
             // then longer patterns before shorter.
             entries.sort_unstable_by(|a, b| {
-                let a_params = a.value().normalized_pattern.matches('{').count();
-                let b_params = b.value().normalized_pattern.matches('{').count();
-                a_params.cmp(&b_params)
+                a.value()
+                    .param_count
+                    .cmp(&b.value().param_count)
                     .then_with(|| {
                         b.value()
                             .constraint_specificity
