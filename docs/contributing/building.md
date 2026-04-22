@@ -35,6 +35,8 @@ docker run -p 8080:8080 -p 9090:9090 bamboozle
 
 The Dockerfile in `bamboozle/` uses a multi-stage build. The final image is based on `debian:bookworm-slim` and contains only the compiled binary.
 
+A Docker Compose file for local development is also available in `./scripts/`, with pre-configured routes and environment variables.
+
 ## OpenAPI / Scalar UI
 
 While the server is running, open `http://localhost:9090/` for the interactive Scalar UI. The raw OpenAPI JSON is at `http://localhost:9090/api-docs/openapi.json`.

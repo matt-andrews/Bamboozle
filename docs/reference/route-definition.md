@@ -49,14 +49,14 @@ Available in `content`, `contentFile`, `status`, response `headers`, and `setSta
 
 | Variable | Type | Value |
 |---|---|---|
-| `routeValues.key` | string | Captured route parameter |
-| `queryParams.key` | string | Query string parameter |
-| `headers.key` | string | Request header (case-insensitive key) |
-| `body.key` | any | Top-level JSON body field |
-| `bodyRaw` | string | Raw request body |
-| `state` | string | Result of `setState` from the previous matched request |
-| `previousContext` | object | Full context snapshot of the previous matched request |
-| `previousContext.state` | string | State from the request before that |
+| `{{ routeValues.key }}` | string | Captured route parameter |
+| `{{ queryParams.key }}` | string | Query string parameter |
+| `{{ headers.key }}` | string | Request header (case-insensitive key) |
+| `{{ body.key }}` | any | Top-level JSON body field |
+| `{{ bodyRaw }}` | string | Raw request body |
+| `{{ state }}` | string | Result of `setState` from the previous matched request |
+| `{{ previousContext }}` | object | Full context snapshot of the previous matched request |
+| `{{ previousContext.state }}` | string | State from the request before that |
 
 ## `SimulationConfig`
 

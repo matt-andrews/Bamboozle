@@ -9,7 +9,7 @@
 
 </div>
 
-Bamboozle is a container-native HTTP mock server for integration testing. It runs as a self-contained Docker image your tests talk to over real HTTP — no in-process mocking, no monkey-patching, no SDK dependency in production code.
+Bamboozle is a container-native HTTP mock server for integration testing. It runs as a self-contained Docker image so that your tests talk to over real HTTP, and you can assert with confidence that your application is making the expected HTTP requests.
 
 ```bash
 docker run -p 8080:8080 -p 9090:9090 mattisthegreatest/bamboozle
@@ -17,13 +17,16 @@ docker run -p 8080:8080 -p 9090:9090 mattisthegreatest/bamboozle
 
 Your system under test calls `:8080`. Your test code configures and asserts via `:9090`.
 
+> [!CAUTION]
+> DO NOT use this in any uncontrolled or production environment! This is 100% not safe in any way shape or form against the internet. For testing purposes only! You have been warned!
+
 ---
 
 ## Documentation
 
 | | |
 |---|---|
-| **[Tutorial — your first mock](docs/tutorials/first-mock.md)** | Start here. Register a route, call it, assert it was called. |
+| **[Tutorial: your first mock](docs/tutorials/first-mock.md)** | Start here. Register a route, call it, assert it was called. |
 | **[How-to guides](docs/how-to/)** | Task-focused recipes for common testing scenarios. |
 | **[Reference](docs/reference/)** | Route schema, API endpoints, expression syntax, environment variables. |
 | **[Explanation](docs/explanation/)** | How the two-server model works, state chaining, matching priority. |
@@ -41,7 +44,9 @@ Your system under test calls `:8080`. Your test code configures and asserts via 
 
 ## SDKs
 
-[`@bamboozle/sdk`](sdks/README.md) — TypeScript/JavaScript client for the control API.
+| Download | Code | Notes |
+| - | - | - |
+| | [`Node`](sdks/npm/README.md) | TypeScript/JavaScript client for the control API *(WIP)* |
 
 ---
 

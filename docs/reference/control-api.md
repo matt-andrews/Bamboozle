@@ -106,7 +106,7 @@ Request body (optional):
 { "expression": "body(\"userId\") == \"abc123\"" }
 ```
 
-When an expression is provided, count qualifiers apply to the filtered set. When no count qualifier is given with an expression, at least one matching call must exist.
+When an expression is provided, count qualifiers apply to the filtered set. When no count qualifier is given with an expression, at least one matching call must exist. When neither a count qualifier nor an expression is provided, the assertion always passes.
 
 | Response | Meaning |
 |---|---|

@@ -51,7 +51,7 @@ docker run \
   -e OTEL_EXPORTER_OTLP_ENDPOINT=https://otlp-gateway-<zone>.grafana.net/otlp \
   -e 'OTEL_EXPORTER_OTLP_HEADERS=Authorization=Basic <base64-token>' \
   -p 8080:8080 -p 9090:9090 \
-  mattisthegreatests/bamboozle
+  mattisthegreatest/bamboozle
 ```
 
 **New Relic**
