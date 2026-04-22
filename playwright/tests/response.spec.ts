@@ -96,6 +96,67 @@ test.describe('request body loopback should match original', () => {
     }
 });
 
+test.describe('route matching', () => {
+    let deleteState: MatchKey[] = [];
+    test.afterEach(async () => {
+        for (let key of deleteState) {
+            try {
+                await bamboozleClient.clearCalls(key.verb, key.pattern);
+                await bamboozleClient.deleteRoute(key.verb, key.pattern);
+            }
+            catch { }
+        }
+        deleteState = [];
+    });
+    test('route matching with strongly typed route params int with string val', async ({ request }) => {
+        const key1: MatchKey = { verb: 'GET', pattern: 'playwright/route/matching/strong/typed/params/int/on/string/val/{param1:int}' };
+        deleteState.push(key1);
+        await bamboozleClient.addRoute({
+            match: key1,
+            response: {
+                status: "200",
+                headers: {
+                },
+                content: "{{routeValues.param1}}"
+            }
+        });
+        const response1 = await request.get('http://localhost:18080/playwright/route/matching/strong/typed/params/int/on/string/val/24');
+        const response2 = await request.get('http://localhost:18080/playwright/route/matching/strong/typed/params/int/on/string/val/twentyfour');
+
+        expect(await response1.text()).toBe("24");
+        expect(response2.status()).toBe(404);
+    });
+    test('route matching with strongly typed route params int vs string', async ({ request }) => {
+        const key1: MatchKey = { verb: 'GET', pattern: 'playwright/route/matching/strong/typed/params/int/vs/string/{param1:int}' };
+        deleteState.push(key1);
+        await bamboozleClient.addRoute({
+            match: key1,
+            response: {
+                status: "200",
+                headers: {
+                },
+                content: "int: {{routeValues.param1}}"
+            }
+        });
+        const key2: MatchKey = { verb: 'GET', pattern: 'playwright/route/matching/strong/typed/params/int/vs/string/{param1:string}' };
+        deleteState.push(key2);
+        await bamboozleClient.addRoute({
+            match: key2,
+            response: {
+                status: "200",
+                headers: {
+                },
+                content: "string: {{routeValues.param1}}"
+            }
+        });
+        const response1 = await request.get('http://localhost:18080/playwright/route/matching/strong/typed/params/int/vs/string/24');
+        const response2 = await request.get('http://localhost:18080/playwright/route/matching/strong/typed/params/int/vs/string/twentyfour');
+
+        expect(await response1.text()).toBe("int: 24");
+        expect(await response2.text()).toBe("string: twentyfour");
+    });
+})
+
 async function reqFactory(verb: string, location: string, request: APIRequestContext, body: any = {}) {
     if (verb === 'GET') {
         return await request.get(location);
