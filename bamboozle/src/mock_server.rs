@@ -101,7 +101,7 @@ async fn catch_all(
                 }
             }
 
-            build_response(&route_def, &ctx, &state.renderer)
+            build_response(&route_def, &ctx, &state.renderer).await
         }
     }
 }
@@ -174,7 +174,7 @@ fn fault_response(kind: &FaultKind) -> Response {
     }
 }
 
-fn build_response(
+async fn build_response(
     route_def: &RouteDefinition,
     ctx: &ContextModel,
     renderer: &Renderer,
@@ -183,14 +183,32 @@ fn build_response(
     let status_code: u16 = status_str.trim().parse().unwrap_or(200);
 
     let body = if route_def.response.loopback {
-        ctx.body_raw.clone()
+        Body::from(ctx.body_raw.clone())
+    } else if let Some(path) = &route_def.response.binary_file {
+        match tokio::fs::File::open(path).await {
+            Ok(file) => Body::from_stream(tokio_util::io::ReaderStream::new(file)),
+            Err(e) => {
+                tracing::error!(path = %path, error = %e, "Failed to open binary file");
+                return StatusCode::INTERNAL_SERVER_ERROR.into_response();
+            }
+        }
+    } else if let Some(path) = &route_def.response.content_file {
+        match tokio::fs::read_to_string(path).await {
+            Ok(text) => Body::from(renderer.render_or_fallback(&text, ctx, "")),
+            Err(e) => {
+                tracing::error!(path = %path, error = %e, "Failed to read content file");
+                return StatusCode::INTERNAL_SERVER_ERROR.into_response();
+            }
+        }
     } else {
-        route_def
-            .response
-            .content
-            .as_deref()
-            .map(|t| renderer.render_or_fallback(t, ctx, ""))
-            .unwrap_or_default()
+        Body::from(
+            route_def
+                .response
+                .content
+                .as_deref()
+                .map(|t| renderer.render_or_fallback(t, ctx, ""))
+                .unwrap_or_default(),
+        )
     };
 
     let mut builder = Response::builder().status(status_code);
@@ -200,7 +218,7 @@ fn build_response(
     }
 
     builder
-        .body(Body::from(body))
+        .body(body)
         .unwrap_or_else(|_| StatusCode::INTERNAL_SERVER_ERROR.into_response())
 }
 
@@ -766,5 +784,131 @@ mod tests {
                 .unwrap();
             assert_eq!(body_string(response.into_body()).await, "");
         }
+    }
+
+    #[tokio::test]
+    async fn content_file_serves_rendered_template() {
+        let dir = std::env::temp_dir();
+        let file_path = dir.join("bamboozle_test_content_file.txt");
+        std::fs::write(&file_path, "Hello {{ routeValues.name }}!").unwrap();
+
+        let state = AppState::new();
+        state
+            .store
+            .set_route(RouteDefinition {
+                match_key: MatchKey::new("GET", "/greet/{name}"),
+                set_state: None,
+                simulation: None,
+                response: ResponseDefinition {
+                    status: "200".to_string(),
+                    content_file: Some(file_path.to_string_lossy().into_owned()),
+                    ..Default::default()
+                },
+            })
+            .unwrap();
+        let response = router(state)
+            .oneshot(
+                Request::builder()
+                    .uri("/greet/World")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+        assert_eq!(body_string(response.into_body()).await, "Hello World!");
+    }
+
+    #[tokio::test]
+    async fn binary_file_serves_raw_bytes() {
+        let dir = std::env::temp_dir();
+        let file_path = dir.join("bamboozle_test_binary_file.bin");
+        let expected: Vec<u8> = vec![0x89, 0x50, 0x4E, 0x47];
+        std::fs::write(&file_path, &expected).unwrap();
+
+        let state = AppState::new();
+        state
+            .store
+            .set_route(RouteDefinition {
+                match_key: MatchKey::new("GET", "/image"),
+                set_state: None,
+                simulation: None,
+                response: ResponseDefinition {
+                    status: "200".to_string(),
+                    binary_file: Some(file_path.to_string_lossy().into_owned()),
+                    ..Default::default()
+                },
+            })
+            .unwrap();
+        let response = router(state)
+            .oneshot(
+                Request::builder()
+                    .uri("/image")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+        let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+            .await
+            .unwrap();
+        assert_eq!(bytes.as_ref(), expected.as_slice());
+    }
+
+    #[tokio::test]
+    async fn content_file_not_found_returns_500() {
+        let state = AppState::new();
+        state
+            .store
+            .set_route(RouteDefinition {
+                match_key: MatchKey::new("GET", "/missing-text"),
+                set_state: None,
+                simulation: None,
+                response: ResponseDefinition {
+                    status: "200".to_string(),
+                    content_file: Some("/nonexistent/path/file.txt".to_string()),
+                    ..Default::default()
+                },
+            })
+            .unwrap();
+        let response = router(state)
+            .oneshot(
+                Request::builder()
+                    .uri("/missing-text")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    }
+
+    #[tokio::test]
+    async fn binary_file_not_found_returns_500() {
+        let state = AppState::new();
+        state
+            .store
+            .set_route(RouteDefinition {
+                match_key: MatchKey::new("GET", "/missing-binary"),
+                set_state: None,
+                simulation: None,
+                response: ResponseDefinition {
+                    status: "200".to_string(),
+                    binary_file: Some("/nonexistent/path/file.bin".to_string()),
+                    ..Default::default()
+                },
+            })
+            .unwrap();
+        let response = router(state)
+            .oneshot(
+                Request::builder()
+                    .uri("/missing-binary")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
     }
 }
