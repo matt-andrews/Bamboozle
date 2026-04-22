@@ -101,6 +101,14 @@ jobs:
           git tag -f app/nightly HEAD
           git push origin -f app/nightly
 
+      - name: Update Docker Hub description
+        uses: peter-evans/dockerhub-description@v4
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          repository: ${{ secrets.DOCKERHUB_USERNAME }}/bamboozle
+          readme-filepath: ./DOCKER_HUB_README.md
+
       - name: Update nightly GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
