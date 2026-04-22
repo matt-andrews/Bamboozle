@@ -80,6 +80,21 @@ impl RouteStore {
     }
 
     pub fn set_route(&self, mut def: RouteDefinition) -> Result<RouteDefinition, AppError> {
+        let body_strategy_count = [
+            def.response.content.is_some(),
+            def.response.content_file.is_some(),
+            def.response.binary_file.is_some(),
+            def.response.loopback,
+        ]
+        .iter()
+        .filter(|&&x| x)
+        .count();
+        if body_strategy_count > 1 {
+            return Err(AppError::BadRequest(
+                "Only one of 'content', 'contentFile', 'binaryFile', or 'loopback' may be specified".to_string(),
+            ));
+        }
+
         let verb = def.match_key.verb.trim().to_ascii_uppercase();
         // `pattern` preserves case inside {braces} so param names match Liquid template
         // access (e.g. `{{routeValues.thingName}}`), but lowercases literal segments.
@@ -440,5 +455,109 @@ mod tests {
         let store = RouteStore::new();
         let suggestions = store.suggest_routes("GET", "/api/users");
         assert!(suggestions.is_empty());
+    }
+
+    fn make_route_with_response(verb: &str, pattern: &str, response: ResponseDefinition) -> RouteDefinition {
+        RouteDefinition {
+            match_key: MatchKey::new(verb, pattern),
+            set_state: None,
+            simulation: None,
+            response,
+        }
+    }
+
+    #[test]
+    fn single_content_is_accepted() {
+        let store = RouteStore::new();
+        let result = store.set_route(make_route_with_response("GET", "/a", ResponseDefinition {
+            content: Some("hello".to_string()),
+            ..Default::default()
+        }));
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn single_content_file_is_accepted() {
+        let store = RouteStore::new();
+        let result = store.set_route(make_route_with_response("GET", "/b", ResponseDefinition {
+            content_file: Some("/some/file.txt".to_string()),
+            ..Default::default()
+        }));
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn single_binary_file_is_accepted() {
+        let store = RouteStore::new();
+        let result = store.set_route(make_route_with_response("GET", "/c", ResponseDefinition {
+            binary_file: Some("/some/file.bin".to_string()),
+            ..Default::default()
+        }));
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn single_loopback_is_accepted() {
+        let store = RouteStore::new();
+        let result = store.set_route(make_route_with_response("GET", "/d", ResponseDefinition {
+            loopback: true,
+            ..Default::default()
+        }));
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn content_and_content_file_together_is_rejected() {
+        let store = RouteStore::new();
+        let err = store.set_route(make_route_with_response("GET", "/e", ResponseDefinition {
+            content: Some("hello".to_string()),
+            content_file: Some("/some/file.txt".to_string()),
+            ..Default::default()
+        })).unwrap_err();
+        assert!(matches!(err, AppError::BadRequest(_)));
+    }
+
+    #[test]
+    fn content_and_binary_file_together_is_rejected() {
+        let store = RouteStore::new();
+        let err = store.set_route(make_route_with_response("GET", "/f", ResponseDefinition {
+            content: Some("hello".to_string()),
+            binary_file: Some("/some/file.bin".to_string()),
+            ..Default::default()
+        })).unwrap_err();
+        assert!(matches!(err, AppError::BadRequest(_)));
+    }
+
+    #[test]
+    fn content_file_and_binary_file_together_is_rejected() {
+        let store = RouteStore::new();
+        let err = store.set_route(make_route_with_response("GET", "/g", ResponseDefinition {
+            content_file: Some("/some/file.txt".to_string()),
+            binary_file: Some("/some/file.bin".to_string()),
+            ..Default::default()
+        })).unwrap_err();
+        assert!(matches!(err, AppError::BadRequest(_)));
+    }
+
+    #[test]
+    fn loopback_and_content_together_is_rejected() {
+        let store = RouteStore::new();
+        let err = store.set_route(make_route_with_response("GET", "/h", ResponseDefinition {
+            loopback: true,
+            content: Some("hello".to_string()),
+            ..Default::default()
+        })).unwrap_err();
+        assert!(matches!(err, AppError::BadRequest(_)));
+    }
+
+    #[test]
+    fn loopback_and_content_file_together_is_rejected() {
+        let store = RouteStore::new();
+        let err = store.set_route(make_route_with_response("GET", "/i", ResponseDefinition {
+            loopback: true,
+            content_file: Some("/some/file.txt".to_string()),
+            ..Default::default()
+        })).unwrap_err();
+        assert!(matches!(err, AppError::BadRequest(_)));
     }
 }
