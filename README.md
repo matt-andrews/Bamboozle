@@ -46,7 +46,8 @@ Your system under test calls `:8080`. Your test code configures and asserts via 
 
 | Download | Code | Notes |
 | - | - | - |
-| | [`Node`](sdks/npm/README.md) | TypeScript/JavaScript client for the control API *(WIP)* |
+| `npm install @matt-andrews/bamboozle-sdk` | [`Node`](sdks/npm/README.md) | TypeScript/JavaScript client for the control API |
+| `dotnet add package Bamboozle.Core` | [`dotnet`](sdks/dotnet/Bamboozle/) | dotnet client for the control API |
 
 ---
 
