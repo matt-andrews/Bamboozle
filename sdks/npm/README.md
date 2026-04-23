@@ -5,7 +5,7 @@
 Typed client for the Bamboozle control API. Works in Node.js 18+ and any runtime with the `fetch` API.
 
 ```bash
-npm install @bamboozle/sdk
+npm install @matt-andrews/bamboozle-sdk
 ```
 
 ```typescript

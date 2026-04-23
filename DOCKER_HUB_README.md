@@ -63,9 +63,10 @@ See the **[Tutorial: your first mock](https://github.com/matt-andrews/Bamboozle/
 
 ## SDKs
 
-| Language | Notes |
-|----------|-------|
-| [Node.js / TypeScript](https://github.com/matt-andrews/Bamboozle/blob/main/sdks/npm/README.md) | TypeScript/JavaScript client for the control API *(WIP)* |
+| Download | Notes |
+| - | - |
+| `npm install @matt-andrews/bamboozle-sdk` | TypeScript/JavaScript client for the control API |
+| `dotnet add package Bamboozle.Core` | dotnet client for the control API |
 
 ---
 
