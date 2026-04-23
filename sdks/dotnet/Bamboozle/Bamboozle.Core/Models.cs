@@ -50,19 +50,44 @@ public record SimulationConfig
     public FaultConfig? Fault { get; set; }
 }
 
-public record DelayConfig
+[JsonPolymorphic(TypeDiscriminatorPropertyName = "type")]
+[JsonDerivedType(typeof(FixedDelayConfig), "fixed")]
+[JsonDerivedType(typeof(RandomDelayConfig), "random")]
+[JsonDerivedType(typeof(GaussianDelayConfig), "gaussian")]
+public abstract record DelayConfig;
+public sealed record FixedDelayConfig : DelayConfig
 {
-    public long Fixed { get; set; }
-    public RandomRange Random { get; set; } = new(0, 0);
-    public GaussianRange Gaussian { get; set; } = new(0, 0);
-    public record RandomRange(long MinMs, long MaxMs);
-    public record GaussianRange(float MeanMs, float StdDevMs);
+    [JsonPropertyName("ms")]
+    public long Ms { get; set; }
+}
+public sealed record RandomDelayConfig : DelayConfig
+{
+    [JsonPropertyName("minMs")]
+    public long MinMs { get; set; }
+    [JsonPropertyName("maxMs")]
+    public long MaxMs { get; set; }
+}
+public sealed record GaussianDelayConfig : DelayConfig
+{
+    [JsonPropertyName("meanMs")]
+    public float MeanMs { get; set; }
+    [JsonPropertyName("stdDevMs")]
+    public float StdDevMs { get; set; }
+}
+
+public class CamelCaseEnumConverter : JsonStringEnumConverter
+{
+    public CamelCaseEnumConverter() : base(JsonNamingPolicy.CamelCase) {}
 }
 
 public record FaultConfig
 {
+    [JsonPropertyName("type")]
     public FaultKind Type { get; set; }
+    [JsonPropertyName("probability")]
     public float Probability { get; set; }
+
+    [JsonConverter(typeof(CamelCaseEnumConverter))]
     public enum FaultKind
     {
         ConnectionReset,

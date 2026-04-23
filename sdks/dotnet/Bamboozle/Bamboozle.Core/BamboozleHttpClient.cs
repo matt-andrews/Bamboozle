@@ -153,6 +153,8 @@ public sealed class BamboozleHttpClient(HttpClient httpClient)
 
     private static string AddRouteKey(string route, MatchKey key)
     {
-        return route.TrimEnd('/') + $"/{key.Verb}/{key.Pattern}";
+        string escapedVerb = Uri.EscapeDataString(key.Verb);
+        string escapedPattern = Uri.EscapeDataString(key.Pattern);
+        return route.TrimEnd('/') + $"/{escapedVerb}/{escapedPattern}";
     }
 }

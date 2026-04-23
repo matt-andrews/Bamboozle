@@ -146,4 +146,98 @@ public class RouteManagementTests : IClassFixture<BamboozleFixture>, IAsyncLifet
         // Bamboozle usually returns 404 or 501 for unhandled routes, assuming 404
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
+
+    [Theory]
+    [InlineData(FaultConfig.FaultKind.ConnectionReset)]
+    [InlineData(FaultConfig.FaultKind.EmptyResponse)]
+    public async Task CreateRoute_WithFaultConfig_ShouldSerializeAndReturnCorrectly(FaultConfig.FaultKind faultKind)
+    {
+        var match = new MatchKey("GET", $"test-fault-{faultKind}");
+        var routeDef = new RouteDefinition
+        {
+            Match = match,
+            Response = new ResponseDefinition
+            {
+                Status = "200"
+            },
+            Simulation = new SimulationConfig
+            {
+                Fault = new FaultConfig
+                {
+                    Type = faultKind,
+                    Probability = 1.0f
+                }
+            }
+        };
+
+        var created = await _fixture.Bamboozle.CreateRoute(routeDef);
+
+        Assert.NotNull(created);
+        Assert.NotNull(created.Simulation);
+        Assert.NotNull(created.Simulation.Fault);
+        Assert.Equal(faultKind, created.Simulation.Fault.Type);
+        Assert.Equal(1.0f, created.Simulation.Fault.Probability);
+    }
+
+    [Fact]
+    public async Task CreateRoute_WithFixedDelayConfig_ShouldSerializeAndReturnCorrectly()
+    {
+        var routeDef = new RouteDefinition
+        {
+            Match = new MatchKey("GET", "test-delay-fixed"),
+            Response = new ResponseDefinition { Status = "200" },
+            Simulation = new SimulationConfig
+            {
+                Delay = new FixedDelayConfig { Ms = 100 }
+            }
+        };
+
+        var created = await _fixture.Bamboozle.CreateRoute(routeDef);
+
+        Assert.NotNull(created?.Simulation?.Delay);
+        var delay = Assert.IsType<FixedDelayConfig>(created.Simulation.Delay);
+        Assert.Equal(100, delay.Ms);
+    }
+
+    [Fact]
+    public async Task CreateRoute_WithRandomDelayConfig_ShouldSerializeAndReturnCorrectly()
+    {
+        var routeDef = new RouteDefinition
+        {
+            Match = new MatchKey("GET", "test-delay-random"),
+            Response = new ResponseDefinition { Status = "200" },
+            Simulation = new SimulationConfig
+            {
+                Delay = new RandomDelayConfig { MinMs = 50, MaxMs = 150 }
+            }
+        };
+
+        var created = await _fixture.Bamboozle.CreateRoute(routeDef);
+
+        Assert.NotNull(created?.Simulation?.Delay);
+        var delay = Assert.IsType<RandomDelayConfig>(created.Simulation.Delay);
+        Assert.Equal(50, delay.MinMs);
+        Assert.Equal(150, delay.MaxMs);
+    }
+
+    [Fact]
+    public async Task CreateRoute_WithGaussianDelayConfig_ShouldSerializeAndReturnCorrectly()
+    {
+        var routeDef = new RouteDefinition
+        {
+            Match = new MatchKey("GET", "test-delay-gaussian"),
+            Response = new ResponseDefinition { Status = "200" },
+            Simulation = new SimulationConfig
+            {
+                Delay = new GaussianDelayConfig { MeanMs = 100.5f, StdDevMs = 10.2f }
+            }
+        };
+
+        var created = await _fixture.Bamboozle.CreateRoute(routeDef);
+
+        Assert.NotNull(created?.Simulation?.Delay);
+        var delay = Assert.IsType<GaussianDelayConfig>(created.Simulation.Delay);
+        Assert.Equal(100.5f, delay.MeanMs);
+        Assert.Equal(10.2f, delay.StdDevMs);
+    }
 }
