@@ -4,7 +4,7 @@
 
   [![Startup Time](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/matt-andrews/Bamboozle/badges/badge-startup.json?v=1&cacheSeconds=3600&style=for-the-badge)](https://github.com/matt-andrews/Bamboozle/actions/workflows/startup-time.yml)
   [![Docker Image Size](https://img.shields.io/docker/image-size/mattisthegreatest/bamboozle?style=for-the-badge)](https://hub.docker.com/r/mattisthegreatest/bamboozle)
-  ![Docker Image Version](https://img.shields.io/docker/v/mattisthegreatest/bamboozle?style=for-the-badge)
+  ![Docker Image Version](https://img.shields.io/docker/v/mattisthegreatest/bamboozle?style=for-the-badge&sort=semver)
   ![GitHub License](https://img.shields.io/github/license/matt-andrews/Bamboozle?style=for-the-badge)
 
 </div>
@@ -46,7 +46,8 @@ Your system under test calls `:8080`. Your test code configures and asserts via 
 
 | Download | Code | Notes |
 | - | - | - |
-| | [`Node`](sdks/npm/README.md) | TypeScript/JavaScript client for the control API *(WIP)* |
+| `npm install @matt-andrews/bamboozle-sdk` | [`Node`](sdks/npm/README.md) | TypeScript/JavaScript client for the control API |
+| `dotnet add package Bamboozle.Core` | [`dotnet`](sdks/dotnet/Bamboozle/) | dotnet client for the control API |
 
 ---
 
