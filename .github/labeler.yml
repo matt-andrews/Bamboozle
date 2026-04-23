@@ -1,11 +1,15 @@
 app:
   - changed-files:
-    - any-glob-to-any-file: 'bamboozle/**'
+      - any-glob-to-any-file: "bamboozle/**"
 
 github_actions:
   - changed-files:
-    - any-glob-to-any-file: '.github/**'
+      - any-glob-to-any-file: ".github/**"
 
 sdks:
   - changed-files:
-    - any-glob-to-any-file: 'sdks/**'
+      - any-glob-to-any-file: "sdks/**"
+
+dotnet:
+  - changed-files:
+      - any-glob-to-any-file: "sdks/dotnet/**"

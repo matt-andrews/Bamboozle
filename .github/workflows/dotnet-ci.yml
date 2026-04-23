@@ -4,7 +4,7 @@ on:
   pull_request:
     types: [opened, synchronize]
     paths:
-      - "./sdks/dotnet"
+      - "./sdks/dotnet/*"
   workflow_call:
 
 env:
