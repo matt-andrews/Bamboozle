@@ -3,7 +3,7 @@ name: DOTNET Release
 on:
   push:
     tags:
-      - 'sdks/dotnet/v*.*.*'
+      - "sdks/dotnet/v*.*.*"
 
 jobs:
   ci:
@@ -12,6 +12,9 @@ jobs:
   publish:
     needs: ci
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
 
     steps:
       - uses: actions/checkout@v6
@@ -19,7 +22,7 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v5
         with:
-          dotnet-version: '10.x'
+          dotnet-version: "10.x"
 
       - name: Extract Version
         id: extract_version
@@ -28,8 +31,20 @@ jobs:
           VERSION="${TAG#sdks/dotnet/v}"
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
-      - name: Build and Pack
-        run: dotnet pack ./sdks/dotnet/Bamboozle/Bamboozle.Core/Bamboozle.Core.csproj --configuration Release -p:PackageVersion=${{ steps.extract_version.outputs.version }}
+      - name: Build & pack
+        run: |
+          dotnet pack ./sdks/dotnet/Bamboozle/Bamboozle.Core/Bamboozle.Core.csproj \
+            --configuration Release \
+            -p:PackageVersion=${{ steps.extract_version.outputs.version }}
 
-      - name: Publish to NuGet
-        run: dotnet nuget push ./sdks/dotnet/Bamboozle/Bamboozle.Core/bin/Release/*.nupkg --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json
+      - name: NuGet login
+        uses: NuGet/login@v1
+        id: nuget-login
+        with:
+          user: ${{ vars.NUGET_USERNAME }}
+
+      - name: Push to NuGet.org
+        run: |
+          dotnet nuget push ./sdks/dotnet/Bamboozle/Bamboozle.Core/bin/Release/*.nupkg \
+            --source https://api.nuget.org/v3/index.json \
+            --api-key ${{ steps.nuget-login.outputs.NUGET_API_KEY }}
