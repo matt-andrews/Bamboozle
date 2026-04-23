@@ -13,3 +13,7 @@ sdks:
 dotnet:
   - changed-files:
       - any-glob-to-any-file: "sdks/dotnet/**"
+
+npm:
+  - changed-files:
+      - any-glob-to-any-file: "sdks/npm/**"

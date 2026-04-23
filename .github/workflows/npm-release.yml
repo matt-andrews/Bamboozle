@@ -1,0 +1,37 @@
+name: NPM Release
+
+on:
+  push:
+    tags:
+      - "sdks/npm/v*"
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18.x"
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install dependencies
+        working-directory: ./sdks/npm
+        run: npm ci
+
+      - name: Run tests
+        working-directory: ./sdks/npm
+        run: npm run test
+
+      - name: Publish to NPM
+        working-directory: ./sdks/npm
+        # Note: npm run build is triggered automatically by the prepublishOnly script
+        run: npm publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
