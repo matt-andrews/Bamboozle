@@ -1,0 +1,30 @@
+name: DOTNET CI
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+    paths:
+      - "./sdks/dotnet"
+  workflow_call:
+
+env:
+  DOTNET_VERSION: "10.x"
+
+jobs:
+  dotnet-unit-test:
+    name: Build & Test dotnet
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: ${{env.DOTNET_VERSION}}
+
+      - name: Run Bamboozle Docker
+        run: bash ./scripts/dev.sh
+
+      - name: Test
+        run: dotnet test ./sdks/dotnet/Bamboozle/Bamboozle.slnx --configuration Release --logger "GitHubActions"
