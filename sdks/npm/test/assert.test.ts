@@ -1,12 +1,12 @@
 import { expect, test } from 'vitest';
-import { BamboozleAssertBuilder, Operator } from '../src/assert.js';
+import { BamboozleAssertBuilder } from '../src/assert.js';
 
 test('BamboozleAssertBuilder constructs correct expressions', () => {
     const builder = new BamboozleAssertBuilder();
-    
+
     builder.with(ctx => ctx.query.id.equals(42))
-           .and()
-           .with(ctx => ctx.header.authorization.startsWith('Bearer'));
+        .and()
+        .with(ctx => ctx.header.authorization.startsWith('Bearer'));
 
     const expression = builder.build();
 
