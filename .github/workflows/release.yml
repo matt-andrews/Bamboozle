@@ -3,7 +3,7 @@ name: Release
 on:
   push:
     tags:
-      - 'app/v*'
+      - "app/v*"
 
 jobs:
   ci:
@@ -54,12 +54,3 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
           repository: ${{ secrets.DOCKERHUB_USERNAME }}/bamboozle
           readme-filepath: ./DOCKER_HUB_README.md
-
-      - name: Create GitHub Release
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          gh release create "${{ github.ref_name }}" \
-            --title "Release ${{ steps.version.outputs.version }}" \
-            --generate-notes \
-            --verify-tag
