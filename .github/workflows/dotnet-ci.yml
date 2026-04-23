@@ -24,7 +24,7 @@ jobs:
           dotnet-version: ${{env.DOTNET_VERSION}}
 
       - name: Run Bamboozle Docker
-        run: bash ./scripts/dev.sh
+        run: docker compose -f ./scripts/docker-compose.dev.yml up -d
 
       - name: Test
         run: dotnet test ./sdks/dotnet/Bamboozle/Bamboozle.slnx --configuration Release --logger "GitHubActions"
