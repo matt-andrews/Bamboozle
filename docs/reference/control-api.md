@@ -111,7 +111,7 @@ When an expression is provided, count qualifiers apply to the filtered set. When
 | Response | Meaning |
 |---|---|
 | `200 OK` | Assertion passes |
-| `418 I'm a Teapot` | Assertion fails |
+| `406 Not Acceptable` | Assertion fails |
 | `400 Bad Request` | Expression is invalid |
 
 ---
