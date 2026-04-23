@@ -22,7 +22,7 @@ use crate::{
     path = "/control/routes",
     request_body = RouteDefinition,
     responses(
-        (status = 200, description = "Route created", body = RouteDefinition),
+        (status = 201, description = "Route created", body = RouteDefinition),
         (status = 409, description = "Route already exists"),
     ),
     tag = "Routes"
@@ -30,9 +30,9 @@ use crate::{
 pub async fn post_routes(
     State(state): State<AppState>,
     Json(route): Json<RouteDefinition>,
-) -> Result<Json<RouteDefinition>, AppError> {
+) -> Result<(StatusCode, Json<RouteDefinition>), AppError> {
     let response = state.store.set_route(route)?;
-    Ok(Json(response))
+    Ok((StatusCode::CREATED, Json(response)))
 }
 
 // ── PUT /control/routes ─────────────────────────────────────────────────────
@@ -42,18 +42,18 @@ pub async fn post_routes(
     path = "/control/routes",
     request_body = RouteDefinition,
     responses(
-        (status = 200, description = "Route upserted", body = RouteDefinition),
+        (status = 201, description = "Route upserted", body = RouteDefinition),
     ),
     tag = "Routes"
 )]
 pub async fn put_routes(
     State(state): State<AppState>,
     Json(route): Json<RouteDefinition>,
-) -> Result<Json<RouteDefinition>, AppError> {
+) -> Result<(StatusCode, Json<RouteDefinition>), AppError> {
     // Ignore NotFound — PUT is idempotent. delete_route normalizes internally.
     let _ = state.store.delete_route(&route.match_key);
     let response = state.store.set_route(route)?;
-    Ok(Json(response))
+    Ok((StatusCode::CREATED, Json(response)))
 }
 
 // ── DELETE /control/routes/:verb/:pattern ────────────────────────────────────
@@ -66,7 +66,7 @@ pub async fn put_routes(
         ("pattern" = String, Path, description = "Route pattern — URL-encode slashes as %2F (e.g. api%2Fusers%2F%7Bid%7D)"),
     ),
     responses(
-        (status = 200, description = "Route deleted"),
+        (status = 204, description = "Route deleted"),
         (status = 404, description = "Route not found"),
     ),
     tag = "Routes"
@@ -76,7 +76,7 @@ pub async fn delete_route(
     Path((verb, pattern)): Path<(String, String)>,
 ) -> Result<StatusCode, AppError> {
     state.store.delete_route(&MatchKey::new(verb, pattern))?;
-    Ok(StatusCode::OK)
+    Ok(StatusCode::NO_CONTENT)
 }
 
 // ── GET /control/routes ──────────────────────────────────────────────────────
@@ -127,7 +127,7 @@ pub async fn get_route_calls(
         ("pattern" = String, Path, description = "Route pattern (URL-encode slashes as %2F)"),
     ),
     responses(
-        (status = 200, description = "Call history cleared"),
+        (status = 204, description = "Call history cleared"),
     ),
     tag = "Calls"
 )]
@@ -138,7 +138,7 @@ pub async fn delete_route_calls(
     state
         .tracker
         .delete_calls_for_route(&MatchKey::new(verb, pattern));
-    StatusCode::OK
+    StatusCode::NO_CONTENT
 }
 
 // ── POST /control/routes/:verb/:pattern/assert ────────────────────────────────
@@ -312,14 +312,14 @@ pub async fn get_unmatched(State(state): State<AppState>) -> impl IntoResponse {
     post,
     path = "/control/reset",
     responses(
-        (status = 200, description = "All routes and call history cleared"),
+        (status = 204, description = "All routes and call history cleared"),
     ),
     tag = "Control"
 )]
 pub async fn reset(State(state): State<AppState>) -> StatusCode {
     state.store.reset();
     state.tracker.reset();
-    StatusCode::OK
+    StatusCode::NO_CONTENT
 }
 
 // ── GET /control/health ──────────────────────────────────────────────────────
