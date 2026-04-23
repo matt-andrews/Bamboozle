@@ -1,16 +1,26 @@
-﻿using System.Text.Json;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace Bamboozle.Core;
 
+
 public record ContextModel
 {
+    [JsonPropertyName("queryParams")]
     public Dictionary<string, string> QueryParams { get; set; } = [];
+    [JsonPropertyName("headers")]
     public Dictionary<string, string> Headers { get; set; } = [];
+    [JsonPropertyName("routeValues")]
     public Dictionary<string, string> RouteValues { get; set; } = [];
+    [JsonPropertyName("routeModel")]
     public required RouteDefinition RouteDefinition { get; set; }
+    [JsonPropertyName("body")]
     public JsonElement Body { get; set; }
+    [JsonPropertyName("bodyRaw")]
     public string BodyRaw { get; set; } = string.Empty;
+    [JsonPropertyName("state")]
     public string State { get; set; } = string.Empty;
+    [JsonPropertyName("previousContext")]
     public ContextModel? PreviousContext { get; set; }
 }
 

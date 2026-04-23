@@ -62,7 +62,7 @@ public sealed class BamboozleHttpClient(HttpClient httpClient)
             List<string> result = [];
             if (NeverCalled)
             {
-                result.Add("never_called=" + NeverCalled);
+                result.Add("never_called=true");
             }
             if (CalledExactly.HasValue)
             {
@@ -111,9 +111,9 @@ public sealed class BamboozleHttpClient(HttpClient httpClient)
         return true;
     }
 
-    public async Task<MatchKey[]> GetUnmatched(MatchKey key, CancellationToken cancellationToken = default)
+    public async Task<MatchKey[]> GetUnmatched(CancellationToken cancellationToken = default)
     {
-        using HttpRequestMessage req = new(HttpMethod.Get, AddRouteKey("/control/unmatched", key));
+        using HttpRequestMessage req = new(HttpMethod.Get, "/control/unmatched");
         return await SendAsync<MatchKey[]>(req, cancellationToken) ?? [];
     }
 

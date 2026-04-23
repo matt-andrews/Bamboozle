@@ -1,0 +1,149 @@
+using System.Net;
+using Bamboozle.Core;
+
+namespace Bamboozle.Tests;
+
+[Collection("Bamboozle")]
+public class RouteManagementTests : IClassFixture<BamboozleFixture>, IAsyncLifetime
+{
+    private readonly BamboozleFixture _fixture;
+
+    public RouteManagementTests(BamboozleFixture fixture)
+    {
+        _fixture = fixture;
+    }
+
+    public async Task InitializeAsync()
+    {
+        await _fixture.Bamboozle.Reset();
+    }
+
+    public Task DisposeAsync()
+    {
+        return Task.CompletedTask;
+    }
+
+    [Fact]
+    public async Task Health_ShouldReturnTrue()
+    {
+        bool result = await _fixture.Bamboozle.Health();
+        Assert.True(result);
+    }
+
+    [Fact]
+    public async Task Version_ShouldReturnVersionString()
+    {
+        string version = await _fixture.Bamboozle.Version();
+        Assert.False(string.IsNullOrWhiteSpace(version));
+    }
+
+    [Fact]
+    public async Task CreateRoute_ShouldRegisterAndReturnRoute()
+    {
+        var routeDef = new RouteDefinition
+        {
+            Match = new MatchKey("GET", "test-route-1"),
+            Response = new ResponseDefinition
+            {
+                Status = "200",
+                Content = "Hello World"
+            }
+        };
+
+        var created = await _fixture.Bamboozle.CreateRoute(routeDef);
+
+        Assert.NotNull(created);
+        Assert.Equal("GET", created.Match.Verb);
+        Assert.Equal("test-route-1", created.Match.Pattern);
+        Assert.Equal("200", created.Response.Status);
+        Assert.Equal("Hello World", created.Response.Content);
+        
+        // Verify mock endpoint works
+        var response = await _fixture.MockClient.GetAsync("/test-route-1");
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        string content = await response.Content.ReadAsStringAsync();
+        Assert.Equal("Hello World", content);
+    }
+
+    [Fact]
+    public async Task GetRoutes_ShouldListConfiguredRoutes()
+    {
+        var routeDef = new RouteDefinition
+        {
+            Match = new MatchKey("GET", "test-route-2"),
+            Response = new ResponseDefinition
+            {
+                Status = "204"
+            }
+        };
+
+        await _fixture.Bamboozle.CreateRoute(routeDef);
+
+        var routes = await _fixture.Bamboozle.GetRoutes();
+        
+        Assert.NotEmpty(routes);
+        Assert.Contains(routes, r => r.Match.Verb == "GET" && r.Match.Pattern == "test-route-2");
+    }
+
+    [Fact]
+    public async Task UpdateRoute_ShouldChangeRouteConfiguration()
+    {
+        var routeDef = new RouteDefinition
+        {
+            Match = new MatchKey("POST", "test-route-3"),
+            Response = new ResponseDefinition
+            {
+                Status = "201",
+                Content = "Created"
+            }
+        };
+
+        await _fixture.Bamboozle.CreateRoute(routeDef);
+
+        // Update the route
+        routeDef.Response.Content = "Updated";
+        routeDef.Response.Status = "202";
+
+        var updated = await _fixture.Bamboozle.UpdateRoute(routeDef);
+
+        Assert.NotNull(updated);
+        Assert.Equal("Updated", updated.Response.Content);
+        Assert.Equal("202", updated.Response.Status);
+        
+        // Verify with mock endpoint
+        var response = await _fixture.MockClient.PostAsync("/test-route-3", new StringContent(""));
+        Assert.Equal(HttpStatusCode.Accepted, response.StatusCode);
+        string content = await response.Content.ReadAsStringAsync();
+        Assert.Equal("Updated", content);
+    }
+
+    [Fact]
+    public async Task DeleteRoute_ShouldRemoveRoute()
+    {
+        var match = new MatchKey("DELETE", "test-route-4");
+        var routeDef = new RouteDefinition
+        {
+            Match = match,
+            Response = new ResponseDefinition
+            {
+                Status = "200"
+            }
+        };
+
+        await _fixture.Bamboozle.CreateRoute(routeDef);
+        
+        var routesBefore = await _fixture.Bamboozle.GetRoutes();
+        Assert.Contains(routesBefore, r => r.Match == match);
+
+        bool deleted = await _fixture.Bamboozle.DeleteRoute(match);
+        Assert.True(deleted);
+
+        var routesAfter = await _fixture.Bamboozle.GetRoutes();
+        Assert.DoesNotContain(routesAfter, r => r.Match == match);
+        
+        // Verify with mock endpoint (should return 404 or unhandled)
+        var response = await _fixture.MockClient.DeleteAsync("/test-route-4");
+        // Bamboozle usually returns 404 or 501 for unhandled routes, assuming 404
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+}
