@@ -80,14 +80,25 @@ public class BamboozleAssertBuilder
             if (methodCall.Method.DeclaringType == typeof(string))
             {
                 string caller = ParseExpression(methodCall.Object!);
-                string arg = ParseExpression(methodCall.Arguments[0]);
-                return methodCall.Method.Name switch
+                bool isSupportedStringMethod =
+                   methodCall.Method.Name is nameof(string.Contains) or nameof(string.StartsWith) or nameof(string.EndsWith);
+                if (isSupportedStringMethod)
                 {
-                    nameof(string.Contains) => $"contains({caller}, {arg})",
-                    nameof(string.StartsWith) => $"starts_with({caller}, {arg})",
-                    nameof(string.EndsWith) => $"ends_with({caller}, {arg})",
-                    _ => throw new NotSupportedException($"String method {methodCall.Method.Name} is not supported.")
-                };
+                    if (methodCall.Arguments.Count != 1 || methodCall.Method.GetParameters().Length != 1)
+                    {
+                        throw new NotSupportedException(
+                            $"String method overload {methodCall.Method.Name} with {methodCall.Method.GetParameters().Length} parameter(s) is not supported. Only the single-string-argument overload is supported.");
+                    }
+                    string arg = ParseExpression(methodCall.Arguments[0]);
+                    return methodCall.Method.Name switch
+                    {
+                        nameof(string.Contains) => $"contains({caller}, {arg})",
+                        nameof(string.StartsWith) => $"starts_with({caller}, {arg})",
+                        nameof(string.EndsWith) => $"ends_with({caller}, {arg})",
+                        _ => throw new NotSupportedException($"String method {methodCall.Method.Name} is not supported.")
+                    };
+                }
+                throw new NotSupportedException($"String method {methodCall.Method.Name} is not supported.");
             }
             
             // Unhandled method call, we try to evaluate it if it doesn't depend on the parameter
@@ -141,6 +152,22 @@ public class BamboozleAssertBuilder
         if (value is null)
         {
             return "\"\"";
+        }
+        if (value is float f)
+        {
+            return f.ToString(null, System.Globalization.CultureInfo.InvariantCulture);
+        }
+        if (value is double d)
+        {
+            return d.ToString(null, System.Globalization.CultureInfo.InvariantCulture);
+        }
+        if (value is decimal m)
+        {
+            return m.ToString(null, System.Globalization.CultureInfo.InvariantCulture);
+        }
+        if (value is IFormattable formattable)
+        {
+            return formattable.ToString(null, System.Globalization.CultureInfo.InvariantCulture) ?? "\"\"";
         }
         return value.ToString() ?? "\"\"";
     }

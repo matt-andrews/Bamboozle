@@ -6,21 +6,13 @@ namespace Bamboozle.Core;
 
 public record ContextModel
 {
-    [JsonPropertyName("queryParams")]
     public Dictionary<string, string> QueryParams { get; set; } = [];
-    [JsonPropertyName("headers")]
     public Dictionary<string, string> Headers { get; set; } = [];
-    [JsonPropertyName("routeValues")]
     public Dictionary<string, string> RouteValues { get; set; } = [];
-    [JsonPropertyName("routeModel")]
-    public required RouteDefinition RouteDefinition { get; set; }
-    [JsonPropertyName("body")]
+    public required RouteDefinition RouteModel { get; set; }
     public JsonElement Body { get; set; }
-    [JsonPropertyName("bodyRaw")]
     public string BodyRaw { get; set; } = string.Empty;
-    [JsonPropertyName("state")]
     public string State { get; set; } = string.Empty;
-    [JsonPropertyName("previousContext")]
     public ContextModel? PreviousContext { get; set; }
 }
 
@@ -36,7 +28,7 @@ public record RouteDefinition
 
 public record ResponseDefinition
 {
-    public required string Status { get; set; }
+    public string Status { get; set; } = "200";
     public Dictionary<string, string> Headers { get; set; } = [];
     public string? Content { get; set; }
     public string? ContentFile { get; set; }

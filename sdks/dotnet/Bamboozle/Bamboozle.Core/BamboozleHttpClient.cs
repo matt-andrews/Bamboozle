@@ -24,11 +24,10 @@ public sealed class BamboozleHttpClient(HttpClient httpClient)
         return await SendAsync<RouteDefinition>(req, cancellationToken);
     }
 
-    public async Task<bool> DeleteRoute(MatchKey key, CancellationToken cancellationToken = default)
+    public async Task DeleteRoute(MatchKey key, CancellationToken cancellationToken = default)
     {
         using HttpRequestMessage req = new(HttpMethod.Delete, AddRouteKey("/control/routes", key));
         await SendAsync(req, cancellationToken);
-        return true;
     }
 
     public async Task<RouteDefinition[]> GetRoutes(CancellationToken cancellationToken = default)
@@ -43,11 +42,10 @@ public sealed class BamboozleHttpClient(HttpClient httpClient)
         return await SendAsync<ContextModel[]>(req, cancellationToken) ?? [];
     }
 
-    public async Task<bool> DeleteRouteCalls(MatchKey key, CancellationToken cancellationToken = default)
+    public async Task DeleteRouteCalls(MatchKey key, CancellationToken cancellationToken = default)
     {
         using HttpRequestMessage req = new(HttpMethod.Delete, AddRouteKey("/control/routes", key) + "/calls");
         await SendAsync(req, cancellationToken);
-        return true;
     }
 
     public class AssertOptions
@@ -123,11 +121,10 @@ public sealed class BamboozleHttpClient(HttpClient httpClient)
         await SendAsync(req, cancellationToken);
     }
 
-    public async Task<bool> Health(CancellationToken cancellationToken = default)
+    public async Task Health(CancellationToken cancellationToken = default)
     {
         using HttpRequestMessage req = new(HttpMethod.Get, "/control/health");
         await SendAsync(req, cancellationToken);
-        return true;
     }
 
     public async Task<string> Version(CancellationToken cancellationToken = default)
