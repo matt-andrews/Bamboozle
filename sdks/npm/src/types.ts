@@ -1,4 +1,4 @@
-import { IBamboozleAssertBuilder } from "./assert";
+import type { IBamboozleAssertBuilder } from "./assert.js";
 
 export interface MatchKey {
   verb: string;
