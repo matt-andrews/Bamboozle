@@ -34,7 +34,7 @@ Content-Type: application/json
 {}
 ```
 
-`200 OK` on pass. `418 I'm a Teapot` on failure.
+`200 OK` on pass. `406 Not Acceptable` on failure.
 
 When no count parameter is given with an empty body, the assertion always passes.
 

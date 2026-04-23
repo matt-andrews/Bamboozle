@@ -69,7 +69,7 @@ Content-Type: application/json
 {}
 ```
 
-`200 OK` — the assertion passes. If the route hadn't been called, you'd get `418 I'm a Teapot`.
+`200 OK` — the assertion passes. If the route hadn't been called, you'd get `406 Not Acceptable`.
 
 ---
 

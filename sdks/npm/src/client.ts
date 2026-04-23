@@ -61,7 +61,7 @@ export class BamboozleClient {
     }
 
     const res = await this.#safeFetch(url.toString(), init);
-    if (res.status === 418) return false;
+    if (res.status === 406) return false;
     if (!res.ok) throw new BamboozleError(res.status, await res.text());
     return true;
   }

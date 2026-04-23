@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="Bamboozle.Core/Bamboozle.Core.csproj" />
+  <Project Path="Bamboozle.Tests/Bamboozle.Tests.csproj" />
+</Solution>
