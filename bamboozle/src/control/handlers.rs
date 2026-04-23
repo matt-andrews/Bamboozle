@@ -179,7 +179,7 @@ pub struct AssertQuery {
     responses(
         (status = 200, description = "Assertion passed"),
         (status = 400, description = "Invalid expression syntax"),
-        (status = 418, description = "Assertion failed — filtered call count did not match expect"),
+        (status = 406, description = "Assertion failed — filtered call count did not match expect"),
     ),
     tag = "Calls"
 )]
@@ -288,7 +288,7 @@ pub async fn assert_route(
             condition = %condition,
             "Assertion failed"
         );
-        Ok(StatusCode::IM_A_TEAPOT)
+        Ok(StatusCode::NOT_ACCEPTABLE)
     }
 }
 
