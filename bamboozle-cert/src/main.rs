@@ -98,7 +98,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let key_path = cli.out.join("key.pem");
 
     fs::write(&ca_path, ca_cert.pem())?;
-    fs::write(&cert_path, leaf_cert.pem())?;
+    fs::write(&cert_path, format!("{}{}", leaf_cert.pem(), ca_cert.pem()))?;
     fs::write(&key_path, leaf_key.serialize_pem())?;
 
     println!("✅ Certificates generated in {}/", cli.out.display());

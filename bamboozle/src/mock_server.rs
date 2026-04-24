@@ -36,7 +36,7 @@ async fn catch_all(
     let path = uri.path().to_string();
     let query_params = extract_query_params(&uri);
     let header_map = extract_headers(&headers);
-    let (body_raw, body) = parse_body(&body_bytes, &headers);
+    let (body_raw, body) = parse_body(&body_bytes);
 
     match state.store.match_route(&verb, &path) {
         None => {
@@ -123,18 +123,9 @@ fn extract_headers(headers: &HeaderMap) -> HashMap<String, String> {
         .collect()
 }
 
-fn parse_body(body_bytes: &Bytes, headers: &HeaderMap) -> (String, serde_json::Value) {
+fn parse_body(body_bytes: &Bytes) -> (String, serde_json::Value) {
     let body_raw = String::from_utf8_lossy(body_bytes).into_owned();
-    let is_json = headers
-        .get("content-type")
-        .and_then(|v| v.to_str().ok())
-        .map(|v| v.contains("application/json"))
-        .unwrap_or(false);
-    let body = if is_json {
-        serde_json::from_str(&body_raw).unwrap_or(serde_json::Value::String(body_raw.clone()))
-    } else {
-        serde_json::Value::String(body_raw.clone())
-    };
+    let body = serde_json::from_str(&body_raw).unwrap_or(serde_json::Value::Null);
     (body_raw, body)
 }
 
@@ -224,6 +215,7 @@ async fn build_response(
             .iter()
             .find(|(k, _)| k.eq_ignore_ascii_case("content-type"))
             .map(|(_, v)| v.clone());
+        warn!(ctx.body_raw, "Loopback request body");
         (Body::from(ctx.body_raw.clone()), ct)
     } else if let Some(path) = &route_def.response.binary_file {
         let ct = infer_content_type_from_path(path, true).to_string();
@@ -1206,6 +1198,79 @@ mod tests {
         assert_eq!(
             content_type_header(&response).as_deref(),
             Some("text/plain")
+        );
+    }
+
+    #[tokio::test]
+    async fn body_json_field_rendered_in_response() {
+        let state = AppState::new();
+        state
+            .store
+            .set_route(RouteDefinition {
+                match_key: MatchKey::new("PUT", "/secrets/{name}"),
+                set_state: None,
+                simulation: None,
+                response: ResponseDefinition {
+                    status: "200".to_string(),
+                    content: Some(r#"{"value":"{{ body.value }}"}"#.to_string()),
+                    headers: HashMap::from([(
+                        "Content-Type".to_string(),
+                        "application/json".to_string(),
+                    )]),
+                    ..Default::default()
+                },
+            })
+            .unwrap();
+        let response = router(state)
+            .oneshot(
+                Request::builder()
+                    .method("PUT")
+                    .uri("/secrets/my-secret")
+                    .header("content-type", "application/json")
+                    .body(Body::from(r#"{"value":"hunter2"}"#))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+        assert_eq!(
+            body_string(response.into_body()).await,
+            r#"{"value":"hunter2"}"#
+        );
+    }
+
+    #[tokio::test]
+    async fn body_json_field_works_without_content_type_header() {
+        // Body is always parsed as JSON regardless of Content-Type header.
+        // A valid JSON body without a Content-Type header still populates body.*.
+        let state = AppState::new();
+        state
+            .store
+            .set_route(RouteDefinition {
+                match_key: MatchKey::new("PUT", "/raw/{name}"),
+                set_state: None,
+                simulation: None,
+                response: ResponseDefinition {
+                    status: "200".to_string(),
+                    content: Some(r#"{"value":"{{ body.value }}"}"#.to_string()),
+                    ..Default::default()
+                },
+            })
+            .unwrap();
+        let response = router(state)
+            .oneshot(
+                Request::builder()
+                    .method("PUT")
+                    .uri("/raw/my-secret")
+                    .body(Body::from(r#"{"value":"hunter2"}"#))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+        assert_eq!(
+            body_string(response.into_body()).await,
+            r#"{"value":"hunter2"}"#
         );
     }
 

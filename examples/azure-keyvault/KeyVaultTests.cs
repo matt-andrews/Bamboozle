@@ -1,14 +1,8 @@
-using System;
-using System.Threading;
-using System.Threading.Tasks;
 using Azure.Core;
 using Azure.Security.KeyVault.Secrets;
-using Xunit;
 
 namespace AzureKeyVaultExample;
 
-// 1. MockTokenCredential bypasses the Entra ID / OAuth authentication process
-// so we don't have to mock login.microsoftonline.com.
 public class MockTokenCredential : TokenCredential
 {
     public override AccessToken GetToken(TokenRequestContext requestContext, CancellationToken cancellationToken)
@@ -28,15 +22,15 @@ public class KeyVaultTests
 
     public KeyVaultTests()
     {
-        // Disable retry logic for fast testing
         var options = new SecretClientOptions
         {
-            Retry = { MaxRetries = 0 }
+            Retry = { MaxRetries = 0 },
+            // Required when pointing at a non-Azure endpoint.
+            DisableChallengeResourceVerification = true
         };
 
-        // 2. Point the SecretClient to the Bamboozle HTTPS endpoint
         _client = new SecretClient(
-            new Uri("https://localhost:8080"), 
+            new Uri("https://localhost:44044"),
             new MockTokenCredential(),
             options
         );
@@ -45,10 +39,8 @@ public class KeyVaultTests
     [Fact]
     public async Task GetSecret_ShouldReturnMockedValue()
     {
-        // Act
         KeyVaultSecret secret = await _client.GetSecretAsync("my-database-password");
 
-        // Assert
         Assert.NotNull(secret);
         Assert.Equal("my-database-password", secret.Name);
         Assert.Equal("super-secret-password123", secret.Value);
@@ -57,10 +49,8 @@ public class KeyVaultTests
     [Fact]
     public async Task SetSecret_ShouldReturnNewlyCreatedSecret()
     {
-        // Act
         KeyVaultSecret secret = await _client.SetSecretAsync("new-api-key", "some-new-value");
 
-        // Assert
         Assert.NotNull(secret);
         Assert.Equal("new-api-key", secret.Name);
         Assert.Equal("some-new-value", secret.Value);
