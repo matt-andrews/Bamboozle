@@ -1,0 +1,8 @@
+[workspace]
+members = ["bamboozle", "bamboozle-cert"]
+resolver = "2"
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
+strip = "symbols"
