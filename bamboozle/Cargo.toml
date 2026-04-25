@@ -8,6 +8,7 @@ name = "bamboozle"
 path = "src/main.rs"
 
 [dependencies]
+clap = { version = "4", features = ["derive"] }
 axum = { version = "0.8", features = ["macros"] }
 tokio = { version = "1", features = ["rt-multi-thread", "net", "fs", "macros"] }
 tower-http = { version = "0.6", features = ["trace"] }
@@ -34,10 +35,19 @@ rand = "0.9"
 rand_distr = "0.5"
 futures = "0.3"
 tokio-util = { version = "0.7", features = ["io"] }
+axum-server = { version = "0.7", features = ["tls-rustls"], optional = true }
+rustls = { version = "0.23", features = ["ring"], optional = true }
+rcgen = { version = "0.13", features = ["pem"], optional = true }
+time = { version = "0.3", optional = true }
 
 [dev-dependencies]
 tokio = { version = "1", features = ["full"] }
 tower = { version = "0.5", features = ["util"] }
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
+strip = "symbols"
 
 [features]
 otel = [
@@ -46,8 +56,5 @@ otel = [
     "dep:opentelemetry-otlp",
     "dep:tracing-opentelemetry",
 ]
+tls = ["dep:axum-server", "dep:rustls", "dep:rcgen", "dep:time"]
 
-[profile.release]
-lto = "thin"
-codegen-units = 1
-strip = "symbols"

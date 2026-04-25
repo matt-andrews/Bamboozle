@@ -7,12 +7,12 @@ WORKDIR /app
 # Pre-build dependencies in a separate layer so they cache on source-only changes.
 COPY Cargo.toml Cargo.lock ./
 RUN mkdir src && echo "fn main(){}" > src/main.rs \
-    && cargo build --release \
+    && cargo build --release --features tls \
     && rm -f target/release/.fingerprint/bamboozle-*/invoked.timestamp
 
 # Build the real source
 COPY src ./src
-RUN touch src/main.rs && cargo build --release
+RUN touch src/main.rs && cargo build --release --features tls
 
 # Stage 2: Zero-byte base — works because the musl binary is fully static.
 FROM scratch

@@ -1,0 +1,16 @@
+services:
+  bamboozle-keyvault:
+    image: bamboozle:dev
+    build:
+      context: ../../bamboozle/
+      dockerfile: Dockerfile
+    ports:
+      - 44044:8080
+    environment:
+      - TLS_CERT_FILE=/certs/cert.pem
+      - TLS_KEY_FILE=/certs/key.pem
+      - 'ROUTE_CONFIG_FOLDERS=["/etc/bamboozle/routes"]'
+      - RUST_LOG=debug
+    volumes:
+      - ./certs:/certs
+      - ./routes:/etc/bamboozle/routes
