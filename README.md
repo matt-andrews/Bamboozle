@@ -39,6 +39,7 @@ Your system under test calls `:8080`. Your test code configures and asserts via 
 - [Assert on calls](docs/how-to/assert-calls.md) — count assertions, expression filters, call history
 - [Load static config](docs/how-to/load-static-config.md) — JSON/YAML route files at startup
 - [Configure logging](docs/how-to/configure-logging.md) — log levels, formats, OpenTelemetry export
+- [Enable TLS](docs/how-to/enable-tls.md) — HTTPS on the mock server, certificate generation
 
 ---
 

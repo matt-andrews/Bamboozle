@@ -9,9 +9,26 @@ mod mock_server;
 mod models;
 mod routing;
 mod tracking;
+#[cfg(feature = "tls")]
+mod cert;
 
+use clap::{Parser, Subcommand};
 use tokio::net::TcpListener;
 use tracing::info;
+
+#[derive(Parser)]
+#[command(name = "bamboozle", version, about = "HTTP mock server")]
+struct Cli {
+    #[command(subcommand)]
+    command: Option<Commands>,
+}
+
+#[derive(Subcommand)]
+enum Commands {
+    /// Generate self-signed TLS certificates
+    #[cfg(feature = "tls")]
+    GenerateCerts(cert::CertArgs),
+}
 
 fn init_tracing() {
     use tracing_subscriber::{fmt, layer::SubscriberExt, util::SubscriberInitExt, EnvFilter};
@@ -71,6 +88,13 @@ fn init_tracing() {
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
+    let cli = Cli::parse();
+
+    #[cfg(feature = "tls")]
+    if let Some(Commands::GenerateCerts(args)) = cli.command {
+        return cert::run(args);
+    }
+
     init_tracing();
 
     let config = config::AppConfig::from_env()?;
@@ -78,8 +102,41 @@ async fn main() -> anyhow::Result<()> {
 
     config_loader::load(&config, &state).await?;
 
-    let mock_listener = TcpListener::bind("0.0.0.0:8080").await?;
+    let mock_addr: std::net::SocketAddr = "0.0.0.0:8080".parse()?;
     let control_listener = TcpListener::bind("0.0.0.0:9090").await?;
+
+    // When TLS is compiled in AND configured, bind the mock server with rustls.
+    // The control server always stays plain HTTP — it's only used by test harnesses.
+    #[cfg(feature = "tls")]
+    if let (Some(cert), Some(key)) = (&config.tls_cert_file, &config.tls_key_file) {
+        rustls::crypto::ring::default_provider()
+            .install_default()
+            .expect("Failed to install default rustls CryptoProvider");
+
+        let tls_config =
+            axum_server::tls_rustls::RustlsConfig::from_pem_file(cert, key).await?;
+
+        info!("Mock server listening on :8080 (TLS)");
+        info!("Control server listening on :9090");
+
+        let result = tokio::try_join!(
+            async {
+                axum_server::bind_rustls(mock_addr, tls_config)
+                    .serve(mock_server::router(state.clone()).into_make_service())
+                    .await
+            },
+            axum::serve(control_listener, control::router(state.clone())),
+        );
+
+        #[cfg(feature = "otel")]
+        opentelemetry::global::shutdown_tracer_provider();
+
+        result?;
+        return Ok(());
+    }
+
+    // Plain HTTP path — default behaviour, identical to before.
+    let mock_listener = TcpListener::bind(mock_addr).await?;
 
     info!("Mock server listening on :8080");
     info!("Control server listening on :9090");
@@ -96,3 +153,4 @@ async fn main() -> anyhow::Result<()> {
 
     Ok(())
 }
+

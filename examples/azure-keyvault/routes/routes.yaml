@@ -1,0 +1,50 @@
+routes:
+  - match:
+      verb: GET
+      pattern: /
+    response:
+      status: "200"
+      content: "OK"
+
+  - match:
+      verb: GET
+      pattern: /secrets/{secretName}
+    response:
+      status: "200"
+      content: |
+        {
+          "value": "super-secret-password123",
+          "id": "https://localhost:44044/secrets/{{ routeValues.secretName }}/4387e9f3d6e14c459867679a90fd0f79",
+          "attributes": {
+            "enabled": true,
+            "created": 1493938410,
+            "updated": 1493938410,
+            "recoveryLevel": "Recoverable+Purgeable"
+          }
+        }
+      headers:
+        Content-Type: application/json
+
+  # The Azure Key Vault SDK uses a challenge-based auth flow:
+  # 1. First request: no Authorization header, no body (probe)
+  # 2. Server responds 401 + WWW-Authenticate
+  # 3. SDK calls the credential, gets a token, retries with full body + Bearer token
+  - match:
+      verb: PUT
+      pattern: /secrets/{secretName}
+    response:
+      status: "{% if headers.authorization %}200{% else %}401{% endif %}"
+      content: |
+        {% if headers.authorization %}{
+          "value": "{{ body.value }}",
+          "id": "https://localhost:44044/secrets/{{ routeValues.secretName }}/4387e9f3d6e14c459867679a90fd0f79",
+          "attributes": {
+            "enabled": true,
+            "created": 1493938410,
+            "updated": 1493938410,
+            "recoveryLevel": "Recoverable+Purgeable"
+          }
+        }{% endif %}
+      headers:
+        Content-Type: application/json
+        WWW-Authenticate: 'Bearer authorization="https://login.microsoftonline.com/00000000-0000-0000-0000-000000000000", resource="https://localhost:44044"'
