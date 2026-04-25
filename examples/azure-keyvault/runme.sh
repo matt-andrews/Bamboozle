@@ -8,6 +8,15 @@ CERTS_DIR="$SCRIPT_DIR/certs"
 cleanup() {
   echo "--- Stopping containers ---"
   docker compose -f "$SCRIPT_DIR/docker-compose.yml" down --remove-orphans || true
+  case "$(uname -s)" in
+    MINGW*|MSYS*|CYGWIN*)
+      certutil -delstore -user Root "Bamboozle Local CA" > /dev/null 2>&1 || true
+      ;;
+    Darwin)
+      sudo security delete-certificate -c "Bamboozle Local CA" \
+        /Library/Keychains/System.keychain 2>/dev/null || true
+      ;;
+  esac
 }
 trap cleanup EXIT
 
@@ -33,23 +42,29 @@ case "$(uname -s)" in
     sudo security add-trusted-cert -d -r trustRoot \
       -k /Library/Keychains/System.keychain "$CERTS_DIR/ca.crt"
     ;;
+  MINGW*|MSYS*|CYGWIN*)
+    certutil -addstore -user Root "$(cygpath -w "$CERTS_DIR/ca.crt")"
+    ;;
   *)
     echo "WARNING: unsupported platform for automatic CA trust, skipping"
     ;;
 esac
 
-# Start containers
+# Build and start containers
+echo "--- Building Docker image ---"
+docker compose -f "$SCRIPT_DIR/docker-compose.yml" build
+
 echo "--- Starting containers ---"
-docker compose -f "$SCRIPT_DIR/docker-compose.yml" up -d --build
+docker compose -f "$SCRIPT_DIR/docker-compose.yml" up -d --force-recreate
 
 # Wait for the service to be ready
 echo "--- Waiting for bamboozle to be ready ---"
-for i in $(seq 1 30); do
-  if curl -sf --cacert "$CERTS_DIR/ca.crt" https://localhost:44044/ > /dev/null 2>&1; then
+for i in $(seq 1 60); do
+  if curl -sfS --ssl-no-revoke --cacert "$CERTS_DIR/ca.crt" https://localhost:44044/ > /dev/null; then
     echo "Service is ready."
     break
   fi
-  if [ "$i" -eq 30 ]; then
+  if [ "$i" -eq 60 ]; then
     echo "ERROR: service did not become ready in time"
     docker compose -f "$SCRIPT_DIR/docker-compose.yml" logs
     exit 1
