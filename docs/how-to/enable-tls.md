@@ -12,27 +12,10 @@ The control port (`:9090`) always stays plain HTTP.
 
 ## 1. Generate certificates
 
-Use `bamboozle-cert` to create a local CA and leaf certificate. Download it from [GitHub Releases](https://github.com/matt-andrews/Bamboozle/releases) or build from source.
-
-### Windows (PowerShell)
-
-```powershell
-# Download
-Invoke-WebRequest -Uri "https://github.com/matt-andrews/Bamboozle/releases/latest/download/bamboozle-cert-windows.exe" -OutFile bamboozle-cert.exe
-
-# Generate certs (outputs to ./certs/)
-.\bamboozle-cert.exe
-```
-
-### macOS / Linux
+Certificate generation is built into the Bamboozle Docker image. Run the `generate-certs` subcommand to create a local CA and leaf certificate, then mount the output directory when starting the server.
 
 ```bash
-# Download (replace OS with 'linux' or 'macos')
-curl -L "https://github.com/matt-andrews/Bamboozle/releases/latest/download/bamboozle-cert-${OS}" -o bamboozle-cert
-chmod +x bamboozle-cert
-
-# Generate certs (outputs to ./certs/)
-./bamboozle-cert
+docker run --rm -v ./certs:/certs mattisthegreatest/bamboozle generate-certs --out /certs
 ```
 
 ### Custom SANs
@@ -40,7 +23,8 @@ chmod +x bamboozle-cert
 By default, certificates are valid for `localhost`, `127.0.0.1`, and `::1`. Add custom SANs with `--san`:
 
 ```bash
-bamboozle-cert --san localhost --san 127.0.0.1 --san my-mock.local
+docker run --rm -v ./certs:/certs mattisthegreatest/bamboozle \
+  generate-certs --out /certs --san localhost --san my-mock.local
 ```
 
 ### Output files

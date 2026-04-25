@@ -289,6 +289,7 @@ dependencies = [
  "anyhow",
  "axum 0.8.9",
  "axum-server",
+ "clap",
  "dashmap",
  "evalexpr",
  "form_urlencoded",
@@ -299,6 +300,7 @@ dependencies = [
  "opentelemetry_sdk",
  "rand 0.9.4",
  "rand_distr",
+ "rcgen",
  "regex",
  "rustls",
  "serde",
@@ -306,6 +308,7 @@ dependencies = [
  "serde_yaml",
  "strsim",
  "thiserror 2.0.18",
+ "time",
  "tokio",
  "tokio-util",
  "tower 0.5.3",
@@ -315,15 +318,6 @@ dependencies = [
  "tracing-subscriber",
  "utoipa",
  "uuid",
-]
-
-[[package]]
-name = "bamboozle-cert"
-version = "0.1.0"
-dependencies = [
- "clap",
- "rcgen",
- "time",
 ]
 
 [[package]]

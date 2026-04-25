@@ -8,14 +8,16 @@ By pointing the standard `SecretClient` at Bamboozle with TLS enabled, you can s
 
 - [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
 - [Docker](https://docs.docker.com/get-docker/)
-- Bamboozle certificate tool (`bamboozle-cert`) — see [Enable TLS guide](../../docs/how-to/enable-tls.md)
 
 ## 1. Generate Certificates
 
-Azure Key Vault SDK requires HTTPS. You must generate a local certificate and mount it into the Bamboozle container.
+Azure Key Vault SDK requires HTTPS. You must generate a local certificate and mount it into the Bamboozle container. Certificate generation is built into the Bamboozle image — no separate tool needed.
 
-1. Generate the certificates using `bamboozle-cert` (outputs to `./certs/` by default).
-2. (Optional but recommended) Install `certs/ca.crt` into your OS trust store so your .NET application trusts the mock certificate.
+```bash
+docker run --rm -v ./certs:/certs mattisthegreatest/bamboozle generate-certs --out /certs
+```
+
+(Optional but recommended) Install `certs/ca.crt` into your OS trust store so your .NET application trusts the mock certificate.
 
 ## 2. Start Bamboozle with TLS
 

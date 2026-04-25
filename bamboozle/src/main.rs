@@ -9,9 +9,26 @@ mod mock_server;
 mod models;
 mod routing;
 mod tracking;
+#[cfg(feature = "tls")]
+mod cert;
 
+use clap::{Parser, Subcommand};
 use tokio::net::TcpListener;
 use tracing::info;
+
+#[derive(Parser)]
+#[command(name = "bamboozle", version, about = "HTTP mock server")]
+struct Cli {
+    #[command(subcommand)]
+    command: Option<Commands>,
+}
+
+#[derive(Subcommand)]
+enum Commands {
+    /// Generate self-signed TLS certificates
+    #[cfg(feature = "tls")]
+    GenerateCerts(cert::CertArgs),
+}
 
 fn init_tracing() {
     use tracing_subscriber::{fmt, layer::SubscriberExt, util::SubscriberInitExt, EnvFilter};
@@ -71,6 +88,13 @@ fn init_tracing() {
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
+    let cli = Cli::parse();
+
+    #[cfg(feature = "tls")]
+    if let Some(Commands::GenerateCerts(args)) = cli.command {
+        return cert::run(args);
+    }
+
     init_tracing();
 
     let config = config::AppConfig::from_env()?;

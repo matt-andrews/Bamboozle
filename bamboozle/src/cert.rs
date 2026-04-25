@@ -1,4 +1,4 @@
-use clap::Parser;
+use clap::Args;
 use rcgen::{
     BasicConstraints, CertificateParams, DnType, ExtendedKeyUsagePurpose, IsCa, KeyPair,
     KeyUsagePurpose, SanType,
@@ -10,41 +10,37 @@ use time::{Duration, OffsetDateTime};
 
 /// Generate self-signed TLS certificates for use with Bamboozle.
 ///
-/// Creates a local Certificate Authority (CA) and a leaf certificate signed by
-/// that CA.  Mount `cert.pem` and `key.pem` into your Bamboozle container,
-/// and optionally install `ca.crt` in your OS trust store so clients accept
-/// the certificate without warnings.
-#[derive(Parser, Debug)]
-#[command(name = "bamboozle-cert", version, about)]
-struct Cli {
-    /// Subject Alternative Names (hostnames or IPs) for the leaf certificate.
-    /// Repeat for multiple values.  Defaults to `localhost 127.0.0.1 ::1`.
+/// Creates a local CA and a leaf certificate signed by that CA. Mount `cert.pem`
+/// and `key.pem` into your Bamboozle container, and optionally install `ca.crt`
+/// in your OS trust store so clients accept the certificate without warnings.
+#[derive(Args, Debug)]
+pub struct CertArgs {
+    /// Subject Alternative Names (hostnames or IPs). Repeat for multiple values.
+    /// Defaults to `localhost 127.0.0.1 ::1`.
     #[arg(long = "san", value_name = "HOST_OR_IP")]
-    sans: Vec<String>,
+    pub sans: Vec<String>,
 
     /// Output directory for generated certificate files.
     #[arg(short, long, default_value = "./certs")]
-    out: PathBuf,
+    pub out: PathBuf,
 
     /// Certificate validity in days.
     #[arg(long, default_value_t = 365)]
-    days: u32,
+    pub days: u32,
 }
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let cli = Cli::parse();
-
-    let sans = if cli.sans.is_empty() {
+pub fn run(args: CertArgs) -> anyhow::Result<()> {
+    let sans = if args.sans.is_empty() {
         vec![
             "localhost".to_string(),
             "127.0.0.1".to_string(),
             "::1".to_string(),
         ]
     } else {
-        cli.sans
+        args.sans
     };
 
-    fs::create_dir_all(&cli.out)?;
+    fs::create_dir_all(&args.out)?;
 
     // ── CA Certificate ───────────────────────────────────────────────────
     let mut ca_params = CertificateParams::new(Vec::<String>::new())?;
@@ -58,7 +54,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     ca_params.key_usages = vec![KeyUsagePurpose::KeyCertSign, KeyUsagePurpose::CrlSign];
     ca_params.not_before = OffsetDateTime::now_utc() - Duration::days(1);
     ca_params.not_after =
-        OffsetDateTime::now_utc() + Duration::days(i64::from(cli.days) + 1);
+        OffsetDateTime::now_utc() + Duration::days(i64::from(args.days) + 1);
 
     let ca_key = KeyPair::generate()?;
     let ca_cert = ca_params.self_signed(&ca_key)?;
@@ -87,44 +83,37 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     ];
     leaf_params.not_before = OffsetDateTime::now_utc() - Duration::days(1);
     leaf_params.not_after =
-        OffsetDateTime::now_utc() + Duration::days(i64::from(cli.days));
+        OffsetDateTime::now_utc() + Duration::days(i64::from(args.days));
 
     let leaf_key = KeyPair::generate()?;
     let leaf_cert = leaf_params.signed_by(&leaf_key, &ca_cert, &ca_key)?;
 
     // ── Write files ──────────────────────────────────────────────────────
-    let ca_path = cli.out.join("ca.crt");
-    let cert_path = cli.out.join("cert.pem");
-    let key_path = cli.out.join("key.pem");
+    let ca_path = args.out.join("ca.crt");
+    let cert_path = args.out.join("cert.pem");
+    let key_path = args.out.join("key.pem");
 
     fs::write(&ca_path, ca_cert.pem())?;
     fs::write(&cert_path, format!("{}{}", leaf_cert.pem(), ca_cert.pem()))?;
     fs::write(&key_path, leaf_key.serialize_pem())?;
 
-    println!("✅ Certificates generated in {}/", cli.out.display());
+    println!("Certificates generated in {}/", args.out.display());
     println!();
-    println!("  {}  — CA certificate (install in your OS trust store)", ca_path.display());
-    println!("  {} — leaf certificate (mount into Bamboozle)", cert_path.display());
-    println!("  {}  — private key      (mount into Bamboozle)", key_path.display());
+    println!(
+        "  {}  — CA certificate (install in your OS trust store)",
+        ca_path.display()
+    );
+    println!(
+        "  {} — leaf certificate (mount into Bamboozle)",
+        cert_path.display()
+    );
+    println!(
+        "  {}  — private key      (mount into Bamboozle)",
+        key_path.display()
+    );
     println!();
     println!("SANs: {}", sans.join(", "));
-    println!("Valid for: {} days", cli.days);
-    println!();
-    println!("Quick trust (optional):");
-    println!();
-    #[cfg(target_os = "windows")]
-    println!("  certutil -addstore -user Root {}", ca_path.display());
-    #[cfg(target_os = "macos")]
-    println!(
-        "  sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain {}",
-        ca_path.display()
-    );
-    #[cfg(target_os = "linux")]
-    println!(
-        "  sudo cp {} /usr/local/share/ca-certificates/ && sudo update-ca-certificates",
-        ca_path.display()
-    );
-    // On any platform, also print the generic instruction
+    println!("Valid for: {} days", args.days);
     println!();
     println!("Docker usage:");
     println!();

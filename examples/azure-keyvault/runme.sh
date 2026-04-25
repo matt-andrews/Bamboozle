@@ -2,7 +2,6 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 CERTS_DIR="$SCRIPT_DIR/certs"
 
 cleanup() {
@@ -20,16 +19,14 @@ cleanup() {
 }
 trap cleanup EXIT
 
-# Build bamboozle-cert
-echo "--- Building bamboozle-cert ---"
-cargo build --manifest-path "$REPO_ROOT/Cargo.toml" --bin bamboozle-cert
+# Build Docker image first (needed for cert generation and the server)
+echo "--- Building Docker image ---"
+docker compose -f "$SCRIPT_DIR/docker-compose.yml" build
 
-BAMBOOZLE_CERT="$REPO_ROOT/target/debug/bamboozle-cert"
-
-# Generate certs
+# Generate certs using the built image
 echo "--- Generating certificates ---"
 mkdir -p "$CERTS_DIR"
-"$BAMBOOZLE_CERT" --out "$CERTS_DIR"
+docker run --rm -v "$CERTS_DIR:/certs" bamboozle:dev generate-certs --out /certs
 
 # Trust the CA
 echo "--- Trusting CA certificate ---"
@@ -49,10 +46,6 @@ case "$(uname -s)" in
     echo "WARNING: unsupported platform for automatic CA trust, skipping"
     ;;
 esac
-
-# Build and start containers
-echo "--- Building Docker image ---"
-docker compose -f "$SCRIPT_DIR/docker-compose.yml" build
 
 echo "--- Starting containers ---"
 docker compose -f "$SCRIPT_DIR/docker-compose.yml" up -d --force-recreate
