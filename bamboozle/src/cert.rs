@@ -60,16 +60,20 @@ pub fn run(args: CertArgs) -> anyhow::Result<()> {
     let ca_cert = ca_params.self_signed(&ca_key)?;
 
     // ── Leaf Certificate ─────────────────────────────────────────────────
-    let san_types: Vec<SanType> = sans
+    let san_types = sans
         .iter()
         .map(|s| {
             if let Ok(ip) = s.parse::<IpAddr>() {
-                SanType::IpAddress(ip)
+                Ok(SanType::IpAddress(ip))
             } else {
-                SanType::DnsName(s.clone().try_into().expect("invalid DNS name"))
+                let name = s
+                    .clone()
+                    .try_into()
+                    .map_err(|_| anyhow::anyhow!("invalid DNS name for --san: {:?}", s))?;
+                Ok(SanType::DnsName(name))
             }
         })
-        .collect();
+        .collect::<anyhow::Result<Vec<_>>>()?;
 
     let mut leaf_params = CertificateParams::new(Vec::<String>::new())?;
     leaf_params

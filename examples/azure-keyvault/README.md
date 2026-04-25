@@ -31,7 +31,7 @@ docker run \
   -v ./routes:/etc/bamboozle/routes \
   -e TLS_CERT_FILE=/certs/cert.pem \
   -e TLS_KEY_FILE=/certs/key.pem \
-  -e 'ROUTE_CONFIG_FOLDERS=["/etc/bamboozle"]' \
+  -e 'ROUTE_CONFIG_FOLDERS=["/etc/bamboozle/routes"]' \
   -p 44044:8080 -p 9090:9090 \
   mattisthegreatest/bamboozle
 ```

@@ -32,7 +32,7 @@ docker run --rm -v ./certs:/certs mattisthegreatest/bamboozle \
 | File | Purpose |
 |------|---------|
 | `certs/ca.crt` | CA certificate — install in your OS/browser trust store |
-| `certs/cert.pem` | Leaf certificate — mount into the Bamboozle container |
+| `certs/cert.pem` | Leaf certificate + CA chain — mount into the Bamboozle container as `TLS_CERT_FILE` |
 | `certs/key.pem` | Private key — mount into the Bamboozle container |
 
 ---
