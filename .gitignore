@@ -7,9 +7,9 @@
 /playwright/playwright-results.json
 /scripts/startup-results.json
 
-# Generated TLS certificates (bamboozle-cert output)
+# Generated TLS certificates
 certs/
-/target
+bamboozle/target/
 /.cargo/config.toml
 
 # User-specific files
