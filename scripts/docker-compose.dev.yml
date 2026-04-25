@@ -9,10 +9,7 @@ services:
       - "18080:8080"
       - "19090:9090"
     volumes:
-      - ./certs:/certs
       - ./test_configs:/test_configs
     environment:
-      - TLS_CERT_FILE=/certs/cert.pem
-      - TLS_KEY_FILE=/certs/key.pem
       - ROUTE_CONFIG_THROW_ON_ERROR=true
       - ROUTE_CONFIG_FOLDERS=["/test_configs"]

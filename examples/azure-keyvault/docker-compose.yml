@@ -10,7 +10,7 @@ services:
       - TLS_CERT_FILE=/certs/cert.pem
       - TLS_KEY_FILE=/certs/key.pem
       - 'ROUTE_CONFIG_FOLDERS=["/etc/bamboozle/routes"]'
-      - RUST_LOG=trace
+      - RUST_LOG=debug
     volumes:
       - ./certs:/certs
       - ./routes:/etc/bamboozle/routes

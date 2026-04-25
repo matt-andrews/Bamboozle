@@ -1,6 +1,13 @@
 routes:
   - match:
       verb: GET
+      pattern: /
+    response:
+      status: "200"
+      content: "OK"
+
+  - match:
+      verb: GET
       pattern: /secrets/{secretName}
     response:
       status: "200"

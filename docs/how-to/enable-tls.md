@@ -78,7 +78,7 @@ sudo update-ca-certificates
 ```
 
 > [!WARNING]
-> Never share `key.pem` or `ca.crt` outside your development environment. Anyone with the CA key can issue certificates that your machine will trust.
+> Protect private keys such as `key.pem` and keep them within your development environment. Treat `ca.crt` with care too.
 
 ---
 

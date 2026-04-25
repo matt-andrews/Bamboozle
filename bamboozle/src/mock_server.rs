@@ -8,7 +8,7 @@ use axum::{
 use futures::stream;
 use std::{collections::HashMap, time::Duration};
 
-use tracing::warn;
+use tracing::{debug, warn};
 
 use crate::{
     app_state::AppState,
@@ -215,7 +215,7 @@ async fn build_response(
             .iter()
             .find(|(k, _)| k.eq_ignore_ascii_case("content-type"))
             .map(|(_, v)| v.clone());
-        warn!(ctx.body_raw, "Loopback request body");
+        debug!(body = ctx.body_raw, "Loopback request body");
         (Body::from(ctx.body_raw.clone()), ct)
     } else if let Some(path) = &route_def.response.binary_file {
         let ct = infer_content_type_from_path(path, true).to_string();

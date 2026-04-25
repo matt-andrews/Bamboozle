@@ -23,19 +23,20 @@ Run Bamboozle, mounting both the certificates and the `routes.yaml` file from th
 
 ```bash
 # Assuming you are in the examples/azure-keyvault directory
+# Port 44044:8080 is to match the compose in this directory - feel free to use a different port!
 docker run \
   -v ./certs:/certs \
-  -v ./routes.yaml:/etc/bamboozle/routes.yaml \
+  -v ./routes:/etc/bamboozle/routes \
   -e TLS_CERT_FILE=/certs/cert.pem \
   -e TLS_KEY_FILE=/certs/key.pem \
   -e 'ROUTE_CONFIG_FOLDERS=["/etc/bamboozle"]' \
-  -p 8080:8080 -p 9090:9090 \
+  -p 44044:8080 -p 9090:9090 \
   mattisthegreatest/bamboozle
 ```
 
 ## 3. Run the Tests
 
-Once Bamboozle is running, execute the xUnit tests. The tests use a custom `MockTokenCredential` to bypass OAuth and point the `SecretClient` directly to `https://localhost:8080`.
+Once Bamboozle is running, execute the xUnit tests. The tests use a custom `MockTokenCredential` to bypass OAuth and point the `SecretClient` directly to `https://localhost:44044`.
 
 ```bash
 dotnet test
