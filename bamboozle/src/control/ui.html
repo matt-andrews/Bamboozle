@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bamboozle Routes</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-base: #0d1117;
+            --bg-card: rgba(22, 27, 34, 0.6);
+            --bg-card-hover: rgba(33, 38, 45, 0.8);
+            --text-main: #c9d1d9;
+            --text-muted: #8b949e;
+            --border: rgba(240, 246, 252, 0.1);
+            --border-hover: rgba(240, 246, 252, 0.2);
+            
+            /* Methods */
+            --get: #58a6ff;
+            --post: #3fb950;
+            --put: #d29922;
+            --delete: #f85149;
+            --patch: #bc8cff;
+            
+            --glass-blur: 16px;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--bg-base);
+            color: var(--text-main);
+            margin: 0;
+            padding: 0;
+            line-height: 1.5;
+            min-height: 100vh;
+            background-image: 
+                radial-gradient(circle at 15% 50%, rgba(88, 166, 255, 0.04) 0%, transparent 40%),
+                radial-gradient(circle at 85% 30%, rgba(188, 140, 255, 0.04) 0%, transparent 40%);
+            background-attachment: fixed;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 40px;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 20px;
+        }
+
+        .logo-area h1 {
+            font-size: 28px;
+            font-weight: 700;
+            margin: 0;
+            background: linear-gradient(to right, #58a6ff, #bc8cff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .logo-area p {
+            margin: 5px 0 0 0;
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+
+        .stats {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .stat-badge {
+            background: rgba(240, 246, 252, 0.05);
+            border: 1px solid var(--border);
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            backdrop-filter: blur(var(--glass-blur));
+        }
+
+        .route-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .route-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 0;
+            backdrop-filter: blur(var(--glass-blur));
+            transition: all 0.2s ease;
+            overflow: hidden;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        .route-card:hover {
+            border-color: var(--border-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2);
+        }
+
+        .route-header {
+            display: flex;
+            align-items: center;
+            padding: 16px 20px;
+            cursor: pointer;
+        }
+
+        .method {
+            font-weight: 700;
+            font-size: 13px;
+            width: 70px;
+            text-align: center;
+            border-radius: 6px;
+            padding: 4px 0;
+            margin-right: 16px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .method.GET { color: var(--get); background: rgba(88, 166, 255, 0.1); border-color: rgba(88, 166, 255, 0.2); }
+        .method.POST { color: var(--post); background: rgba(63, 185, 80, 0.1); border-color: rgba(63, 185, 80, 0.2); }
+        .method.PUT { color: var(--put); background: rgba(210, 153, 34, 0.1); border-color: rgba(210, 153, 34, 0.2); }
+        .method.DELETE { color: var(--delete); background: rgba(248, 81, 73, 0.1); border-color: rgba(248, 81, 73, 0.2); }
+        .method.PATCH { color: var(--patch); background: rgba(188, 140, 255, 0.1); border-color: rgba(188, 140, 255, 0.2); }
+        .method.ANY { color: var(--text-main); }
+
+        .pattern {
+            font-family: ui-monospace, SFMono-Regular, Consolas, 'Courier New', monospace;
+            font-size: 15px;
+            flex-grow: 1;
+            word-break: break-all;
+            color: #e6edf3;
+        }
+
+        .status-badge {
+            font-size: 13px;
+            font-weight: 600;
+            padding: 4px 10px;
+            border-radius: 6px;
+            background: rgba(240, 246, 252, 0.05);
+            border: 1px solid var(--border);
+            margin-left: 12px;
+            min-width: 40px;
+            text-align: center;
+        }
+
+        .status-success { color: #3fb950; }
+        .status-warning { color: #d29922; }
+        .status-error { color: #f85149; }
+
+        .route-details {
+            display: none;
+            padding: 0 20px 20px 20px;
+            border-top: 1px solid var(--border);
+            background: rgba(1, 4, 9, 0.3);
+            animation: slideDown 0.3s ease;
+        }
+
+        .route-card.expanded .route-details {
+            display: block;
+        }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .detail-section {
+            margin-top: 20px;
+        }
+
+        .detail-title {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-muted);
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        pre {
+            background: #0d1117;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 16px;
+            overflow-x: auto;
+            font-family: ui-monospace, SFMono-Regular, Consolas, 'Courier New', monospace;
+            font-size: 13px;
+            margin: 0;
+            color: #e6edf3;
+        }
+
+        .tag-list {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .tag {
+            background: rgba(88, 166, 255, 0.1);
+            color: var(--get);
+            border: 1px solid rgba(88, 166, 255, 0.2);
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-family: ui-monospace, monospace;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 80px 20px;
+            color: var(--text-muted);
+            background: var(--bg-card);
+            border: 1px dashed var(--border);
+            border-radius: 12px;
+            backdrop-filter: blur(var(--glass-blur));
+        }
+
+        .empty-state h2 {
+            margin: 0 0 10px 0;
+            color: var(--text-main);
+        }
+
+        .loader {
+            width: 48px;
+            height: 48px;
+            border: 4px solid var(--border);
+            border-bottom-color: var(--get);
+            border-radius: 50%;
+            display: inline-block;
+            box-sizing: border-box;
+            animation: rotation 1s linear infinite;
+            margin-bottom: 20px;
+        }
+
+        @keyframes rotation {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .error-message {
+            color: var(--delete);
+            background: rgba(248, 81, 73, 0.1);
+            border: 1px solid rgba(248, 81, 73, 0.2);
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .refresh-btn {
+            background: rgba(240, 246, 252, 0.05);
+            color: var(--text-main);
+            border: 1px solid var(--border);
+            padding: 6px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 13px;
+            font-weight: 600;
+            transition: all 0.2s;
+            backdrop-filter: blur(var(--glass-blur));
+        }
+
+        .refresh-btn:hover {
+            background: rgba(240, 246, 252, 0.1);
+            border-color: var(--border-hover);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo-area">
+                <h1>Bamboozle Routes</h1>
+                <p>Live view of all dynamic mock endpoints</p>
+            </div>
+            <div class="stats">
+                <button class="refresh-btn" onclick="fetchRoutes()">Refresh</button>
+                <div class="stat-badge" id="route-count">0 Routes</div>
+            </div>
+        </header>
+
+        <div id="error-box" class="error-message"></div>
+
+        <div id="loading" class="empty-state">
+            <span class="loader"></span>
+            <h2>Loading routes...</h2>
+            <p>Fetching active routes from Bamboozle.</p>
+        </div>
+
+        <div id="empty-routes" class="empty-state" style="display: none;">
+            <h2>No Routes Configured</h2>
+            <p>Use the Control API or YAML config to add some routes.</p>
+        </div>
+
+        <div id="route-list" class="route-list">
+            <!-- Routes injected here via JS -->
+        </div>
+    </div>
+
+    <script>
+        function getStatusColorClass(statusStr) {
+            const status = parseInt(statusStr);
+            if (isNaN(status)) return 'status-success';
+            if (status >= 200 && status < 300) return 'status-success';
+            if (status >= 400 && status < 500) return 'status-warning';
+            if (status >= 500) return 'status-error';
+            return 'status-success';
+        }
+
+        function formatJson(str) {
+            try {
+                return JSON.stringify(JSON.parse(str), null, 2);
+            } catch (e) {
+                return str;
+            }
+        }
+
+        function toggleRoute(element) {
+            element.closest('.route-card').classList.toggle('expanded');
+        }
+
+        function escapeHtml(unsafe) {
+            return (unsafe || '').toString()
+                 .replace(/&/g, "&amp;")
+                 .replace(/</g, "&lt;")
+                 .replace(/>/g, "&gt;")
+                 .replace(/"/g, "&quot;")
+                 .replace(/'/g, "&#039;");
+        }
+
+        async function fetchRoutes() {
+            const loading = document.getElementById('loading');
+            const emptyState = document.getElementById('empty-routes');
+            const routeList = document.getElementById('route-list');
+            const routeCount = document.getElementById('route-count');
+            const errorBox = document.getElementById('error-box');
+
+            errorBox.style.display = 'none';
+            loading.style.display = 'block';
+            emptyState.style.display = 'none';
+            routeList.innerHTML = '';
+
+            try {
+                const response = await fetch('/control/routes');
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch: ${response.status} ${response.statusText}`);
+                }
+                
+                const routes = await response.json();
+                loading.style.display = 'none';
+                
+                routeCount.textContent = `${routes.length} Route${routes.length !== 1 ? 's' : ''}`;
+
+                if (routes.length === 0) {
+                    emptyState.style.display = 'block';
+                    return;
+                }
+
+                // Sort routes: verb then pattern
+                routes.sort((a, b) => {
+                    const verbA = a.match.verb || '';
+                    const verbB = b.match.verb || '';
+                    if (verbA !== verbB) return verbA.localeCompare(verbB);
+                    return (a.match.pattern || '').localeCompare(b.match.pattern || '');
+                });
+
+                routes.forEach(route => {
+                    const verb = route.match.verb || 'ANY';
+                    const pattern = route.match.pattern || '/';
+                    const responseDef = route.response || {};
+                    const status = responseDef.status || '200';
+                    const statusClass = getStatusColorClass(status);
+                    
+                    const card = document.createElement('div');
+                    card.className = 'route-card';
+                    
+                    // Build details HTML
+                    let detailsHtml = '';
+                    
+                    // Headers
+                    if (responseDef.headers && Object.keys(responseDef.headers).length > 0) {
+                        detailsHtml += `<div class="detail-section">
+                            <div class="detail-title">Response Headers</div>
+                            <div class="tag-list">
+                                ${Object.entries(responseDef.headers).map(([k, v]) => 
+                                    `<span class="tag">${escapeHtml(k)}: ${escapeHtml(v)}</span>`
+                                ).join('')}
+                            </div>
+                        </div>`;
+                    }
+
+                    // Content
+                    if (responseDef.content) {
+                        detailsHtml += `<div class="detail-section">
+                            <div class="detail-title">Response Content</div>
+                            <pre><code>${escapeHtml(formatJson(responseDef.content))}</code></pre>
+                        </div>`;
+                    } else if (responseDef.contentFile) {
+                        detailsHtml += `<div class="detail-section">
+                            <div class="detail-title">Response File</div>
+                            <pre><code>File: ${escapeHtml(responseDef.contentFile)}</code></pre>
+                        </div>`;
+                    } else if (responseDef.binaryFile) {
+                        detailsHtml += `<div class="detail-section">
+                            <div class="detail-title">Response Binary File</div>
+                            <pre><code>File: ${escapeHtml(responseDef.binaryFile)}</code></pre>
+                        </div>`;
+                    }
+                    
+                    // Simulation
+                    if (route.simulation) {
+                        let simHtml = '';
+                        if (route.simulation.delay) {
+                            const d = route.simulation.delay;
+                            let delayText = 'Delay';
+                            if (d.type === 'fixed') {
+                                delayText = `Fixed Delay: ${d.ms}ms`;
+                            } else if (d.type === 'random') {
+                                delayText = `Random Delay: ${d.minMs}-${d.maxMs}ms`;
+                            } else if (d.type === 'gaussian') {
+                                delayText = `Gaussian Delay: ~${d.meanMs}ms (σ=${d.stdDevMs})`;
+                            }
+                            simHtml += `<span class="tag">${escapeHtml(delayText)}</span>`;
+                        }
+                        if (route.simulation.fault) {
+                            const f = route.simulation.fault;
+                            const prob = f.probability !== undefined ? f.probability : 1.0;
+                            const faultText = `Fault: ${f.type} (${(prob * 100).toFixed(0)}%)`;
+                            simHtml += `<span class="tag" style="color:var(--delete);border-color:rgba(248,81,73,0.2);background:rgba(248,81,73,0.1)">${escapeHtml(faultText)}</span>`;
+                        }
+                        if (simHtml) {
+                            detailsHtml += `<div class="detail-section">
+                                <div class="detail-title">Simulation</div>
+                                <div class="tag-list">${simHtml}</div>
+                            </div>`;
+                        }
+                    }
+
+                    // Set state
+                    if (route.setState) {
+                        detailsHtml += `<div class="detail-section">
+                            <div class="detail-title">Set State</div>
+                            <pre><code>${escapeHtml(route.setState)}</code></pre>
+                        </div>`;
+                    }
+                    
+                    if (!detailsHtml) {
+                        detailsHtml = `<div class="detail-section"><div class="detail-title">No additional details</div></div>`;
+                    }
+
+                    card.innerHTML = `
+                        <div class="route-header" onclick="toggleRoute(this)">
+                            <div class="method ${escapeHtml(verb)}">${escapeHtml(verb)}</div>
+                            <div class="pattern">/${escapeHtml(pattern)}</div>
+                            <div class="status-badge ${statusClass}">${escapeHtml(status)}</div>
+                        </div>
+                        <div class="route-details">
+                            ${detailsHtml}
+                        </div>
+                    `;
+                    
+                    routeList.appendChild(card);
+                });
+
+            } catch (err) {
+                loading.style.display = 'none';
+                errorBox.textContent = `Error loading routes: ${err.message}`;
+                errorBox.style.display = 'block';
+            }
+        }
+
+        // Fetch initially
+        document.addEventListener('DOMContentLoaded', fetchRoutes);
+    </script>
+</body>
+</html>

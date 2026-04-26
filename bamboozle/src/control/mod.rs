@@ -73,6 +73,10 @@ async fn scalar_ui() -> Html<&'static str> {
     )
 }
 
+async fn routes_ui() -> Html<&'static str> {
+    Html(include_str!("ui.html"))
+}
+
 static OPENAPI_JSON: OnceLock<String> = OnceLock::new();
 
 async fn openapi_json() -> impl axum::response::IntoResponse {
@@ -106,6 +110,7 @@ pub fn router(state: AppState) -> Router {
         .route("/control/reset", post(handlers::reset))
         .route("/control/health", get(handlers::health))
         .route("/control/version", get(handlers::version))
+        .route("/ui", get(routes_ui))
         .route("/", get(scalar_ui))
         .route("/api-docs/openapi.json", get(openapi_json))
         .with_state(state)
