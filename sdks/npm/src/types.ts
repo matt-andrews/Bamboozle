@@ -35,6 +35,7 @@ export interface RouteDefinition {
   response: ResponseDefinition;
   setState?: string;
   simulation?: SimulationConfig;
+  maxCalls?: number;
 }
 
 export interface ContextModel {

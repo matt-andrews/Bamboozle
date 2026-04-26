@@ -24,6 +24,7 @@ public record RouteDefinition
     public required ResponseDefinition Response { get; set; }
     public string? SetState { get; set; }
     public SimulationConfig? Simulation { get; set; }
+    public int? MaxCalls { get; set; }
 }
 
 public record ResponseDefinition
@@ -69,7 +70,7 @@ public sealed record GaussianDelayConfig : DelayConfig
 
 public class CamelCaseEnumConverter : JsonStringEnumConverter
 {
-    public CamelCaseEnumConverter() : base(JsonNamingPolicy.CamelCase) {}
+    public CamelCaseEnumConverter() : base(JsonNamingPolicy.CamelCase) { }
 }
 
 public record FaultConfig
