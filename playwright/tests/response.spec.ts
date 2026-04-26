@@ -95,6 +95,51 @@ test.describe('request body loopback should match original', () => {
     }
 });
 
+test.describe('max calls returns 404', () => {
+    let deleteState: MatchKey[] = [];
+    test.afterEach(async () => {
+        for (let key of deleteState) {
+            try {
+                await bamboozleClient.clearCalls(key.verb, key.pattern);
+                await bamboozleClient.deleteRoute(key.verb, key.pattern);
+            }
+            catch { }
+        }
+        deleteState = [];
+    });
+    const verbs: string[] = ['PUT', 'POST', 'PATCH'];
+    for (let verb of verbs) {
+        test(verb, async ({ request }) => {
+            const key: MatchKey = { verb: verb, pattern: 'playwright/max/calls/returns/404' };
+            deleteState.push(key);
+            await bamboozleClient.addRoute({
+                match: key,
+                response: {
+                    status: "200",
+                    loopback: true
+                },
+                maxCalls: 1
+            });
+            const initReq = await reqFactory(verb, `http://localhost:18080/${key.pattern}`, request, {
+                hello: "world",
+                number: 24
+            });
+            const init = await initReq.json();
+            expect(init).toBeDefined();
+            expect(init.hello).toEqual("world");
+            expect(init.number).toEqual(24);
+            expect(await bamboozleClient.assert(key.verb, key.pattern, { calledExactly: 1 })).toBeTruthy();
+            expect(initReq.headers()["content-type"]).toBe("application/json");
+
+            const secReq = await reqFactory(verb, `http://localhost:18080/${key.pattern}`, request, {
+                hello: "world",
+                number: 24
+            });
+            expect(secReq.status()).toBe(404);
+        });
+    }
+});
+
 test.describe('route matching', () => {
     let deleteState: MatchKey[] = [];
     test.afterEach(async () => {

@@ -9,6 +9,7 @@ The JSON/YAML schema for a route. Used in `POST /control/routes`, `PUT /control/
 | `match` | `MatchKey` | yes | Identifies the route |
 | `response` | `ResponseDefinition` | yes | What to return |
 | `setState` | string | no | Liquid template — evaluated after each match, result stored as `state` |
+| `maxCalls` | number | no | Delete the route after it has been called this many times |
 | `simulation` | `SimulationConfig` | no | Latency or fault injection |
 
 ## `MatchKey`

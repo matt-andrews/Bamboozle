@@ -136,6 +136,7 @@ mod tests {
                 match_key: MatchKey::new("GET", "/test"),
                 set_state: None,
                 simulation: None,
+                max_calls: None,
                 response: ResponseDefinition::default(),
             },
             previous_context: None,

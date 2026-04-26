@@ -98,7 +98,7 @@ async fn main() -> anyhow::Result<()> {
     init_tracing();
 
     let config = config::AppConfig::from_env()?;
-    let state = app_state::AppState::new();
+    let state = app_state::AppState::new(config.max_routes, config.max_content_size);
 
     config_loader::load(&config, &state).await?;
 
