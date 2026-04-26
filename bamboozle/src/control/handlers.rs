@@ -31,7 +31,9 @@ pub async fn post_routes(
     State(state): State<AppState>,
     Json(route): Json<RouteDefinition>,
 ) -> Result<(StatusCode, Json<RouteDefinition>), AppError> {
+    let match_key = route.match_key.clone();
     let response = state.store.set_route(route)?;
+    state.tracker.delete_calls_for_route(&match_key);
     Ok((StatusCode::CREATED, Json(response)))
 }
 
@@ -51,8 +53,10 @@ pub async fn put_routes(
     Json(route): Json<RouteDefinition>,
 ) -> Result<(StatusCode, Json<RouteDefinition>), AppError> {
     // Ignore NotFound — PUT is idempotent. delete_route normalizes internally.
+    let match_key = route.match_key.clone();
     let _ = state.store.delete_route(&route.match_key);
     let response = state.store.set_route(route)?;
+    state.tracker.delete_calls_for_route(&match_key);
     Ok((StatusCode::CREATED, Json(response)))
 }
 

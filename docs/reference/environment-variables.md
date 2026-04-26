@@ -6,7 +6,7 @@ All variables Bamboozle reads at startup.
 |---|---|---|
 | `ROUTE_CONFIG_FOLDERS` | `[]` | JSON array of directory paths to scan for `.json`, `.yaml`, `.yml` route files |
 | `ROUTE_CONFIG_THROW_ON_ERROR` | `false` | When `true`, fail startup if any route file can't be parsed |
-| `MAX_ROUTES` | `1000` | Maximum number of dynamically configurable routes |
+| `MAX_ROUTES` | `1000` | Maximum number of routes that can be loaded or configured |
 | `MAX_CONTENT_SIZE_BYTES` | `10485760` | Maximum allowed inline content size (in bytes) for a single route definition (default: 10 MB) |
 | `TLS_CERT_FILE` | unset | Path to a PEM-encoded TLS certificate file — setting this (with `TLS_KEY_FILE`) enables HTTPS on the mock port |
 | `TLS_KEY_FILE` | unset | Path to a PEM-encoded TLS private key file — must be set together with `TLS_CERT_FILE` |

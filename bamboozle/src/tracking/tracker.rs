@@ -56,6 +56,15 @@ impl CallTracker {
         calls
     }
 
+    pub fn get_call_count_for_route(&self, key: &MatchKey) -> usize {
+        let count = self
+            .matched
+            .iter()
+            .filter(|entry| entry.value().route_model.match_key == *key)
+            .count();
+        count
+    }
+
     pub fn delete_calls_for_route(&self, key: &MatchKey) {
         self.matched
             .retain(|_, ctx| ctx.route_model.match_key != *key);

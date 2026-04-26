@@ -111,6 +111,12 @@ impl RouteStore {
             }
         }
 
+        if def.max_calls == Some(0) {
+            return Err(AppError::BadRequest(
+                "'maxCalls' must be greater than 0".to_string(),
+            ));
+        }
+
         let verb = def.match_key.verb.trim().to_ascii_uppercase();
         // `pattern` preserves case inside {braces} so param names match Liquid template
         // access (e.g. `{{routeValues.thingName}}`), but lowercases literal segments.
@@ -158,7 +164,8 @@ impl RouteStore {
                 normalized_pattern: pattern,
             },
         );
-        self.route_count.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        self.route_count
+            .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
 
         info!(route = %key_str, "Route set");
         Ok(def)
@@ -182,7 +189,8 @@ impl RouteStore {
             return Err(RouteError::NotFound(key_str));
         }
 
-        self.route_count.fetch_sub(1, std::sync::atomic::Ordering::Relaxed);
+        self.route_count
+            .fetch_sub(1, std::sync::atomic::Ordering::Relaxed);
         info!(route = %key_str, "Route deleted");
         Ok(())
     }
@@ -242,14 +250,18 @@ impl RouteStore {
                 let stored_verb = outer.key().clone();
                 let normalized = normalized.clone();
                 let verb_upper = verb_upper.clone();
-                outer.value().iter().map(move |inner| {
-                    let pattern = &inner.value().normalized_pattern;
-                    let mut score = jaro_winkler(normalized.as_str(), pattern.as_str());
-                    if stored_verb == verb_upper {
-                        score += 0.05;
-                    }
-                    (score, format!("{}|{}", stored_verb, pattern))
-                }).collect::<Vec<_>>()
+                outer
+                    .value()
+                    .iter()
+                    .map(move |inner| {
+                        let pattern = &inner.value().normalized_pattern;
+                        let mut score = jaro_winkler(normalized.as_str(), pattern.as_str());
+                        if stored_verb == verb_upper {
+                            score += 0.05;
+                        }
+                        (score, format!("{}|{}", stored_verb, pattern))
+                    })
+                    .collect::<Vec<_>>()
             })
             .filter(|(score, _)| *score >= SUGGESTION_THRESHOLD)
             .collect();
@@ -274,7 +286,8 @@ impl RouteStore {
 
     pub fn reset(&self) {
         self.routes.clear();
-        self.route_count.store(0, std::sync::atomic::Ordering::Relaxed);
+        self.route_count
+            .store(0, std::sync::atomic::Ordering::Relaxed);
         info!("Route store cleared");
     }
 }
@@ -484,7 +497,11 @@ mod tests {
         assert!(suggestions.is_empty());
     }
 
-    fn make_route_with_response(verb: &str, pattern: &str, response: ResponseDefinition) -> RouteDefinition {
+    fn make_route_with_response(
+        verb: &str,
+        pattern: &str,
+        response: ResponseDefinition,
+    ) -> RouteDefinition {
         RouteDefinition {
             match_key: MatchKey::new(verb, pattern),
             set_state: None,
@@ -497,95 +514,141 @@ mod tests {
     #[test]
     fn single_content_is_accepted() {
         let store = RouteStore::default();
-        let result = store.set_route(make_route_with_response("GET", "/a", ResponseDefinition {
-            content: Some("hello".to_string()),
-            ..Default::default()
-        }));
+        let result = store.set_route(make_route_with_response(
+            "GET",
+            "/a",
+            ResponseDefinition {
+                content: Some("hello".to_string()),
+                ..Default::default()
+            },
+        ));
         assert!(result.is_ok());
     }
 
     #[test]
     fn single_content_file_is_accepted() {
         let store = RouteStore::default();
-        let result = store.set_route(make_route_with_response("GET", "/b", ResponseDefinition {
-            content_file: Some("/some/file.txt".to_string()),
-            ..Default::default()
-        }));
+        let result = store.set_route(make_route_with_response(
+            "GET",
+            "/b",
+            ResponseDefinition {
+                content_file: Some("/some/file.txt".to_string()),
+                ..Default::default()
+            },
+        ));
         assert!(result.is_ok());
     }
 
     #[test]
     fn single_binary_file_is_accepted() {
         let store = RouteStore::default();
-        let result = store.set_route(make_route_with_response("GET", "/c", ResponseDefinition {
-            binary_file: Some("/some/file.bin".to_string()),
-            ..Default::default()
-        }));
+        let result = store.set_route(make_route_with_response(
+            "GET",
+            "/c",
+            ResponseDefinition {
+                binary_file: Some("/some/file.bin".to_string()),
+                ..Default::default()
+            },
+        ));
         assert!(result.is_ok());
     }
 
     #[test]
     fn single_loopback_is_accepted() {
         let store = RouteStore::default();
-        let result = store.set_route(make_route_with_response("GET", "/d", ResponseDefinition {
-            loopback: true,
-            ..Default::default()
-        }));
+        let result = store.set_route(make_route_with_response(
+            "GET",
+            "/d",
+            ResponseDefinition {
+                loopback: true,
+                ..Default::default()
+            },
+        ));
         assert!(result.is_ok());
     }
 
     #[test]
     fn content_and_content_file_together_is_rejected() {
         let store = RouteStore::default();
-        let err = store.set_route(make_route_with_response("GET", "/e", ResponseDefinition {
-            content: Some("hello".to_string()),
-            content_file: Some("/some/file.txt".to_string()),
-            ..Default::default()
-        })).unwrap_err();
+        let err = store
+            .set_route(make_route_with_response(
+                "GET",
+                "/e",
+                ResponseDefinition {
+                    content: Some("hello".to_string()),
+                    content_file: Some("/some/file.txt".to_string()),
+                    ..Default::default()
+                },
+            ))
+            .unwrap_err();
         assert!(matches!(err, AppError::BadRequest(_)));
     }
 
     #[test]
     fn content_and_binary_file_together_is_rejected() {
         let store = RouteStore::default();
-        let err = store.set_route(make_route_with_response("GET", "/f", ResponseDefinition {
-            content: Some("hello".to_string()),
-            binary_file: Some("/some/file.bin".to_string()),
-            ..Default::default()
-        })).unwrap_err();
+        let err = store
+            .set_route(make_route_with_response(
+                "GET",
+                "/f",
+                ResponseDefinition {
+                    content: Some("hello".to_string()),
+                    binary_file: Some("/some/file.bin".to_string()),
+                    ..Default::default()
+                },
+            ))
+            .unwrap_err();
         assert!(matches!(err, AppError::BadRequest(_)));
     }
 
     #[test]
     fn content_file_and_binary_file_together_is_rejected() {
         let store = RouteStore::default();
-        let err = store.set_route(make_route_with_response("GET", "/g", ResponseDefinition {
-            content_file: Some("/some/file.txt".to_string()),
-            binary_file: Some("/some/file.bin".to_string()),
-            ..Default::default()
-        })).unwrap_err();
+        let err = store
+            .set_route(make_route_with_response(
+                "GET",
+                "/g",
+                ResponseDefinition {
+                    content_file: Some("/some/file.txt".to_string()),
+                    binary_file: Some("/some/file.bin".to_string()),
+                    ..Default::default()
+                },
+            ))
+            .unwrap_err();
         assert!(matches!(err, AppError::BadRequest(_)));
     }
 
     #[test]
     fn loopback_and_content_together_is_rejected() {
         let store = RouteStore::default();
-        let err = store.set_route(make_route_with_response("GET", "/h", ResponseDefinition {
-            loopback: true,
-            content: Some("hello".to_string()),
-            ..Default::default()
-        })).unwrap_err();
+        let err = store
+            .set_route(make_route_with_response(
+                "GET",
+                "/h",
+                ResponseDefinition {
+                    loopback: true,
+                    content: Some("hello".to_string()),
+                    ..Default::default()
+                },
+            ))
+            .unwrap_err();
         assert!(matches!(err, AppError::BadRequest(_)));
     }
 
     #[test]
     fn loopback_and_content_file_together_is_rejected() {
         let store = RouteStore::default();
-        let err = store.set_route(make_route_with_response("GET", "/i", ResponseDefinition {
-            loopback: true,
-            content_file: Some("/some/file.txt".to_string()),
-            ..Default::default()
-        })).unwrap_err();
+        let err = store
+            .set_route(make_route_with_response(
+                "GET",
+                "/i",
+                ResponseDefinition {
+                    loopback: true,
+                    content_file: Some("/some/file.txt".to_string()),
+                    ..Default::default()
+                },
+            ))
+            .unwrap_err();
         assert!(matches!(err, AppError::BadRequest(_)));
     }
 
@@ -600,16 +663,26 @@ mod tests {
     #[test]
     fn max_content_size_limit_is_enforced() {
         let store = RouteStore::new(1000, 5);
-        let err = store.set_route(make_route_with_response("GET", "/too-big", ResponseDefinition {
-            content: Some("123456".to_string()),
-            ..Default::default()
-        })).unwrap_err();
+        let err = store
+            .set_route(make_route_with_response(
+                "GET",
+                "/too-big",
+                ResponseDefinition {
+                    content: Some("123456".to_string()),
+                    ..Default::default()
+                },
+            ))
+            .unwrap_err();
         assert!(matches!(err, AppError::BadRequest(_)));
 
-        let ok = store.set_route(make_route_with_response("GET", "/just-right", ResponseDefinition {
-            content: Some("12345".to_string()),
-            ..Default::default()
-        }));
+        let ok = store.set_route(make_route_with_response(
+            "GET",
+            "/just-right",
+            ResponseDefinition {
+                content: Some("12345".to_string()),
+                ..Default::default()
+            },
+        ));
         assert!(ok.is_ok());
     }
 }

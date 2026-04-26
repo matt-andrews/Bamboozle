@@ -97,8 +97,8 @@ async fn catch_all(
             state.tracker.record_matched(ctx.clone());
 
             if let Some(max_calls) = route_def.max_calls {
-                let calls = state.tracker.get_calls_for_route(&route_def.match_key);
-                if calls.len() >= max_calls {
+                let call_count = state.tracker.get_call_count_for_route(&route_def.match_key);
+                if call_count >= max_calls {
                     let _ = state.store.delete_route(&route_def.match_key);
                 }
             }
