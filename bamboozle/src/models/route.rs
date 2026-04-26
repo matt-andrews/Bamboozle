@@ -14,6 +14,8 @@ pub struct RouteDefinition {
     pub set_state: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub simulation: Option<SimulationConfig>,
+    #[serde(rename = "maxCalls", default, skip_serializing_if = "Option::is_none")]
+    pub max_calls: Option<usize>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default, ToSchema)]

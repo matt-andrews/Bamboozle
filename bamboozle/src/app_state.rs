@@ -10,9 +10,9 @@ pub struct AppState {
 }
 
 impl AppState {
-    pub fn new() -> Self {
+    pub fn new(max_routes: usize, max_content_size: usize) -> Self {
         Self {
-            store: Arc::new(RouteStore::new()),
+            store: Arc::new(RouteStore::new(max_routes, max_content_size)),
             tracker: Arc::new(CallTracker::new()),
             renderer: Arc::new(Renderer::new()),
         }
@@ -21,6 +21,6 @@ impl AppState {
 
 impl Default for AppState {
     fn default() -> Self {
-        Self::new()
+        Self::new(1000, 10 * 1024 * 1024)
     }
 }

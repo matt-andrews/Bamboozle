@@ -65,6 +65,7 @@ async fn catch_all(
                     match_key: MatchKey::new(verb, path),
                     set_state: None,
                     simulation: None,
+                    max_calls: None,
                     response: ResponseDefinition::default(),
                 },
                 state: String::new(),
@@ -94,6 +95,13 @@ async fn catch_all(
             }
 
             state.tracker.record_matched(ctx.clone());
+
+            if let Some(max_calls) = route_def.max_calls {
+                let calls = state.tracker.get_calls_for_route(&route_def.match_key);
+                if calls.len() >= max_calls {
+                    let _ = state.store.delete_route(&route_def.match_key);
+                }
+            }
 
             if let Some(sim) = &route_def.simulation {
                 if let Some(fault_response) = apply_simulation(sim).await {
@@ -301,6 +309,7 @@ mod tests {
             match_key: MatchKey::new(verb, pattern),
             set_state: None,
             simulation: None,
+            max_calls: None,
             response: ResponseDefinition {
                 status: status.to_string(),
                 content: content.map(|s| s.to_string()),
@@ -323,7 +332,7 @@ mod tests {
 
     #[tokio::test]
     async fn unmatched_route_returns_404() {
-        let app = router(AppState::new());
+        let app = router(AppState::default());
         let response = app
             .oneshot(
                 Request::builder()
@@ -338,7 +347,7 @@ mod tests {
 
     #[tokio::test]
     async fn matched_static_route_returns_200() {
-        let state = AppState::new();
+        let state = AppState::default();
         state
             .store
             .set_route(make_route("GET", "/hello", Some("world"), "200"))
@@ -357,7 +366,7 @@ mod tests {
 
     #[tokio::test]
     async fn response_body_matches_configured_content() {
-        let state = AppState::new();
+        let state = AppState::default();
         state
             .store
             .set_route(make_route("GET", "/greet", Some("hello there"), "200"))
@@ -376,7 +385,7 @@ mod tests {
 
     #[tokio::test]
     async fn custom_status_code_is_returned() {
-        let state = AppState::new();
+        let state = AppState::default();
         state
             .store
             .set_route(make_route("POST", "/things", None, "201"))
@@ -396,13 +405,14 @@ mod tests {
 
     #[tokio::test]
     async fn loopback_echoes_request_body() {
-        let state = AppState::new();
+        let state = AppState::default();
         state
             .store
             .set_route(RouteDefinition {
                 match_key: MatchKey::new("POST", "/echo"),
                 set_state: None,
                 simulation: None,
+                max_calls: None,
                 response: ResponseDefinition {
                     status: "200".to_string(),
                     loopback: true,
@@ -425,7 +435,7 @@ mod tests {
 
     #[tokio::test]
     async fn route_value_rendered_in_response_body() {
-        let state = AppState::new();
+        let state = AppState::default();
         state
             .store
             .set_route(make_route(
@@ -452,7 +462,7 @@ mod tests {
         // Construct via MatchKey fields directly (not MatchKey::new) to simulate the
         // serde deserialization path used by config file loading, where param names
         // retain their original case.
-        let state = AppState::new();
+        let state = AppState::default();
         state
             .store
             .set_route(RouteDefinition {
@@ -462,6 +472,7 @@ mod tests {
                 },
                 set_state: None,
                 simulation: None,
+                max_calls: None,
                 response: ResponseDefinition {
                     status: "200".to_string(),
                     content: Some(r#"{"id":"{{ routeValues.thingName }}"}"#.to_string()),
@@ -486,7 +497,7 @@ mod tests {
 
     #[tokio::test]
     async fn unmatched_request_is_tracked() {
-        let state = AppState::new();
+        let state = AppState::default();
         let tracker = state.tracker.clone();
         router(state)
             .oneshot(
@@ -502,7 +513,7 @@ mod tests {
 
     #[tokio::test]
     async fn matched_request_is_tracked() {
-        let state = AppState::new();
+        let state = AppState::default();
         state
             .store
             .set_route(make_route("GET", "/tracked", Some("ok"), "200"))
@@ -526,8 +537,48 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn max_calls_auto_deletes_route() {
+        let state = AppState::default();
+        state
+            .store
+            .set_route(RouteDefinition {
+                match_key: MatchKey::new("GET", "/limited"),
+                set_state: None,
+                simulation: None,
+                max_calls: Some(2),
+                response: ResponseDefinition {
+                    status: "200".to_string(),
+                    content: Some("ok".to_string()),
+                    ..Default::default()
+                },
+            })
+            .unwrap();
+
+        // 1st request -> 200
+        let req1 = router(state.clone())
+            .oneshot(Request::builder().uri("/limited").body(Body::empty()).unwrap())
+            .await
+            .unwrap();
+        assert_eq!(req1.status(), StatusCode::OK);
+
+        // 2nd request -> 200 (hits max_calls and auto-deletes)
+        let req2 = router(state.clone())
+            .oneshot(Request::builder().uri("/limited").body(Body::empty()).unwrap())
+            .await
+            .unwrap();
+        assert_eq!(req2.status(), StatusCode::OK);
+
+        // 3rd request -> 404 (route was deleted)
+        let req3 = router(state)
+            .oneshot(Request::builder().uri("/limited").body(Body::empty()).unwrap())
+            .await
+            .unwrap();
+        assert_eq!(req3.status(), StatusCode::NOT_FOUND);
+    }
+
+    #[tokio::test]
     async fn previous_context_is_null_on_first_call() {
-        let state = AppState::new();
+        let state = AppState::default();
         state
             .store
             .set_route(make_route("GET", "/thing", Some("ok"), "200"))
@@ -541,7 +592,7 @@ mod tests {
 
     #[tokio::test]
     async fn previous_context_is_set_on_second_call() {
-        let state = AppState::new();
+        let state = AppState::default();
         state
             .store
             .set_route(make_route("GET", "/thing", Some("ok"), "200"))
@@ -556,7 +607,7 @@ mod tests {
 
     #[tokio::test]
     async fn previous_context_does_not_nest() {
-        let state = AppState::new();
+        let state = AppState::default();
         state
             .store
             .set_route(make_route("GET", "/thing", Some("ok"), "200"))
@@ -577,13 +628,14 @@ mod tests {
 
     #[tokio::test]
     async fn set_state_template_is_rendered_and_stored() {
-        let state = AppState::new();
+        let state = AppState::default();
         state
             .store
             .set_route(RouteDefinition {
                 match_key: MatchKey::new("GET", "/stateful"),
                 set_state: Some("hello-state".to_string()),
                 simulation: None,
+                max_calls: None,
                 response: ResponseDefinition {
                     status: "200".to_string(),
                     content: Some("{{ state }}".to_string()),
@@ -608,7 +660,7 @@ mod tests {
 
     #[tokio::test]
     async fn previous_context_state_accessible_on_second_call() {
-        let state = AppState::new();
+        let state = AppState::default();
         state
             .store
             .set_route(RouteDefinition {
@@ -618,6 +670,7 @@ mod tests {
                         .to_string(),
                 ),
                 simulation: None,
+                max_calls: None,
                 response: ResponseDefinition {
                     status: "200".to_string(),
                     content: Some("{{ state }}".to_string()),
@@ -640,7 +693,7 @@ mod tests {
 
     #[tokio::test]
     async fn simulation_none_has_no_effect() {
-        let state = AppState::new();
+        let state = AppState::default();
         state
             .store
             .set_route(make_route("GET", "/plain", Some("ok"), "200"))
@@ -663,7 +716,7 @@ mod tests {
         use crate::models::simulation::{DelayConfig, SimulationConfig};
         use std::time::Instant;
 
-        let state = AppState::new();
+        let state = AppState::default();
         state
             .store
             .set_route(RouteDefinition {
@@ -673,6 +726,7 @@ mod tests {
                     delay: Some(DelayConfig::Fixed { ms: 50 }),
                     fault: None,
                 }),
+                max_calls: None,
                 response: ResponseDefinition {
                     status: "200".to_string(),
                     content: Some("ok".to_string()),
@@ -692,7 +746,7 @@ mod tests {
     async fn fault_empty_response_returns_200_empty_body() {
         use crate::models::simulation::{FaultConfig, FaultKind, SimulationConfig};
 
-        let state = AppState::new();
+        let state = AppState::default();
         state
             .store
             .set_route(RouteDefinition {
@@ -705,6 +759,7 @@ mod tests {
                         probability: 1.0,
                     }),
                 }),
+                max_calls: None,
                 response: ResponseDefinition {
                     status: "200".to_string(),
                     content: Some("should not appear".to_string()),
@@ -729,7 +784,7 @@ mod tests {
     async fn fault_connection_reset_errors_on_body_read() {
         use crate::models::simulation::{FaultConfig, FaultKind, SimulationConfig};
 
-        let state = AppState::new();
+        let state = AppState::default();
         state
             .store
             .set_route(RouteDefinition {
@@ -742,6 +797,7 @@ mod tests {
                         probability: 1.0,
                     }),
                 }),
+                max_calls: None,
                 response: ResponseDefinition {
                     status: "200".to_string(),
                     content: Some("should not appear".to_string()),
@@ -770,7 +826,7 @@ mod tests {
     async fn fault_probability_zero_never_triggers() {
         use crate::models::simulation::{FaultConfig, FaultKind, SimulationConfig};
 
-        let state = AppState::new();
+        let state = AppState::default();
         state
             .store
             .set_route(RouteDefinition {
@@ -783,6 +839,7 @@ mod tests {
                         probability: 0.0,
                     }),
                 }),
+                max_calls: None,
                 response: ResponseDefinition {
                     status: "200".to_string(),
                     content: Some("normal".to_string()),
@@ -808,7 +865,7 @@ mod tests {
     async fn fault_probability_one_always_triggers() {
         use crate::models::simulation::{FaultConfig, FaultKind, SimulationConfig};
 
-        let state = AppState::new();
+        let state = AppState::default();
         state
             .store
             .set_route(RouteDefinition {
@@ -821,6 +878,7 @@ mod tests {
                         probability: 1.0,
                     }),
                 }),
+                max_calls: None,
                 response: ResponseDefinition {
                     status: "200".to_string(),
                     content: Some("should not appear".to_string()),
@@ -848,13 +906,14 @@ mod tests {
         let file_path = dir.join("bamboozle_test_content_file.txt");
         std::fs::write(&file_path, "Hello {{ routeValues.name }}!").unwrap();
 
-        let state = AppState::new();
+        let state = AppState::default();
         state
             .store
             .set_route(RouteDefinition {
                 match_key: MatchKey::new("GET", "/greet/{name}"),
                 set_state: None,
                 simulation: None,
+                max_calls: None,
                 response: ResponseDefinition {
                     status: "200".to_string(),
                     content_file: Some(file_path.to_string_lossy().into_owned()),
@@ -882,13 +941,14 @@ mod tests {
         let expected: Vec<u8> = vec![0x89, 0x50, 0x4E, 0x47];
         std::fs::write(&file_path, &expected).unwrap();
 
-        let state = AppState::new();
+        let state = AppState::default();
         state
             .store
             .set_route(RouteDefinition {
                 match_key: MatchKey::new("GET", "/image"),
                 set_state: None,
                 simulation: None,
+                max_calls: None,
                 response: ResponseDefinition {
                     status: "200".to_string(),
                     binary_file: Some(file_path.to_string_lossy().into_owned()),
@@ -914,13 +974,14 @@ mod tests {
 
     #[tokio::test]
     async fn content_file_not_found_returns_500() {
-        let state = AppState::new();
+        let state = AppState::default();
         state
             .store
             .set_route(RouteDefinition {
                 match_key: MatchKey::new("GET", "/missing-text"),
                 set_state: None,
                 simulation: None,
+                max_calls: None,
                 response: ResponseDefinition {
                     status: "200".to_string(),
                     content_file: Some("/nonexistent/path/file.txt".to_string()),
@@ -942,13 +1003,14 @@ mod tests {
 
     #[tokio::test]
     async fn binary_file_not_found_returns_500() {
-        let state = AppState::new();
+        let state = AppState::default();
         state
             .store
             .set_route(RouteDefinition {
                 match_key: MatchKey::new("GET", "/missing-binary"),
                 set_state: None,
                 simulation: None,
+                max_calls: None,
                 response: ResponseDefinition {
                     status: "200".to_string(),
                     binary_file: Some("/nonexistent/path/file.bin".to_string()),
@@ -978,7 +1040,7 @@ mod tests {
 
     #[tokio::test]
     async fn inline_json_content_infers_application_json() {
-        let state = AppState::new();
+        let state = AppState::default();
         state
             .store
             .set_route(make_route("GET", "/data", Some(r#"{"id":1}"#), "200"))
@@ -995,7 +1057,7 @@ mod tests {
 
     #[tokio::test]
     async fn inline_json_array_infers_application_json() {
-        let state = AppState::new();
+        let state = AppState::default();
         state
             .store
             .set_route(make_route("GET", "/items", Some(r#"[1,2,3]"#), "200"))
@@ -1017,7 +1079,7 @@ mod tests {
 
     #[tokio::test]
     async fn inline_plain_text_infers_text_plain() {
-        let state = AppState::new();
+        let state = AppState::default();
         state
             .store
             .set_route(make_route("GET", "/msg", Some("hello world"), "200"))
@@ -1038,13 +1100,14 @@ mod tests {
         let file_path = dir.join("bamboozle_test_ct.json");
         std::fs::write(&file_path, r#"{"ok":true}"#).unwrap();
 
-        let state = AppState::new();
+        let state = AppState::default();
         state
             .store
             .set_route(RouteDefinition {
                 match_key: MatchKey::new("GET", "/ct-json"),
                 set_state: None,
                 simulation: None,
+                max_calls: None,
                 response: ResponseDefinition {
                     status: "200".to_string(),
                     content_file: Some(file_path.to_string_lossy().into_owned()),
@@ -1073,13 +1136,14 @@ mod tests {
         let file_path = dir.join("bamboozle_test_ct.html");
         std::fs::write(&file_path, "<h1>Hello</h1>").unwrap();
 
-        let state = AppState::new();
+        let state = AppState::default();
         state
             .store
             .set_route(RouteDefinition {
                 match_key: MatchKey::new("GET", "/ct-html"),
                 set_state: None,
                 simulation: None,
+                max_calls: None,
                 response: ResponseDefinition {
                     status: "200".to_string(),
                     content_file: Some(file_path.to_string_lossy().into_owned()),
@@ -1105,13 +1169,14 @@ mod tests {
         let file_path = dir.join("bamboozle_test_ct.png");
         std::fs::write(&file_path, [0x89, 0x50, 0x4E, 0x47]).unwrap();
 
-        let state = AppState::new();
+        let state = AppState::default();
         state
             .store
             .set_route(RouteDefinition {
                 match_key: MatchKey::new("GET", "/ct-png"),
                 set_state: None,
                 simulation: None,
+                max_calls: None,
                 response: ResponseDefinition {
                     status: "200".to_string(),
                     binary_file: Some(file_path.to_string_lossy().into_owned()),
@@ -1137,13 +1202,14 @@ mod tests {
         let file_path = dir.join("bamboozle_test_ct.xyz");
         std::fs::write(&file_path, [0x00, 0x01, 0x02]).unwrap();
 
-        let state = AppState::new();
+        let state = AppState::default();
         state
             .store
             .set_route(RouteDefinition {
                 match_key: MatchKey::new("GET", "/ct-bin"),
                 set_state: None,
                 simulation: None,
+                max_calls: None,
                 response: ResponseDefinition {
                     status: "200".to_string(),
                     binary_file: Some(file_path.to_string_lossy().into_owned()),
@@ -1168,13 +1234,14 @@ mod tests {
 
     #[tokio::test]
     async fn user_specified_content_type_overrides_inferred() {
-        let state = AppState::new();
+        let state = AppState::default();
         state
             .store
             .set_route(RouteDefinition {
                 match_key: MatchKey::new("GET", "/override"),
                 set_state: None,
                 simulation: None,
+                max_calls: None,
                 response: ResponseDefinition {
                     status: "200".to_string(),
                     content: Some(r#"{"id":1}"#.to_string()),
@@ -1203,13 +1270,14 @@ mod tests {
 
     #[tokio::test]
     async fn body_json_field_rendered_in_response() {
-        let state = AppState::new();
+        let state = AppState::default();
         state
             .store
             .set_route(RouteDefinition {
                 match_key: MatchKey::new("PUT", "/secrets/{name}"),
                 set_state: None,
                 simulation: None,
+                max_calls: None,
                 response: ResponseDefinition {
                     status: "200".to_string(),
                     content: Some(r#"{"value":"{{ body.value }}"}"#.to_string()),
@@ -1243,13 +1311,14 @@ mod tests {
     async fn body_json_field_works_without_content_type_header() {
         // Body is always parsed as JSON regardless of Content-Type header.
         // A valid JSON body without a Content-Type header still populates body.*.
-        let state = AppState::new();
+        let state = AppState::default();
         state
             .store
             .set_route(RouteDefinition {
                 match_key: MatchKey::new("PUT", "/raw/{name}"),
                 set_state: None,
                 simulation: None,
+                max_calls: None,
                 response: ResponseDefinition {
                     status: "200".to_string(),
                     content: Some(r#"{"value":"{{ body.value }}"}"#.to_string()),
@@ -1276,13 +1345,14 @@ mod tests {
 
     #[tokio::test]
     async fn loopback_mirrors_request_content_type() {
-        let state = AppState::new();
+        let state = AppState::default();
         state
             .store
             .set_route(RouteDefinition {
                 match_key: MatchKey::new("POST", "/echo-ct"),
                 set_state: None,
                 simulation: None,
+                max_calls: None,
                 response: ResponseDefinition {
                     status: "200".to_string(),
                     loopback: true,

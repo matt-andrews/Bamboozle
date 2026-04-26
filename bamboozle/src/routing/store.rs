@@ -64,18 +64,24 @@ fn param_count(pattern: &str) -> usize {
 pub struct RouteStore {
     // outer key = uppercase HTTP verb ("GET"), inner key = fully-lowercase normalized pattern
     routes: DashMap<String, DashMap<String, StoredRoute>>,
+    max_routes: usize,
+    max_content_size: usize,
+    route_count: std::sync::atomic::AtomicUsize,
 }
 
 impl Default for RouteStore {
     fn default() -> Self {
-        Self::new()
+        Self::new(1000, 10 * 1024 * 1024)
     }
 }
 
 impl RouteStore {
-    pub fn new() -> Self {
+    pub fn new(max_routes: usize, max_content_size: usize) -> Self {
         Self {
             routes: DashMap::new(),
+            max_routes,
+            max_content_size,
+            route_count: std::sync::atomic::AtomicUsize::new(0),
         }
     }
 
@@ -93,6 +99,16 @@ impl RouteStore {
             return Err(AppError::BadRequest(
                 "Only one of 'content', 'contentFile', 'binaryFile', or 'loopback' may be specified".to_string(),
             ));
+        }
+
+        if let Some(content) = &def.response.content {
+            if content.len() > self.max_content_size {
+                return Err(AppError::BadRequest(format!(
+                    "Content size {} bytes exceeds maximum allowed {} bytes",
+                    content.len(),
+                    self.max_content_size
+                )));
+            }
         }
 
         let verb = def.match_key.verb.trim().to_ascii_uppercase();
@@ -123,6 +139,13 @@ impl RouteStore {
             return Err(AppError::AlreadyExists(key_str));
         }
 
+        if self.route_count.load(std::sync::atomic::Ordering::Relaxed) >= self.max_routes {
+            return Err(AppError::BadRequest(format!(
+                "Maximum number of routes ({}) reached",
+                self.max_routes
+            )));
+        }
+
         let specificity = constraint_specificity(&pattern);
         let params = param_count(&pattern);
         verb_map.insert(
@@ -135,6 +158,7 @@ impl RouteStore {
                 normalized_pattern: pattern,
             },
         );
+        self.route_count.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
 
         info!(route = %key_str, "Route set");
         Ok(def)
@@ -158,6 +182,7 @@ impl RouteStore {
             return Err(RouteError::NotFound(key_str));
         }
 
+        self.route_count.fetch_sub(1, std::sync::atomic::Ordering::Relaxed);
         info!(route = %key_str, "Route deleted");
         Ok(())
     }
@@ -249,6 +274,7 @@ impl RouteStore {
 
     pub fn reset(&self) {
         self.routes.clear();
+        self.route_count.store(0, std::sync::atomic::Ordering::Relaxed);
         info!("Route store cleared");
     }
 }
@@ -269,20 +295,21 @@ mod tests {
             match_key: MatchKey::new(verb, pattern),
             set_state: None,
             simulation: None,
+            max_calls: None,
             response: ResponseDefinition::default(),
         }
     }
 
     #[test]
     fn set_route_and_match_it() {
-        let store = RouteStore::new();
+        let store = RouteStore::default();
         store.set_route(make_route("GET", "/api/users")).unwrap();
         assert!(store.match_route("GET", "/api/users").is_some());
     }
 
     #[test]
     fn duplicate_set_route_returns_already_exists() {
-        let store = RouteStore::new();
+        let store = RouteStore::default();
         store.set_route(make_route("GET", "/api/users")).unwrap();
         let err = store
             .set_route(make_route("GET", "/api/users"))
@@ -292,7 +319,7 @@ mod tests {
 
     #[test]
     fn delete_route_removes_it() {
-        let store = RouteStore::new();
+        let store = RouteStore::default();
         store
             .set_route(make_route("DELETE", "/items/{id}"))
             .unwrap();
@@ -303,7 +330,7 @@ mod tests {
 
     #[test]
     fn delete_nonexistent_route_returns_not_found() {
-        let store = RouteStore::new();
+        let store = RouteStore::default();
         let err = store
             .delete_route(&MatchKey::new("GET", "/missing"))
             .unwrap_err();
@@ -312,7 +339,7 @@ mod tests {
 
     #[test]
     fn match_static_route() {
-        let store = RouteStore::new();
+        let store = RouteStore::default();
         store.set_route(make_route("GET", "/hello")).unwrap();
         let (def, values) = store.match_route("GET", "/hello").unwrap();
         assert_eq!(def.match_key.pattern, "hello");
@@ -321,7 +348,7 @@ mod tests {
 
     #[test]
     fn match_parameterized_route_extracts_values() {
-        let store = RouteStore::new();
+        let store = RouteStore::default();
         store.set_route(make_route("GET", "/users/{id}")).unwrap();
         let (_, values) = store.match_route("GET", "/users/42").unwrap();
         assert_eq!(values["id"], "42");
@@ -329,7 +356,7 @@ mod tests {
 
     #[test]
     fn match_route_returns_none_for_no_match() {
-        let store = RouteStore::new();
+        let store = RouteStore::default();
         store.set_route(make_route("GET", "/api/users")).unwrap();
         assert!(store.match_route("GET", "/api/orders").is_none());
         assert!(store.match_route("POST", "/api/users").is_none());
@@ -337,7 +364,7 @@ mod tests {
 
     #[test]
     fn get_all_routes_returns_all() {
-        let store = RouteStore::new();
+        let store = RouteStore::default();
         store.set_route(make_route("GET", "/a")).unwrap();
         store.set_route(make_route("POST", "/b")).unwrap();
         assert_eq!(store.get_all_routes().len(), 2);
@@ -345,7 +372,7 @@ mod tests {
 
     #[test]
     fn reset_clears_all_routes() {
-        let store = RouteStore::new();
+        let store = RouteStore::default();
         store.set_route(make_route("GET", "/a")).unwrap();
         store.reset();
         assert!(store.get_all_routes().is_empty());
@@ -354,7 +381,7 @@ mod tests {
 
     #[test]
     fn typed_int_param_wins_over_string_when_value_is_numeric() {
-        let store = RouteStore::new();
+        let store = RouteStore::default();
         store
             .set_route(make_route("GET", "/items/{id:int}"))
             .unwrap();
@@ -379,7 +406,7 @@ mod tests {
 
     #[test]
     fn typed_int_param_rejects_non_numeric_with_no_string_fallback() {
-        let store = RouteStore::new();
+        let store = RouteStore::default();
         store
             .set_route(make_route("GET", "/items/{id:int}"))
             .unwrap();
@@ -388,7 +415,7 @@ mod tests {
 
     #[test]
     fn suggest_routes_returns_similar_route() {
-        let store = RouteStore::new();
+        let store = RouteStore::default();
         store.set_route(make_route("GET", "/api/users")).unwrap();
         store.set_route(make_route("GET", "/api/orders")).unwrap();
         let suggestions = store.suggest_routes("GET", "/api/users");
@@ -402,7 +429,7 @@ mod tests {
 
     #[test]
     fn suggest_routes_boosts_same_verb() {
-        let store = RouteStore::new();
+        let store = RouteStore::default();
         store.set_route(make_route("GET", "/api/users")).unwrap();
         store.set_route(make_route("POST", "/api/users")).unwrap();
         // Same path requested with GET — GET|api/users should rank first due to verb boost.
@@ -417,7 +444,7 @@ mod tests {
 
     #[test]
     fn suggest_routes_returns_empty_when_no_similar_routes() {
-        let store = RouteStore::new();
+        let store = RouteStore::default();
         store
             .set_route(make_route("GET", "/completely/different/path"))
             .unwrap();
@@ -432,7 +459,7 @@ mod tests {
 
     #[test]
     fn suggest_routes_caps_results_at_limit() {
-        let store = RouteStore::new();
+        let store = RouteStore::default();
         store.set_route(make_route("GET", "/api/users")).unwrap();
         store.set_route(make_route("GET", "/api/user")).unwrap();
         store
@@ -452,7 +479,7 @@ mod tests {
 
     #[test]
     fn suggest_routes_returns_empty_when_store_is_empty() {
-        let store = RouteStore::new();
+        let store = RouteStore::default();
         let suggestions = store.suggest_routes("GET", "/api/users");
         assert!(suggestions.is_empty());
     }
@@ -462,13 +489,14 @@ mod tests {
             match_key: MatchKey::new(verb, pattern),
             set_state: None,
             simulation: None,
+            max_calls: None,
             response,
         }
     }
 
     #[test]
     fn single_content_is_accepted() {
-        let store = RouteStore::new();
+        let store = RouteStore::default();
         let result = store.set_route(make_route_with_response("GET", "/a", ResponseDefinition {
             content: Some("hello".to_string()),
             ..Default::default()
@@ -478,7 +506,7 @@ mod tests {
 
     #[test]
     fn single_content_file_is_accepted() {
-        let store = RouteStore::new();
+        let store = RouteStore::default();
         let result = store.set_route(make_route_with_response("GET", "/b", ResponseDefinition {
             content_file: Some("/some/file.txt".to_string()),
             ..Default::default()
@@ -488,7 +516,7 @@ mod tests {
 
     #[test]
     fn single_binary_file_is_accepted() {
-        let store = RouteStore::new();
+        let store = RouteStore::default();
         let result = store.set_route(make_route_with_response("GET", "/c", ResponseDefinition {
             binary_file: Some("/some/file.bin".to_string()),
             ..Default::default()
@@ -498,7 +526,7 @@ mod tests {
 
     #[test]
     fn single_loopback_is_accepted() {
-        let store = RouteStore::new();
+        let store = RouteStore::default();
         let result = store.set_route(make_route_with_response("GET", "/d", ResponseDefinition {
             loopback: true,
             ..Default::default()
@@ -508,7 +536,7 @@ mod tests {
 
     #[test]
     fn content_and_content_file_together_is_rejected() {
-        let store = RouteStore::new();
+        let store = RouteStore::default();
         let err = store.set_route(make_route_with_response("GET", "/e", ResponseDefinition {
             content: Some("hello".to_string()),
             content_file: Some("/some/file.txt".to_string()),
@@ -519,7 +547,7 @@ mod tests {
 
     #[test]
     fn content_and_binary_file_together_is_rejected() {
-        let store = RouteStore::new();
+        let store = RouteStore::default();
         let err = store.set_route(make_route_with_response("GET", "/f", ResponseDefinition {
             content: Some("hello".to_string()),
             binary_file: Some("/some/file.bin".to_string()),
@@ -530,7 +558,7 @@ mod tests {
 
     #[test]
     fn content_file_and_binary_file_together_is_rejected() {
-        let store = RouteStore::new();
+        let store = RouteStore::default();
         let err = store.set_route(make_route_with_response("GET", "/g", ResponseDefinition {
             content_file: Some("/some/file.txt".to_string()),
             binary_file: Some("/some/file.bin".to_string()),
@@ -541,7 +569,7 @@ mod tests {
 
     #[test]
     fn loopback_and_content_together_is_rejected() {
-        let store = RouteStore::new();
+        let store = RouteStore::default();
         let err = store.set_route(make_route_with_response("GET", "/h", ResponseDefinition {
             loopback: true,
             content: Some("hello".to_string()),
@@ -552,12 +580,36 @@ mod tests {
 
     #[test]
     fn loopback_and_content_file_together_is_rejected() {
-        let store = RouteStore::new();
+        let store = RouteStore::default();
         let err = store.set_route(make_route_with_response("GET", "/i", ResponseDefinition {
             loopback: true,
             content_file: Some("/some/file.txt".to_string()),
             ..Default::default()
         })).unwrap_err();
         assert!(matches!(err, AppError::BadRequest(_)));
+    }
+
+    #[test]
+    fn max_routes_limit_is_enforced() {
+        let store = RouteStore::new(1, 10 * 1024 * 1024);
+        store.set_route(make_route("GET", "/first")).unwrap();
+        let err = store.set_route(make_route("GET", "/second")).unwrap_err();
+        assert!(matches!(err, AppError::BadRequest(_)));
+    }
+
+    #[test]
+    fn max_content_size_limit_is_enforced() {
+        let store = RouteStore::new(1000, 5);
+        let err = store.set_route(make_route_with_response("GET", "/too-big", ResponseDefinition {
+            content: Some("123456".to_string()),
+            ..Default::default()
+        })).unwrap_err();
+        assert!(matches!(err, AppError::BadRequest(_)));
+
+        let ok = store.set_route(make_route_with_response("GET", "/just-right", ResponseDefinition {
+            content: Some("12345".to_string()),
+            ..Default::default()
+        }));
+        assert!(ok.is_ok());
     }
 }
