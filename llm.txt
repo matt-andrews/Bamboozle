@@ -36,7 +36,7 @@ Keeping the ports separate ensures the system under test cannot accidentally rea
 ## Request lifecycle
 
 1. Extract verb, path, query params, headers, body.
-2. Match against registered routes (static paths first, then by specificity: longer patterns, typed constraints).
+2. Match against registered routes (static paths first, then by specificity: typed constraints before longer patterns).
 3. On no match — record as unmatched, log up to 3 fuzzy-matched suggestions, return 404.
 4. On match — build template context, evaluate `setState`, record call, apply simulation (delay then fault), render and return response.
 
@@ -85,12 +85,12 @@ Available in `content`, `headers`, `status`, and `setState`:
 | `{{ headers.key }}` | Request header (case-insensitive) |
 | `{{ body.key }}` | Top-level JSON body field |
 | `{{ bodyRaw }}` | Raw request body string |
-| `{{ state }}` | Value stored by `setState` on the previous request |
-| `{{ previousContext }}` | Full context snapshot of the previous request |
+| `{{ state }}` | Value produced by `setState` for the current request |
+| `{{ previousContext }}` | Full context snapshot of the previous request; use `{{ previousContext.state }}` for the prior request's state |
 
 ## State chaining
 
-A route can carry a `setState` field — a Liquid template evaluated after each match. The result is stored per-route and available as `{{ state }}` on the next request to that route. Use this to model stateful sequences (e.g. first call returns 201, second returns 409) without running a real backend.
+A route can carry a `setState` field — a Liquid template evaluated after each match. The result is stored per-route and exposed as `{{ state }}` for the current request. On the next request to that route, the prior call's context is available as `{{ previousContext }}`, including the prior state at `{{ previousContext.state }}`. Use this to model stateful sequences (e.g. first call returns 201, second returns 409) without running a real backend.
 
 `previousContext.previousContext` is always nil to prevent unbounded chain depth.
 
@@ -125,7 +125,7 @@ Every request is recorded whether matched or not. Matched calls are stored per-r
 GET /control/routes/{verb}/{pattern}/calls
 ```
 
-Returns an array of `ContextModel` objects in call order.
+Returns an array of `ContextModel` objects in an indeterminate order. For all routes, the `pattern` segment must be url encoded or the route may fail to match.
 
 ### Assert on a route
 
@@ -160,7 +160,7 @@ Operators: `==`, `!=`, `>`, `>=`, `<`, `<=`, `&&`, `||`.
 | GET | `/control/routes/{verb}/{pattern}/calls` | Call history for a route |
 | DELETE | `/control/routes/{verb}/{pattern}/calls` | Clear call history for a route |
 | POST | `/control/routes/{verb}/{pattern}/assert` | Assert on a route |
-| GET | `/control/unmatched` | Get unmatched calls |
+| GET | `/control/unmatched` | List unmatched call keys (verb + normalized pattern) |
 | POST | `/control/reset` | Remove all routes and clear all history |
 | GET | `/control/health` | Health check |
 | GET | `/control/version` | Version string |
@@ -215,7 +215,7 @@ Files with `.json`, `.yaml`, or `.yml` extensions are loaded. The mock listener 
 | `MAX_CONTENT_SIZE_BYTES` | `10485760` | Max inline content size (10 MB) |
 | `TLS_CERT_FILE` | unset | PEM-encoded certificate file |
 | `TLS_KEY_FILE` | unset | PEM-encoded private key file |
-| `RUST_LOG` | `info` | Log level (`error`, `warn`, `info`, `debug`) |
+| `RUST_LOG` | `info` | Log level/filter (`error`, `warn`, `info`, `debug`, `trace`) or any `tracing_subscriber::EnvFilter` directive |
 | `RUST_LOG_FORMAT` | `compact` | `compact`, `pretty`, or `json` |
 | `NO_COLOR` | unset | Disable ANSI colour codes |
 | `OTEL_EXPORTER_OTLP_ENDPOINT` | unset | OTLP HTTP endpoint for trace export |
@@ -235,10 +235,10 @@ Both SDKs wrap the control API. See `sdks/npm/README.md` and `sdks/dotnet/Bamboo
 - Language: Rust (stable)
 - HTTP framework: Axum
 - Async runtime: Tokio
-- Route storage: DashMap (concurrent, lock-free)
+- Route storage: DashMap (concurrent)
 - Template engine: Liquid
 - API docs: Utoipa (OpenAPI)
-- Final Docker image: `debian:bookworm-slim` with only the compiled binary
+- Docker image layout: static binary built in Alpine; final published runtime image is `scratch`
 
 ## Further reading
 
