@@ -1,0 +1,249 @@
+# Bamboozle
+
+> Container-native HTTP mock server for integration testing.
+
+Bamboozle runs as a self-contained Docker image. Your system under test talks to it over real HTTP, so you exercise your full client stack — serialization, auth headers, retries, circuit breakers — exactly as they would hit a real service. Your test code controls the mock via a separate control API.
+
+## Why it exists
+
+In-process mocking libraries cannot catch bugs that live in your HTTP client configuration, middleware stack, or retry logic. Bamboozle fills that gap by accepting and responding to real TCP connections, making it suitable for any language or runtime without per-language library support.
+
+## Who it is for
+
+- Integration test engineers testing apps that depend on external HTTP services
+- Distributed systems / microservices teams that need fault injection and resilience testing
+- Cloud-native teams working in Docker / Kubernetes environments
+- Any team that needs to exercise real HTTP traffic rather than in-process stubs
+
+## Quick start
+
+```bash
+docker run -p 8080:8080 -p 9090:9090 mattisthegreatest/bamboozle
+```
+
+- `:8080` — mock surface (your system under test calls this)
+- `:9090` — control API (your test code configures and asserts via this)
+
+## Two-server model
+
+Bamboozle binds two independent HTTP listeners in one process:
+
+- **Mock surface (:8080)** — matches incoming requests to registered routes, records every call, applies simulated delays or faults, and returns the configured response.
+- **Control API (:9090)** — REST API for registering routes, retrieving call history, running assertions, and resetting state. Always plain HTTP even when the mock surface runs TLS.
+
+Keeping the ports separate ensures the system under test cannot accidentally reach the control API.
+
+## Request lifecycle
+
+1. Extract verb, path, query params, headers, body.
+2. Match against registered routes (static paths first, then by specificity: longer patterns, typed constraints).
+3. On no match — record as unmatched, log up to 3 fuzzy-matched suggestions, return 404.
+4. On match — build template context, evaluate `setState`, record call, apply simulation (delay then fault), render and return response.
+
+Routes are compiled to regex once at registration, not per request.
+
+## Route definition
+
+```json
+{
+  "match": { "verb": "GET", "pattern": "/orders/{id:int}" },
+  "response": {
+    "status": "200",
+    "content": "{ \"id\": {{ routeValues.id }} }",
+    "headers": { "Content-Type": "application/json" }
+  }
+}
+```
+
+### Pattern syntax
+
+| Pattern | Behaviour |
+|---|---|
+| `/orders` | Exact match |
+| `/orders/{id}` | Any path segment, captured as `id` |
+| `/orders/{id:int}` | Integer only |
+| `/orders/{id:guid}` | Valid GUID only |
+| `/orders/{slug?}` | Optional segment |
+
+Type constraints: `int`, `long`, `double`, `decimal`, `float`, `bool`, `guid`, `alpha`, `datetime`.
+
+### Response strategies (mutually exclusive)
+
+- `content` — inline string (Liquid template)
+- `contentFile` — path to a text file (Liquid template applied)
+- `binaryFile` — path to a binary file (no templating; use for images, PDFs)
+- `loopback` — echo the request body back as the response
+
+### Template variables
+
+Available in `content`, `headers`, `status`, and `setState`:
+
+| Variable | Value |
+|---|---|
+| `{{ routeValues.key }}` | Captured route parameter |
+| `{{ queryParams.key }}` | Query string parameter |
+| `{{ headers.key }}` | Request header (case-insensitive) |
+| `{{ body.key }}` | Top-level JSON body field |
+| `{{ bodyRaw }}` | Raw request body string |
+| `{{ state }}` | Value stored by `setState` on the previous request |
+| `{{ previousContext }}` | Full context snapshot of the previous request |
+
+## State chaining
+
+A route can carry a `setState` field — a Liquid template evaluated after each match. The result is stored per-route and available as `{{ state }}` on the next request to that route. Use this to model stateful sequences (e.g. first call returns 201, second returns 409) without running a real backend.
+
+`previousContext.previousContext` is always nil to prevent unbounded chain depth.
+
+## Simulation (faults and delays)
+
+### Delay types
+
+| Type | Fields |
+|---|---|
+| `fixed` | `ms` |
+| `random` | `minMs`, `maxMs` |
+| `gaussian` | `meanMs`, `stdDevMs` (clamped to 0) |
+
+Delays are async; other routes continue to serve concurrently.
+
+### Fault types
+
+| Type | Behaviour |
+|---|---|
+| `connectionReset` | Sends headers then abruptly closes the connection |
+| `emptyResponse` | Returns `200 OK` with empty body |
+
+Add `probability` (0.0–1.0) to make faults intermittent. Delay fires before fault check. Both can be combined.
+
+## Call recording and assertions
+
+Every request is recorded whether matched or not. Matched calls are stored per-route; unmatched calls go to a separate bucket.
+
+### Retrieve history
+
+```
+GET /control/routes/{verb}/{pattern}/calls
+```
+
+Returns an array of `ContextModel` objects in call order.
+
+### Assert on a route
+
+```
+POST /control/routes/{verb}/{pattern}/assert
+```
+
+Query parameters: `called_exactly=n`, `called_at_least=n`, `called_at_most=n`, `never_called=true`.
+
+Returns `200 OK` on pass, `406 Not Acceptable` on failure.
+
+### Expression filtering
+
+Pass a JSON body with an `expression` field to assert only on calls matching a condition:
+
+```json
+{ "expression": "body(\"userId\") == \"abc123\" && header(\"x-tenant\") == \"acme\"" }
+```
+
+Expression tokens: `verb`, `state`, `query("key")`, `header("key")`, `route("key")`, `body("key")`.
+String functions: `contains(s, sub)`, `starts_with(s, prefix)`, `ends_with(s, suffix)`.
+Operators: `==`, `!=`, `>`, `>=`, `<`, `<=`, `&&`, `||`.
+
+## Control API endpoints
+
+| Method | Path | Purpose |
+|---|---|---|
+| POST | `/control/routes` | Register route (409 if exists) |
+| PUT | `/control/routes` | Create or replace route |
+| GET | `/control/routes` | List all routes |
+| DELETE | `/control/routes/{verb}/{pattern}` | Delete route |
+| GET | `/control/routes/{verb}/{pattern}/calls` | Call history for a route |
+| DELETE | `/control/routes/{verb}/{pattern}/calls` | Clear call history for a route |
+| POST | `/control/routes/{verb}/{pattern}/assert` | Assert on a route |
+| GET | `/control/unmatched` | Get unmatched calls |
+| POST | `/control/reset` | Remove all routes and clear all history |
+| GET | `/control/health` | Health check |
+| GET | `/control/version` | Version string |
+
+Interactive docs: `http://localhost:9090/` (Scalar UI)
+Raw OpenAPI spec: `http://localhost:9090/api-docs/openapi.json`
+
+## TLS
+
+The mock surface supports optional TLS. The control API always stays plain HTTP.
+
+Certificate generation is built into the image:
+
+```bash
+docker run --rm -v ./certs:/certs mattisthegreatest/bamboozle generate-certs --out /certs
+```
+
+Output: `ca.crt`, `cert.pem`, `key.pem`. Install `ca.crt` in your OS trust store so your application trusts the mock certificate.
+
+Enable TLS at runtime:
+
+```bash
+docker run \
+  -v ./certs:/certs \
+  -e TLS_CERT_FILE=/certs/cert.pem \
+  -e TLS_KEY_FILE=/certs/key.pem \
+  -p 8080:8080 -p 9090:9090 \
+  mattisthegreatest/bamboozle
+```
+
+## Static configuration
+
+Pre-register routes from JSON or YAML files at startup:
+
+```bash
+docker run \
+  -v ./routes:/etc/bamboozle/routes \
+  -e 'ROUTE_CONFIG_FOLDERS=["/etc/bamboozle/routes"]' \
+  -p 8080:8080 -p 9090:9090 \
+  mattisthegreatest/bamboozle
+```
+
+Files with `.json`, `.yaml`, or `.yml` extensions are loaded. The mock listener does not start until all files are processed.
+
+## Environment variables
+
+| Variable | Default | Description |
+|---|---|---|
+| `ROUTE_CONFIG_FOLDERS` | `[]` | JSON array of directory paths to scan for route files |
+| `ROUTE_CONFIG_THROW_ON_ERROR` | `false` | Fail startup on parse error |
+| `MAX_ROUTES` | `1000` | Maximum routes allowed |
+| `MAX_CONTENT_SIZE_BYTES` | `10485760` | Max inline content size (10 MB) |
+| `TLS_CERT_FILE` | unset | PEM-encoded certificate file |
+| `TLS_KEY_FILE` | unset | PEM-encoded private key file |
+| `RUST_LOG` | `info` | Log level (`error`, `warn`, `info`, `debug`) |
+| `RUST_LOG_FORMAT` | `compact` | `compact`, `pretty`, or `json` |
+| `NO_COLOR` | unset | Disable ANSI colour codes |
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | unset | OTLP HTTP endpoint for trace export |
+| `OTEL_EXPORTER_OTLP_HEADERS` | unset | HTTP headers for OTLP requests |
+
+## SDKs
+
+| Package | Language | Install |
+|---|---|---|
+| `@matt-andrews/bamboozle-sdk` | TypeScript / JavaScript | `npm install @matt-andrews/bamboozle-sdk` |
+| `Bamboozle.Core` | .NET (C#) | `dotnet add package Bamboozle.Core` |
+
+Both SDKs wrap the control API. See `sdks/npm/README.md` and `sdks/dotnet/Bamboozle/` for usage.
+
+## Implementation
+
+- Language: Rust (stable)
+- HTTP framework: Axum
+- Async runtime: Tokio
+- Route storage: DashMap (concurrent, lock-free)
+- Template engine: Liquid
+- API docs: Utoipa (OpenAPI)
+- Final Docker image: `debian:bookworm-slim` with only the compiled binary
+
+## Further reading
+
+- `docs/tutorials/first-mock.md` — end-to-end walkthrough
+- `docs/how-to/` — task-focused recipes
+- `docs/reference/` — route schema, API endpoints, expression syntax, environment variables
+- `docs/explanation/` — two-server model, state chaining, matching priority
+- `examples/azure-keyvault/` — mocking Azure Key Vault over HTTPS with .NET
