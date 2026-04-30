@@ -1,0 +1,14 @@
+services:
+  bamboozle:
+    image: mattisthegreatest/bamboozle:latest
+    ports:
+      # 8080 is the mock listener — your service-under-test calls this port
+      - "8080:8080"
+      # 9090 is the control API — your test code configures and asserts here
+      - "9090:9090"
+    environment:
+      # Tell Bamboozle to load every .yaml/.yml/.json file in this folder at startup
+      ROUTE_CONFIG_FOLDERS: '["/etc/bamboozle/routes"]'
+      ROUTE_CONFIG_THROW_ON_ERROR: "true"
+    volumes:
+      - ./routes:/etc/bamboozle/routes:ro
