@@ -9,6 +9,7 @@ services:
     environment:
       # Tell Bamboozle to load every .yaml/.yml/.json file in this folder at startup
       ROUTE_CONFIG_FOLDERS: '["/etc/bamboozle/routes"]'
+      # Tell Bamboozle to throw an error on startup when the route files don't load correctly
       ROUTE_CONFIG_THROW_ON_ERROR: "true"
     volumes:
       - ./routes:/etc/bamboozle/routes:ro

@@ -1,5 +1,5 @@
 /**
- * Integration tests for the blog post's central claim:
+ * Integration tests for the central claim:
  *
  *   "Your unit tests prove your code handles 503s. Your code does NOT
  *    handle the failure modes that actually take down production."
@@ -113,7 +113,7 @@ async function assertCalledExactly(
       .catch(() => "<could not fetch unmatched>");
     throw new Error(
       `assertion failed: ${verb} ${pattern} was not called exactly ${n} times. ` +
-        `Unmatched requests on the mock listener: ${unmatched}`,
+      `Unmatched requests on the mock listener: ${unmatched}`,
     );
   }
   throw new Error(
@@ -161,7 +161,7 @@ describe("blog post: 'Simulating faults your unit tests can't catch'", () => {
     } catch (err) {
       throw new Error(
         `Bamboozle is not reachable at ${CONTROL_URL}: ${String(err)}. ` +
-          `Did you run \`npm run bamboozle:up\`?`,
+        `Did you run \`npm run bamboozle:up\`?`,
       );
     }
   });
@@ -245,8 +245,8 @@ describe("blog post: 'Simulating faults your unit tests can't catch'", () => {
       if (result.kind === "ok") {
         throw new Error(
           `expected /reset-me to fail at the network layer, but got ` +
-            `HTTP ${result.status} (body: ${JSON.stringify(result.body.slice(0, 200))}). ` +
-            `Bamboozle's connectionReset fault is not being applied — check the route registration.`,
+          `HTTP ${result.status} (body: ${JSON.stringify(result.body.slice(0, 200))}). ` +
+          `Bamboozle's connectionReset fault is not being applied — check the route registration.`,
         );
       }
       expect(result.kind).toBe("network_error");

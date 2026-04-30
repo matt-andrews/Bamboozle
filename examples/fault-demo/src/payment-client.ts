@@ -1,5 +1,5 @@
 /**
- * The service-under-test for the blog post companion.
+ * The service-under-test
  *
  * Two clients, deliberately different:
  *

@@ -1,12 +1,10 @@
-# bamboozle-fault-demo
+# Simulated Fault Demo
 
-A runnable companion to the blog post **["Simulating faults your unit tests can't catch"](#)**.
-
-Spin up [Bamboozle](https://github.com/matt-andrews/bamboozle) in Docker, point a small TypeScript HTTP client at it, and watch the failure modes from the post — TCP connection resets, empty 200s, latency spikes, and transient flakes — actually take the client down. Then watch a more carefully written client survive them.
+Spin up Bamboozle in Docker, point a small TypeScript HTTP client at it, and watch the failure modes from the post — TCP connection resets, empty 200s, latency spikes, and transient flakes — actually take the client down. Then watch a more carefully written client survive them.
 
 ## What's in here
 
-```
+```json
 .
 ├── docker-compose.yml          # boots Bamboozle with the routes mounted in
 ├── routes/
@@ -41,14 +39,14 @@ If something looks off, `npm run bamboozle:logs` will tail the container.
 
 Each route in `routes/routes.yaml` corresponds to a section of the blog post. Hit them with curl to see for yourself:
 
-| Path                | What Bamboozle does                                      | Blog post section                          |
-| ------------------- | -------------------------------------------------------- | ------------------------------------------ |
-| `GET /happy-path`   | Plain 200 with a JSON body                               | (the control case)                         |
-| `GET /server-error` | Plain 503                                                | "A 503 is the easy case"                   |
-| `POST /payments`    | Sends headers, then resets the TCP connection            | "The TCP reset that took down the service" |
-| `GET /empty-response` | Returns `200 OK` with an empty body                    | "Faults that mirror reality, not fixtures" |
-| `GET /slow`         | Gaussian-distributed latency, mean 300ms, stddev 80ms    | "Latency injection"                        |
-| `GET /flaky`        | 30% of calls reset the connection; the other 70% succeed | "Transient faults"                         |
+| Path                  | What Bamboozle does                                      |
+| -------------------   | -------------------------------------------------------- |
+| `GET /happy-path`     | Plain 200 with a JSON body                               |
+| `GET /server-error`   | Plain 503                                                |
+| `POST /payments`      | Sends headers, then resets the TCP connection            |
+| `GET /empty-response` | Returns `200 OK` with an empty body                      |
+| `GET /slow`           | Gaussian-distributed latency, mean 300ms, stddev 80ms    |
+| `GET /flaky`          | 30% of calls reset the connection; the other 70% succeed |
 
 Try this with the container running:
 
@@ -96,7 +94,7 @@ If a test passes, the cause matched the claim.
 Bamboozle exposes two ports:
 
 - **`:8080`** — the mock HTTP listener. The TypeScript client (`payment-client.ts`) talks to this. From the client's perspective, this is just an upstream service.
-- **`:9090`** — the control API. The test file talks to this directly via `fetch()` to register runtime routes, clear per-route call history, and assert on call counts. We use the raw HTTP API rather than the npm SDK; helpers at the top of the test file wrap the calls.
+- **`:9090`** — the control API. The test file talks to this directly via `fetch()` to register runtime routes, clear per-route call history, and assert on call counts.
 
 Routes are defined two ways. Most of this demo uses **static config**: `routes/routes.yaml` is mounted into the container, and Bamboozle loads every YAML/JSON file in `/etc/bamboozle/routes` at startup. This is the right choice for routes that don't change between tests.
 
@@ -118,7 +116,7 @@ See the [Bamboozle docs](https://github.com/matt-andrews/Bamboozle/tree/main/doc
 
 ### A note on `reset()`
 
-The control API has `POST /control/reset`, which removes **all** routes and **all** call history — including routes loaded from `routes.yaml` at startup. Use it sparingly; once you reset, anything statically configured is gone for the lifetime of the container.
+The control API has `POST /control/reset`, which removes **all** routes and **all** call history — including routes loaded from `routes.yaml` at startup. Use it sparingly; once you reset, anything statically configured is gone for the lifetime of the container. See [#61 for more on the current usecase](https://github.com/matt-andrews/Bamboozle/issues/61)
 
 For per-test cleanup, prefer the narrower endpoint:
 
@@ -130,10 +128,5 @@ It clears call history for one route without removing the route itself. The asse
 
 ## Caveats
 
-- The test file talks to the control API via raw `fetch()` rather than the npm SDK. This is intentional: the control API is documented, the SDK README has internal name inconsistencies (the install name and import name don't match), and using `fetch` makes the demo easy to translate to other clients. If you want to use the SDK, the helpers at the top of `tests/payment-client.test.ts` are thin wrappers around the documented HTTP endpoints — swap them out.
 - The probability-based test (`/flaky`) uses statistical bounds (>85%, <85%). On 50 samples that's loose enough to be reliable, but if you crank `N` down you'll start to see flakes. Probabilistic tests need probabilistic assertions.
 - Don't run Bamboozle anywhere reachable from the public internet. It's a fault-injecting mock server with no auth — it's for testing only.
-
-## License
-
-MIT — same as Bamboozle.
