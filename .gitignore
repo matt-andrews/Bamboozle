@@ -12,6 +12,8 @@ certs/
 bamboozle/target/
 /.cargo/config.toml
 
+target/
+
 # User-specific files
 *.rsuser
 *.suo
