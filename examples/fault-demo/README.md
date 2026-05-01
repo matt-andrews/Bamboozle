@@ -128,5 +128,5 @@ It clears call history for one route without removing the route itself. The asse
 
 ## Caveats
 
-- The probability-based test (`/flaky`) uses statistical bounds (>85%, <85%). On 50 samples that's loose enough to be reliable, but if you crank `N` down you'll start to see flakes. Probabilistic tests need probabilistic assertions.
+- The probability-based test (`/flaky`) uses a success-rate threshold/window rather than a deterministic expectation. On 50 samples that's loose enough to be reliable, but if you crank `N` down you'll start to see flakes. Probabilistic tests need probabilistic assertions.
 - Don't run Bamboozle anywhere reachable from the public internet. It's a fault-injecting mock server with no auth — it's for testing only.
