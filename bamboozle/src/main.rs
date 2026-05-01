@@ -56,7 +56,7 @@ fn init_tracing() {
         let otel_layer = std::env::var("OTEL_EXPORTER_OTLP_ENDPOINT").ok().and_then(|_| {
             match opentelemetry_otlp::SpanExporter::builder().with_http().build() {
                 Ok(exporter) => {
-                    let provider = opentelemetry_sdk::trace::TracerProvider::builder()
+                    let provider = opentelemetry_sdk::trace::SdkTracerProvider::builder()
                         .with_simple_exporter(exporter)
                         .build();
                     use opentelemetry::trace::TracerProvider as _;
@@ -128,9 +128,6 @@ async fn main() -> anyhow::Result<()> {
             axum::serve(control_listener, control::router(state.clone())),
         );
 
-        #[cfg(feature = "otel")]
-        opentelemetry::global::shutdown_tracer_provider();
-
         result?;
         return Ok(());
     }
@@ -145,9 +142,6 @@ async fn main() -> anyhow::Result<()> {
         axum::serve(mock_listener, mock_server::router(state.clone())),
         axum::serve(control_listener, control::router(state.clone())),
     );
-
-    #[cfg(feature = "otel")]
-    opentelemetry::global::shutdown_tracer_provider();
 
     result?;
 
