@@ -1,0 +1,103 @@
+routes:
+  # ---------------------------------------------------------------------------
+  # /happy-path
+  # The control case. No simulation. Returns 200 OK with a normal JSON body.
+  # Use this to confirm the client works against a well-behaved dependency
+  # before you start breaking things.
+  # ---------------------------------------------------------------------------
+  - match:
+      verb: GET
+      pattern: /happy-path
+    response:
+      status: "200"
+      content: '{"id":"abc-123","amount":4200,"status":"ok"}'
+      headers:
+        Content-Type: application/json
+
+  # ---------------------------------------------------------------------------
+  # /slow
+  # Gaussian-distributed latency centred on 300ms. Most calls are fine; some
+  # land in the tail. This is how real upstreams behave — not a flat delay.
+  # Useful for testing your timeout and circuit-breaker behaviour.
+  # ---------------------------------------------------------------------------
+  - match:
+      verb: GET
+      pattern: /slow
+    response:
+      status: "200"
+      content: '{"id":"abc-123","amount":4200,"status":"ok"}'
+      headers:
+        Content-Type: application/json
+    simulation:
+      delay:
+        type: gaussian
+        meanMs: 300
+        stdDevMs: 80
+
+  # ---------------------------------------------------------------------------
+  # /server-error
+  # The "easy" failure mode — a clean 503. Most retry logic handles this.
+  # If your code passes /connection-reset but fails this, something is off.
+  # ---------------------------------------------------------------------------
+  - match:
+      verb: GET
+      pattern: /server-error
+    response:
+      status: "503"
+      content: '{"error":"upstream temporarily unavailable"}'
+      headers:
+        Content-Type: application/json
+
+  # ---------------------------------------------------------------------------
+  # /connection-reset
+  # The headline scenario from the blog post. Bamboozle accepts the connection,
+  # sends response headers, then slams the socket shut. Your client sees an
+  # ECONNRESET / broken-pipe error — NOT an HTTP status code. Retry logic that
+  # only catches `HTTPError` subclasses will never fire.
+  # ---------------------------------------------------------------------------
+  - match:
+      verb: POST
+      pattern: /payments
+    response:
+      status: "200"
+    simulation:
+      fault:
+        type: connectionReset
+
+  # ---------------------------------------------------------------------------
+  # /empty-response
+  # 200 OK, but the body is empty. The status code says "all good"; the
+  # payload says otherwise. This is the failure mode that exposes
+  # "we trusted the status code instead of validating the response."
+  # ---------------------------------------------------------------------------
+  - match:
+      verb: GET
+      pattern: /empty-response
+    response:
+      status: "200"
+      headers:
+        Content-Type: application/json
+    simulation:
+      fault:
+        type: emptyResponse
+
+  # ---------------------------------------------------------------------------
+  # /flaky
+  # Transient fault — 30% of calls reset the connection, 70% succeed. There's
+  # no pattern; retrying usually works. This is where probabilistic testing
+  # earns its keep: deterministic faults catch obvious bugs, but the bugs in
+  # your retry/circuit-breaker/idempotency code only surface under partial
+  # failure across many requests.
+  # ---------------------------------------------------------------------------
+  - match:
+      verb: GET
+      pattern: /flaky
+    response:
+      status: "200"
+      content: '{"id":"abc-123","amount":4200,"status":"ok"}'
+      headers:
+        Content-Type: application/json
+    simulation:
+      fault:
+        type: connectionReset
+        probability: 0.3

@@ -40,6 +40,7 @@ Your system under test calls `:8080`. Your test code configures and asserts via 
 - [Load static config](docs/how-to/load-static-config.md) — JSON/YAML route files at startup
 - [Configure logging](docs/how-to/configure-logging.md) — log levels, formats, OpenTelemetry export
 - [Enable TLS](docs/how-to/enable-tls.md) — HTTPS on the mock server, certificate generation
+- [Fault Tolerance Example](examples/fault-demo/README.md) — Example: simulated faults including latency injection, connection resets, and transient failures
 
 ---
 
