@@ -72,6 +72,8 @@ jobs:
           report-path: ./bamboozle/ctrf-report.json
           pull-request-report: "true"
           title: "Rust Unit Tests"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - uses: actions/upload-artifact@v7
         if: always()

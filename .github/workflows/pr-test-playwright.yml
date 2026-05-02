@@ -71,6 +71,8 @@ jobs:
           report-path: ./playwright/ctrf/ctrf-report.json
           pull-request-report: "true"
           title: "Playwright E2E"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - uses: actions/upload-artifact@v7
         if: ${{ !cancelled() }}
