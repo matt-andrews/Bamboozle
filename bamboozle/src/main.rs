@@ -1,4 +1,6 @@
 mod app_state;
+#[cfg(feature = "tls")]
+mod cert;
 mod config;
 mod config_loader;
 mod control;
@@ -9,8 +11,6 @@ mod mock_server;
 mod models;
 mod routing;
 mod tracking;
-#[cfg(feature = "tls")]
-mod cert;
 
 use clap::{Parser, Subcommand};
 use tokio::net::TcpListener;
@@ -88,7 +88,7 @@ fn init_tracing() {
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    let cli = Cli::parse();
+    Cli::parse();
 
     #[cfg(feature = "tls")]
     if let Some(Commands::GenerateCerts(args)) = cli.command {
@@ -113,8 +113,7 @@ async fn main() -> anyhow::Result<()> {
             .install_default()
             .expect("Failed to install default rustls CryptoProvider");
 
-        let tls_config =
-            axum_server::tls_rustls::RustlsConfig::from_pem_file(cert, key).await?;
+        let tls_config = axum_server::tls_rustls::RustlsConfig::from_pem_file(cert, key).await?;
 
         info!("Mock server listening on :8080 (TLS)");
         info!("Control server listening on :9090");
@@ -147,4 +146,3 @@ async fn main() -> anyhow::Result<()> {
 
     Ok(())
 }
-
