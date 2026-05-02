@@ -14,11 +14,11 @@ export class BamboozleClient {
     this.#baseUrl = (options.baseUrl ?? "http://localhost:9090").replace(/\/$/, "");
   }
 
-  async addRoute(route: RouteDefinition): Promise<RouteDefinition> {
+  async addRoute(route: RouteDefinition): Promise<RouteDefinition[]> {
     return this.#request("POST", "/control/routes", route);
   }
 
-  async upsertRoute(route: RouteDefinition): Promise<RouteDefinition> {
+  async upsertRoute(route: RouteDefinition): Promise<RouteDefinition[]> {
     return this.#request("PUT", "/control/routes", route);
   }
 

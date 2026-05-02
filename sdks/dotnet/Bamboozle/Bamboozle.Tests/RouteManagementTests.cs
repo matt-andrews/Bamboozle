@@ -53,10 +53,10 @@ public class RouteManagementTests : IClassFixture<BamboozleFixture>, IAsyncLifet
         var created = await _fixture.Bamboozle.CreateRoute(routeDef);
 
         Assert.NotNull(created);
-        Assert.Equal("GET", created.Match.Verb);
-        Assert.Equal("test-route-1", created.Match.Pattern);
-        Assert.Equal("200", created.Response.Status);
-        Assert.Equal("Hello World", created.Response.Content);
+        Assert.Equal("GET", created.First().Match.Verb);
+        Assert.Equal("test-route-1", created.First().Match.Pattern);
+        Assert.Equal("200", created.First().Response.Status);
+        Assert.Equal("Hello World", created.First().Response.Content);
         
         // Verify mock endpoint works
         var response = await _fixture.MockClient.GetAsync("/test-route-1");
@@ -107,8 +107,8 @@ public class RouteManagementTests : IClassFixture<BamboozleFixture>, IAsyncLifet
         var updated = await _fixture.Bamboozle.UpdateRoute(routeDef);
 
         Assert.NotNull(updated);
-        Assert.Equal("Updated", updated.Response.Content);
-        Assert.Equal("202", updated.Response.Status);
+        Assert.Equal("Updated", updated.First().Response.Content);
+        Assert.Equal("202", updated.First().Response.Status);
         
         // Verify with mock endpoint
         var response = await _fixture.MockClient.PostAsync("/test-route-3", new StringContent(""));
@@ -172,10 +172,10 @@ public class RouteManagementTests : IClassFixture<BamboozleFixture>, IAsyncLifet
         var created = await _fixture.Bamboozle.CreateRoute(routeDef);
 
         Assert.NotNull(created);
-        Assert.NotNull(created.Simulation);
-        Assert.NotNull(created.Simulation.Fault);
-        Assert.Equal(faultKind, created.Simulation.Fault.Type);
-        Assert.Equal(1.0f, created.Simulation.Fault.Probability);
+        Assert.NotNull(created.First().Simulation);
+        Assert.NotNull(created.First().Simulation?.Fault);
+        Assert.Equal(faultKind, created.First().Simulation!.Fault!.Type);
+        Assert.Equal(1.0f, created.First().Simulation!.Fault!.Probability);
     }
 
     [Fact]
@@ -193,8 +193,8 @@ public class RouteManagementTests : IClassFixture<BamboozleFixture>, IAsyncLifet
 
         var created = await _fixture.Bamboozle.CreateRoute(routeDef);
 
-        Assert.NotNull(created?.Simulation?.Delay);
-        var delay = Assert.IsType<FixedDelayConfig>(created.Simulation.Delay);
+        Assert.NotNull(created.First()?.Simulation?.Delay);
+        var delay = Assert.IsType<FixedDelayConfig>(created.First().Simulation!.Delay);
         Assert.Equal(100, delay.Ms);
     }
 
@@ -213,8 +213,8 @@ public class RouteManagementTests : IClassFixture<BamboozleFixture>, IAsyncLifet
 
         var created = await _fixture.Bamboozle.CreateRoute(routeDef);
 
-        Assert.NotNull(created?.Simulation?.Delay);
-        var delay = Assert.IsType<RandomDelayConfig>(created.Simulation.Delay);
+        Assert.NotNull(created.First()?.Simulation?.Delay);
+        var delay = Assert.IsType<RandomDelayConfig>(created.First().Simulation.Delay);
         Assert.Equal(50, delay.MinMs);
         Assert.Equal(150, delay.MaxMs);
     }
@@ -234,8 +234,8 @@ public class RouteManagementTests : IClassFixture<BamboozleFixture>, IAsyncLifet
 
         var created = await _fixture.Bamboozle.CreateRoute(routeDef);
 
-        Assert.NotNull(created?.Simulation?.Delay);
-        var delay = Assert.IsType<GaussianDelayConfig>(created.Simulation.Delay);
+        Assert.NotNull(created.First()?.Simulation?.Delay);
+        var delay = Assert.IsType<GaussianDelayConfig>(created.First().Simulation.Delay);
         Assert.Equal(100.5f, delay.MeanMs);
         Assert.Equal(10.2f, delay.StdDevMs);
     }

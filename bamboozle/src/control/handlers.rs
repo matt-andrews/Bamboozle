@@ -22,7 +22,7 @@ use crate::{
     path = "/control/routes",
     request_body = RouteDefinition,
     responses(
-        (status = 201, description = "Route created", body = RouteDefinition),
+        (status = 201, description = "Route created", body = Vec<RouteDefinition>),
         (status = 409, description = "Route already exists"),
     ),
     tag = "Routes"
@@ -30,10 +30,11 @@ use crate::{
 pub async fn post_routes(
     State(state): State<AppState>,
     Json(route): Json<RouteDefinition>,
-) -> Result<(StatusCode, Json<RouteDefinition>), AppError> {
-    let match_key = route.match_key.clone();
+) -> Result<(StatusCode, Json<Vec<RouteDefinition>>), AppError> {
     let response = state.store.set_route(route)?;
-    state.tracker.delete_calls_for_route(&match_key);
+    for def in &response {
+        state.tracker.delete_calls_for_route(&def.match_key);
+    }
     Ok((StatusCode::CREATED, Json(response)))
 }
 
@@ -44,20 +45,39 @@ pub async fn post_routes(
     path = "/control/routes",
     request_body = RouteDefinition,
     responses(
-        (status = 201, description = "Route upserted", body = RouteDefinition),
+        (status = 200, description = "Route updated", body = Vec<RouteDefinition>),
+        (status = 201, description = "Route created", body = Vec<RouteDefinition>),
     ),
     tag = "Routes"
 )]
 pub async fn put_routes(
     State(state): State<AppState>,
     Json(route): Json<RouteDefinition>,
-) -> Result<(StatusCode, Json<RouteDefinition>), AppError> {
-    // Ignore NotFound — PUT is idempotent. delete_route normalizes internally.
-    let match_key = route.match_key.clone();
-    let _ = state.store.delete_route(&route.match_key);
+) -> Result<(StatusCode, Json<Vec<RouteDefinition>>), AppError> {
+    // Delete each verb individually. With a multi-verb string like "GET,POST"
+    // the store keys routes by single verb, so we must fan out the deletes.
+    let mut any_replaced = false;
+    for v in route.match_key.verb.split(',') {
+        if state
+            .store
+            .delete_route(&MatchKey::new(v.trim(), &route.match_key.pattern))
+            .is_ok()
+        {
+            any_replaced = true;
+        }
+    }
+
+    let return_status = if any_replaced {
+        StatusCode::OK
+    } else {
+        StatusCode::CREATED
+    };
+
     let response = state.store.set_route(route)?;
-    state.tracker.delete_calls_for_route(&match_key);
-    Ok((StatusCode::CREATED, Json(response)))
+    for def in &response {
+        state.tracker.delete_calls_for_route(&def.match_key);
+    }
+    Ok((return_status, Json(response)))
 }
 
 // ── DELETE /control/routes/:verb/:pattern ────────────────────────────────────

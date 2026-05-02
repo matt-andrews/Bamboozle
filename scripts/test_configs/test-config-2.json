@@ -2,7 +2,7 @@
   "routes": [
     {
       "match": {
-        "verb": "GET",
+        "verb": "GET,POST",
         "pattern": "something/{somethingName}/{somethingVersion}"
       },
       "response": {

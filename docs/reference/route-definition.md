@@ -14,10 +14,26 @@ The JSON/YAML schema for a route. Used in `POST /control/routes`, `PUT /control/
 
 ## `MatchKey`
 
-| Field | Type | Description |
-|---|---|---|
-| `verb` | string | HTTP method, case-insensitive (`GET`, `POST`, etc.) |
-| `pattern` | string | URL path pattern, optionally with typed parameters |
+| Field | Type | Description                                                                                                   |
+|---|---|---------------------------------------------------------------------------------------------------------------|
+| `verb` | string | HTTP method, case-insensitive. Can be a comma-separated list to define multiple verbs in a single definition. |
+| `pattern` | string | URL path pattern, optionally with typed parameters                                                            |
+
+> [!NOTE]
+> When defining multiple verbs, each route is individually recognized after creation. This means assertions must target a specific verb and **not** a collection
+
+## Allowed Verbs
+| Verb      | Description |
+|-----------|-------------|
+| `GET`     | HTTP        |
+| `POST`    | HTTP        |
+| `PUT`     | HTTP        |
+| `DELETE`  | HTTP        |
+| `PATCH`   | HTTP        |
+| `HEAD`    | HTTP        |
+| `OPTIONS` | HTTP        |
+| `CONNECT` | HTTP        |
+| `TRACE`   | HTTP        |
 
 ### Pattern syntax
 

@@ -8,7 +8,14 @@ test('response json is real json', async ({ request }) => {
     const json = await response.json();
     expect(json.id).toEqual("something");
     expect(json.value).toEqual("test-value-something")
-})
+});
+
+test('can hit multi-verb route definition', async ({ request }) => {
+    const response = await request.post('http://localhost:18080/something/something/darkside');
+    const json = await response.json();
+    expect(json.id).toEqual("something");
+    expect(json.value).toEqual("test-value-something")
+});
 
 test.describe('request body can do complex json', () => {
     let deleteState: MatchKey[] = [];
