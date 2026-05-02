@@ -5,6 +5,9 @@ on:
     tags:
       - "app/v*"
 
+permissions:
+  contents: read
+
 jobs:
   unit-test:
     uses: ./.github/workflows/pr-test-unit.yml

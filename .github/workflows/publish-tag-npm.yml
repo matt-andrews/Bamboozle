@@ -5,6 +5,9 @@ on:
     tags:
       - "sdks/npm/v*"
 
+permissions:
+  contents: read
+
 jobs:
   playwright-tests:
     uses: ./.github/workflows/pr-test-playwright.yml
