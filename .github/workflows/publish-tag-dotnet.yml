@@ -7,7 +7,7 @@ on:
 
 jobs:
   ci:
-    uses: ./.github/workflows/dotnet-ci.yml
+    uses: ./.github/workflows/pr-test-dotnet.yml
 
   publish:
     needs: ci

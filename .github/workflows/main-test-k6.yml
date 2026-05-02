@@ -3,13 +3,13 @@ name: K6 Load Tests
 on:
   workflow_dispatch:
   pull_request:
-    types: [opened, synchronize]
+    types: [closed]
+    branches: [main]
 
 jobs:
   k6:
     name: K6 Load Test
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v6
 
@@ -21,14 +21,23 @@ jobs:
 
       - name: Run K6 load tests
         run: |
-          docker run --rm \
-            --network host \
-            --user $(id -u):$(id -g) \
-            -v "${{ github.workspace }}/scripts/perf-test/k6:/scripts" \
-            -e BASE_URL=http://localhost:18080 \
-            grafana/k6:0.57.0 \
-            run --no-color --out json=/scripts/results.json \
-            /scripts/load-test.js | tee ./scripts/perf-test/k6/k6-output.txt
+          set -o pipefail
+          K6_DIR="./scripts/perf-test/k6"
+          overall_exit=0
+          for script in "$K6_DIR"/*.js; do
+            script_name=$(basename "$script" .js)
+            echo "=== $script_name ===" | tee -a "$K6_DIR/k6-output.txt"
+            docker run --rm \
+              --network host \
+              --user $(id -u):$(id -g) \
+              -v "${{ github.workspace }}/scripts/perf-test/k6:/scripts" \
+              -e BASE_URL=http://localhost:18080 \
+              grafana/k6:0.57.0 \
+              run --no-color --out "json=/scripts/results-${script_name}.json" \
+              "/scripts/${script_name}.js" 2>&1 | tee -a "$K6_DIR/k6-output.txt" \
+              || overall_exit=1
+          done
+          exit "$overall_exit"
 
       - name: Post summary
         if: always()
@@ -44,6 +53,6 @@ jobs:
         with:
           name: k6-results
           path: |
-            scripts/perf-test/k6/results.json
+            scripts/perf-test/k6/results-*.json
             scripts/perf-test/k6/k6-output.txt
           retention-days: 30

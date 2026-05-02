@@ -1,4 +1,4 @@
-name: PR Auto-labeler
+name: PR Auto-tagger
 
 on:
   pull_request:
