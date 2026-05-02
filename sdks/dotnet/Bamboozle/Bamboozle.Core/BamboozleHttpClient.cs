@@ -6,22 +6,22 @@ namespace Bamboozle.Core;
 public sealed class BamboozleHttpClient(HttpClient httpClient)
 {
     private readonly HttpClient _httpClient = httpClient;
-    public async Task<RouteDefinition?> CreateRoute(RouteDefinition definition, CancellationToken cancellationToken = default)
+    public async Task<RouteDefinition[]> CreateRoute(RouteDefinition definition, CancellationToken cancellationToken = default)
     {
         using HttpRequestMessage req = new(HttpMethod.Post, "/control/routes")
         {
             Content = JsonContent.Create(definition)
         };
-        return await SendAsync<RouteDefinition>(req, cancellationToken);
+        return await SendAsync<RouteDefinition[]>(req, cancellationToken);
     }
 
-    public async Task<RouteDefinition?> UpdateRoute(RouteDefinition definition, CancellationToken cancellationToken = default)
+    public async Task<RouteDefinition[]> UpdateRoute(RouteDefinition definition, CancellationToken cancellationToken = default)
     {
         using HttpRequestMessage req = new(HttpMethod.Put, "/control/routes")
         {
             Content = JsonContent.Create(definition)
         };
-        return await SendAsync<RouteDefinition>(req, cancellationToken);
+        return await SendAsync<RouteDefinition[]>(req, cancellationToken);
     }
 
     public async Task DeleteRoute(MatchKey key, CancellationToken cancellationToken = default)
