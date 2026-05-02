@@ -85,7 +85,7 @@ impl RouteStore {
         }
     }
 
-    pub fn set_route(&self, mut def: RouteDefinition) -> Result<RouteDefinition, AppError> {
+    pub fn set_route(&self, def: RouteDefinition) -> Result<Vec<RouteDefinition>, AppError> {
         let body_strategy_count = [
             def.response.content.is_some(),
             def.response.content_file.is_some(),
@@ -117,58 +117,64 @@ impl RouteStore {
             ));
         }
 
-        let verb = def.match_key.verb.trim().to_ascii_uppercase();
-        // `pattern` preserves case inside {braces} so param names match Liquid template
-        // access (e.g. `{{routeValues.thingName}}`), but lowercases literal segments.
-        // `lookup_key` is fully lowercase for case-insensitive deduplication in the map.
-        let pattern = MatchKey::normalize_pattern(&def.match_key.pattern);
-        let lookup_key = pattern.to_ascii_lowercase();
-        def.match_key.verb = verb.clone();
-        def.match_key.pattern = pattern.clone();
-        let key_str = def.match_key.to_string();
-        let compiled = match compile_pattern(&pattern) {
-            Ok(c) => c,
-            Err(e) => {
-                error!(route = %key_str, error = %e, "Failed to compile route pattern");
+        let verbs: Vec<String> = Self::parse_http_verbs(&def.match_key.verb)?;
+        let mut results: Vec<RouteDefinition> = Vec::new();
+        for verb in verbs {
+            let mut working = def.clone();
+            // `pattern` preserves case inside {braces} so param names match Liquid template
+            // access (e.g. `{{routeValues.thingName}}`), but lowercases literal segments.
+            // `lookup_key` is fully lowercase for case-insensitive deduplication in the map.
+            let pattern = MatchKey::normalize_pattern(&working.match_key.pattern);
+            let lookup_key = pattern.to_ascii_lowercase();
+            working.match_key.verb = verb.clone();
+            working.match_key.pattern = pattern.clone();
+            let key_str = working.match_key.to_string();
+            let compiled = match compile_pattern(&pattern) {
+                Ok(c) => c,
+                Err(e) => {
+                    error!(route = %key_str, error = %e, "Failed to compile route pattern");
+                    return Err(AppError::BadRequest(format!(
+                        "Invalid pattern '{}': {}",
+                        pattern, e
+                    )));
+                }
+            };
+
+            let verb_entry = self.routes.entry(verb.clone()).or_default();
+            let verb_map = verb_entry.value();
+
+            if verb_map.contains_key(&lookup_key) {
+                warn!(route = %key_str, "Route already exists, skipping");
+                return Err(AppError::AlreadyExists(key_str));
+            }
+
+            if self.route_count.load(std::sync::atomic::Ordering::Relaxed) >= self.max_routes {
                 return Err(AppError::BadRequest(format!(
-                    "Invalid pattern '{}': {}",
-                    pattern, e
+                    "Maximum number of routes ({}) reached",
+                    self.max_routes
                 )));
             }
-        };
 
-        let verb_entry = self.routes.entry(verb.clone()).or_default();
-        let verb_map = verb_entry.value();
+            let specificity = constraint_specificity(&pattern);
+            let params = param_count(&pattern);
+            verb_map.insert(
+                lookup_key,
+                StoredRoute {
+                    definition: working.clone(),
+                    compiled_regex: compiled,
+                    param_count: params,
+                    constraint_specificity: specificity,
+                    normalized_pattern: pattern,
+                },
+            );
+            self.route_count
+                .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
 
-        if verb_map.contains_key(&lookup_key) {
-            warn!(route = %key_str, "Route already exists, skipping");
-            return Err(AppError::AlreadyExists(key_str));
+            info!(route = %key_str, "Route set");
+
+            results.push(working);
         }
-
-        if self.route_count.load(std::sync::atomic::Ordering::Relaxed) >= self.max_routes {
-            return Err(AppError::BadRequest(format!(
-                "Maximum number of routes ({}) reached",
-                self.max_routes
-            )));
-        }
-
-        let specificity = constraint_specificity(&pattern);
-        let params = param_count(&pattern);
-        verb_map.insert(
-            lookup_key,
-            StoredRoute {
-                definition: def.clone(),
-                compiled_regex: compiled,
-                param_count: params,
-                constraint_specificity: specificity,
-                normalized_pattern: pattern,
-            },
-        );
-        self.route_count
-            .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-
-        info!(route = %key_str, "Route set");
-        Ok(def)
+        Ok(results)
     }
 
     pub fn delete_route(&self, key: &MatchKey) -> Result<(), RouteError> {
@@ -290,6 +296,28 @@ impl RouteStore {
             .store(0, std::sync::atomic::Ordering::Relaxed);
         info!("Route store cleared");
     }
+
+    fn parse_http_verbs(input: &str) -> Result<Vec<String>, AppError> {
+        const VALID_VERBS: &[&str] = &[
+            "GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS", "CONNECT", "TRACE",
+        ];
+
+        let verbs: Vec<String> = input
+            .split(',')
+            .map(|v| v.trim().to_ascii_uppercase())
+            .collect();
+
+        for verb in &verbs {
+            if !VALID_VERBS.contains(&verb.as_str()) {
+                return Err(AppError::BadRequest(format!(
+                    "'{}' is not a valid HTTP verb",
+                    verb
+                )));
+            }
+        }
+
+        Ok(verbs)
+    }
 }
 
 #[cfg(test)]
@@ -318,6 +346,25 @@ mod tests {
         let store = RouteStore::default();
         store.set_route(make_route("GET", "/api/users")).unwrap();
         assert!(store.match_route("GET", "/api/users").is_some());
+    }
+
+    #[test]
+    fn set_routes_and_match_it() {
+        let store = RouteStore::default();
+        store
+            .set_route(make_route("GET,POST", "/api/users"))
+            .unwrap();
+        assert!(store.match_route("GET", "/api/users").is_some());
+        assert!(store.match_route("POST", "/api/users").is_some());
+    }
+
+    #[test]
+    fn malformed_verb_throws() {
+        let store = RouteStore::default();
+        let err = store
+            .set_route(make_route("GET,PfOST", "/api/users"))
+            .unwrap_err();
+        assert!(matches!(err, AppError::BadRequest(_)));
     }
 
     #[test]

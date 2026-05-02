@@ -20,9 +20,9 @@ use crate::{
 #[utoipa::path(
     post,
     path = "/control/routes",
-    request_body = RouteDefinition,
+    request_body = Vec<RouteDefinition>,
     responses(
-        (status = 201, description = "Route created", body = RouteDefinition),
+        (status = 201, description = "Route created", body = Vec<RouteDefinition>),
         (status = 409, description = "Route already exists"),
     ),
     tag = "Routes"
@@ -30,7 +30,7 @@ use crate::{
 pub async fn post_routes(
     State(state): State<AppState>,
     Json(route): Json<RouteDefinition>,
-) -> Result<(StatusCode, Json<RouteDefinition>), AppError> {
+) -> Result<(StatusCode, Json<Vec<RouteDefinition>>), AppError> {
     let match_key = route.match_key.clone();
     let response = state.store.set_route(route)?;
     state.tracker.delete_calls_for_route(&match_key);
@@ -42,22 +42,29 @@ pub async fn post_routes(
 #[utoipa::path(
     put,
     path = "/control/routes",
-    request_body = RouteDefinition,
+    request_body = Vec<RouteDefinition>,
     responses(
-        (status = 201, description = "Route upserted", body = RouteDefinition),
+        (status = 200, description = "Route updated", body = Vec<RouteDefinition>),
+        (status = 201, description = "Route created", body = Vec<RouteDefinition>),
     ),
     tag = "Routes"
 )]
 pub async fn put_routes(
     State(state): State<AppState>,
     Json(route): Json<RouteDefinition>,
-) -> Result<(StatusCode, Json<RouteDefinition>), AppError> {
+) -> Result<(StatusCode, Json<Vec<RouteDefinition>>), AppError> {
     // Ignore NotFound — PUT is idempotent. delete_route normalizes internally.
     let match_key = route.match_key.clone();
-    let _ = state.store.delete_route(&route.match_key);
+
+    // if delete returns an error, then we are creating
+    let return_status: StatusCode = match state.store.delete_route(&route.match_key) {
+        Ok(_) => StatusCode::OK,
+        Err(_) => StatusCode::CREATED,
+    };
+
     let response = state.store.set_route(route)?;
     state.tracker.delete_calls_for_route(&match_key);
-    Ok((StatusCode::CREATED, Json(response)))
+    Ok((return_status, Json(response)))
 }
 
 // ── DELETE /control/routes/:verb/:pattern ────────────────────────────────────
