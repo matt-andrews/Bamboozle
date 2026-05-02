@@ -1,6 +1,7 @@
 docker compose -f docker-compose.dev.yml up -d
 bash perf-test/k6/wait-for-health.sh 60
 
+overall_exit=0
 for script in perf-test/k6/*.js; do
   script_name=$(basename "$script")
   echo "=== running $script_name ==="
@@ -8,7 +9,8 @@ for script in perf-test/k6/*.js; do
     -v "$(pwd)/perf-test/k6:/scripts" \
     -e BASE_URL=http://host.docker.internal:18080 \
     -e CONTROL_URL=http://host.docker.internal:19090 \
-    grafana/k6:0.57.0 run --no-color "/scripts/$script_name"
+    grafana/k6:0.57.0 run --no-color "/scripts/$script_name" || overall_exit=1
 done
 
 docker compose -f docker-compose.dev.yml down
+exit "$overall_exit"

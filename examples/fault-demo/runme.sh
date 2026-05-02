@@ -12,7 +12,7 @@ cleanup() {
 trap cleanup EXIT
 
 echo "--- Installing dependencies ---"
-npm install
+npm ci
 
 echo "--- Starting Bamboozle ---"
 npm run bamboozle:up

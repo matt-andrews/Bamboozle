@@ -26,25 +26,20 @@ jobs:
         with:
           node-version: lts/*
 
-      - name: Cache npm dependencies
+      - name: Cache npm download cache
         uses: actions/cache@v4
-        id: npm-cache
         with:
-          path: |
-            ./sdks/npm/node_modules
-            ./playwright/node_modules
+          path: ~/.npm
           key: npm-${{ runner.os }}-${{ hashFiles('sdks/npm/package-lock.json', 'playwright/package-lock.json') }}
 
       - name: Run compose
         run: docker compose -f ./scripts/docker-compose.dev.yml up -d
 
       - name: Build npm sdk
-        if: steps.npm-cache.outputs.cache-hit != 'true'
         run: npm install && npm run build
         working-directory: ./sdks/npm
 
       - name: Install dependencies
-        if: steps.npm-cache.outputs.cache-hit != 'true'
         run: npm ci
         working-directory: ./playwright
 
