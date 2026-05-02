@@ -5,6 +5,9 @@ on:
   workflow_call:
   pull_request:
     branches: [main]
+    paths:
+      - "bamboozle/**"
+      - ".github/workflows/pr-test-unit.yml"
 
 jobs:
   rust-test:

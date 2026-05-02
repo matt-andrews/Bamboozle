@@ -7,6 +7,7 @@ on:
     branches: [main]
     paths:
       - "sdks/dotnet/**"
+      - ".github/workflows/pr-test-dotnet.yml"
 
 env:
   DOTNET_VERSION: "10.x"

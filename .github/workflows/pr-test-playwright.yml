@@ -5,6 +5,12 @@ on:
   workflow_call:
   pull_request:
     branches: [main]
+    paths:
+      - "bamboozle/**"
+      - "playwright/**"
+      - "scripts/**"
+      - "sdks/npm/**"
+      - ".github/workflows/pr-test-playwright.yml"
 
 jobs:
   playwright-tests:
