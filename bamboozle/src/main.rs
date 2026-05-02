@@ -88,10 +88,10 @@ fn init_tracing() {
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    let cli = Cli::parse();
+    let _cli = Cli::parse();
 
     #[cfg(feature = "tls")]
-    if let Some(Commands::GenerateCerts(args)) = cli.command {
+    if let Some(Commands::GenerateCerts(args)) = _cli.command {
         return cert::run(args);
     }
 

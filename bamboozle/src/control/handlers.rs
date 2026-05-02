@@ -56,16 +56,16 @@ pub async fn put_routes(
 ) -> Result<(StatusCode, Json<Vec<RouteDefinition>>), AppError> {
     // Delete each verb individually. With a multi-verb string like "GET,POST"
     // the store keys routes by single verb, so we must fan out the deletes.
-    let any_replaced = route
-        .match_key
-        .verb
-        .split(',')
-        .any(|v| {
-            state
-                .store
-                .delete_route(&MatchKey::new(v.trim(), &route.match_key.pattern))
-                .is_ok()
-        });
+    let mut any_replaced = false;
+    for v in route.match_key.verb.split(',') {
+        if state
+            .store
+            .delete_route(&MatchKey::new(v.trim(), &route.match_key.pattern))
+            .is_ok()
+        {
+            any_replaced = true;
+        }
+    }
 
     let return_status = if any_replaced {
         StatusCode::OK

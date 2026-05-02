@@ -152,7 +152,7 @@ impl RouteStore {
             if self
                 .routes
                 .get(verb)
-                .map_or(false, |m| m.contains_key(&lookup_key))
+                .is_some_and(|m| m.contains_key(&lookup_key))
             {
                 let key_str = format!("{}|{}", verb, lookup_key);
                 warn!(route = %key_str, "Route already exists, skipping");
