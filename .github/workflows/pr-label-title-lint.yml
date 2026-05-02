@@ -1,11 +1,11 @@
-name: Lint
+name: PR - Title Linter
 
 on:
   pull_request:
     types: [opened, edited]
 
 jobs:
-  pr-title:
+  pr-title-linter:
     name: PR Title
     runs-on: ubuntu-latest
     steps:

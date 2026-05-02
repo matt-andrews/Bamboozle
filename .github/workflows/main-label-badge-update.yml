@@ -1,6 +1,8 @@
-name: Update Badges
+name: Update Status Badges
 
 on:
+  workflow_dispatch:
+  workflow_call:
   pull_request:
     types: [closed]
     branches: [main]
@@ -10,7 +12,7 @@ permissions:
   actions: read
 
 jobs:
-  update-badges:
+  update-status-badges:
     runs-on: ubuntu-latest
     if: github.event.pull_request.merged == true
 

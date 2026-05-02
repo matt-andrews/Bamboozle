@@ -1,11 +1,13 @@
-name: Playwright Tests
+name: PR - playwright tests
+
 on:
+  workflow_dispatch:
+  workflow_call:
   pull_request:
     branches: [main]
-  workflow_call:
 
 jobs:
-  test:
+  playwright-tests:
     timeout-minutes: 60
     runs-on: ubuntu-latest
     permissions:
@@ -62,7 +64,7 @@ jobs:
 
       - name: Publish test report
         uses: ctrf-io/github-test-reporter@v1
-        if: always()
+        if: always() && github.event_name == 'pull_request'
         with:
           report-path: ./playwright/ctrf/ctrf-report.json
           pull-request-report: "true"

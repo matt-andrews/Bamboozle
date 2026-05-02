@@ -1,9 +1,10 @@
-name: CI
+name: PR - unit tests
 
 on:
+  workflow_dispatch:
+  workflow_call:
   pull_request:
     branches: [main]
-  workflow_call:
 
 jobs:
   rust-test:
@@ -63,7 +64,7 @@ jobs:
 
       - name: Publish test report
         uses: ctrf-io/github-test-reporter@v1
-        if: always()
+        if: always() && github.event_name == 'pull_request'
         with:
           report-path: ./bamboozle/ctrf-report.json
           pull-request-report: "true"
@@ -75,21 +76,3 @@ jobs:
           name: unit-test-results
           path: ./bamboozle/unit-test-results.json
           retention-days: 30
-
-  azure-keyvault-example:
-    name: Azure KeyVault Example
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v6
-
-      - name: Setup Rust
-        uses: dtolnay/rust-toolchain@stable
-
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v5
-        with:
-          dotnet-version: "10.x"
-
-      - name: Run azure-keyvault example
-        run: bash examples/azure-keyvault/runme.sh

@@ -1,0 +1,23 @@
+name: Example - Fault Demo
+
+on:
+  workflow_dispatch:
+  workflow_call:
+  pull_request:
+    types: [closed]
+    branches: [main]
+
+jobs:
+  fault-demo-example:
+    name: Fault Demo Example
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "20"
+
+      - name: Run fault demo
+        run: bash examples/fault-demo/runme.sh

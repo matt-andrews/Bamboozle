@@ -1,4 +1,4 @@
-name: Release
+name: Publish - App
 
 on:
   push:
@@ -6,12 +6,25 @@ on:
       - "app/v*"
 
 jobs:
-  ci:
+  unit-test:
     uses: ./.github/workflows/pr-test-unit.yml
+  playwright-test:
+    uses: ./.github/workflows/pr-test-playwright.yml
+  load-tests:
+    uses: ./.github/workflows/main-test-k6.yml
+  fault-tolerance-example:
+    uses: ./.github/workflows/main-test-example-fault-tolerance.yml
+  keyvault-example:
+    uses: ./.github/workflows/main-test-example-keyvault.yml
 
-  docker:
-    name: Build and push Docker image
-    needs: ci
+  publish-app:
+    needs:
+      - unit-test
+      - playwright-test
+      - load-tests
+      - fault-tolerance-example
+      - keyvault-example
+
     runs-on: ubuntu-latest
     permissions:
       contents: write

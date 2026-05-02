@@ -1,11 +1,12 @@
-name: DOTNET CI
+name: PR - dotnet unit tests
 
 on:
+  workflow_dispatch:
+  workflow_call:
   pull_request:
     branches: [main]
     paths:
       - "sdks/dotnet/**"
-  workflow_call:
 
 env:
   DOTNET_VERSION: "10.x"

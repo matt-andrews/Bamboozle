@@ -1,4 +1,4 @@
-name: DOTNET Release
+name: Publish - dotnet
 
 on:
   push:
@@ -6,11 +6,11 @@ on:
       - "sdks/dotnet/v*.*.*"
 
 jobs:
-  ci:
+  unit-tests:
     uses: ./.github/workflows/pr-test-dotnet.yml
 
-  publish:
-    needs: ci
+  dotnet-publish:
+    needs: unit-tests
     runs-on: ubuntu-latest
     permissions:
       id-token: write

@@ -1,9 +1,8 @@
-name: Nightly
+name: Publish - Nightly
 
 on:
   schedule:
     - cron: "0 0 * * *"
-  workflow_dispatch:
 
 jobs:
   check-changes:
@@ -59,7 +58,7 @@ jobs:
     if: needs.check-changes.outputs.has_changes == 'true'
     uses: ./.github/workflows/pr-test-unit.yml
 
-  docker:
+  publish-nightly:
     name: Build and push nightly Docker image
     needs: [check-changes, ci]
     if: needs.check-changes.outputs.has_changes == 'true'
