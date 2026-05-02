@@ -117,61 +117,72 @@ impl RouteStore {
             ));
         }
 
-        let verbs: Vec<String> = Self::parse_http_verbs(&def.match_key.verb)?;
-        let mut results: Vec<RouteDefinition> = Vec::new();
-        for verb in verbs {
-            let mut working = def.clone();
-            // `pattern` preserves case inside {braces} so param names match Liquid template
-            // access (e.g. `{{routeValues.thingName}}`), but lowercases literal segments.
-            // `lookup_key` is fully lowercase for case-insensitive deduplication in the map.
-            let pattern = MatchKey::normalize_pattern(&working.match_key.pattern);
-            let lookup_key = pattern.to_ascii_lowercase();
-            working.match_key.verb = verb.clone();
-            working.match_key.pattern = pattern.clone();
-            let key_str = working.match_key.to_string();
-            let compiled = match compile_pattern(&pattern) {
-                Ok(c) => c,
-                Err(e) => {
-                    error!(route = %key_str, error = %e, "Failed to compile route pattern");
-                    return Err(AppError::BadRequest(format!(
-                        "Invalid pattern '{}': {}",
-                        pattern, e
-                    )));
-                }
-            };
+        let verbs = Self::parse_http_verbs(&def.match_key.verb)?;
 
-            let verb_entry = self.routes.entry(verb.clone()).or_default();
-            let verb_map = verb_entry.value();
+        // Compile pattern once — identical for every verb in the list.
+        // `pattern` preserves case inside {braces} so param names match Liquid template
+        // access (e.g. `{{routeValues.thingName}}`), but lowercases literal segments.
+        // `lookup_key` is fully lowercase for case-insensitive deduplication in the map.
+        let pattern = MatchKey::normalize_pattern(&def.match_key.pattern);
+        let lookup_key = pattern.to_ascii_lowercase();
+        let compiled = match compile_pattern(&pattern) {
+            Ok(c) => c,
+            Err(e) => {
+                error!(pattern = %pattern, error = %e, "Failed to compile route pattern");
+                return Err(AppError::BadRequest(format!(
+                    "Invalid pattern '{}': {}",
+                    pattern, e
+                )));
+            }
+        };
+        let specificity = constraint_specificity(&pattern);
+        let params = param_count(&pattern);
 
-            if verb_map.contains_key(&lookup_key) {
+        // Phase 1: validate all preconditions before any writes so a failure
+        // mid-list cannot leave the store partially modified.
+        if self.route_count.load(std::sync::atomic::Ordering::Relaxed) + verbs.len()
+            > self.max_routes
+        {
+            return Err(AppError::BadRequest(format!(
+                "Maximum number of routes ({}) reached",
+                self.max_routes
+            )));
+        }
+        for verb in &verbs {
+            if self
+                .routes
+                .get(verb)
+                .map_or(false, |m| m.contains_key(&lookup_key))
+            {
+                let key_str = format!("{}|{}", verb, lookup_key);
                 warn!(route = %key_str, "Route already exists, skipping");
                 return Err(AppError::AlreadyExists(key_str));
             }
+        }
 
-            if self.route_count.load(std::sync::atomic::Ordering::Relaxed) >= self.max_routes {
-                return Err(AppError::BadRequest(format!(
-                    "Maximum number of routes ({}) reached",
-                    self.max_routes
-                )));
-            }
+        // Phase 2: all insertions — preconditions satisfied, no early returns below.
+        let mut results = Vec::with_capacity(verbs.len());
+        for verb in verbs {
+            let mut working = def.clone();
+            working.match_key.verb = verb.clone();
+            working.match_key.pattern = pattern.clone();
+            let key_str = working.match_key.to_string();
 
-            let specificity = constraint_specificity(&pattern);
-            let params = param_count(&pattern);
-            verb_map.insert(
-                lookup_key,
+            let verb_entry = self.routes.entry(verb).or_default();
+            verb_entry.value().insert(
+                lookup_key.clone(),
                 StoredRoute {
                     definition: working.clone(),
-                    compiled_regex: compiled,
+                    compiled_regex: compiled.clone(),
                     param_count: params,
                     constraint_specificity: specificity,
-                    normalized_pattern: pattern,
+                    normalized_pattern: pattern.clone(),
                 },
             );
             self.route_count
                 .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
 
             info!(route = %key_str, "Route set");
-
             results.push(working);
         }
         Ok(results)
@@ -307,10 +318,17 @@ impl RouteStore {
             .map(|v| v.trim().to_ascii_uppercase())
             .collect();
 
+        let mut seen = std::collections::HashSet::new();
         for verb in &verbs {
             if !VALID_VERBS.contains(&verb.as_str()) {
                 return Err(AppError::BadRequest(format!(
                     "'{}' is not a valid HTTP verb",
+                    verb
+                )));
+            }
+            if !seen.insert(verb.as_str()) {
+                return Err(AppError::BadRequest(format!(
+                    "Duplicate verb '{}' in verb list",
                     verb
                 )));
             }
