@@ -1,0 +1,63 @@
+name: Test - K6 Load Tests
+
+on:
+  workflow_dispatch:
+  workflow_call:
+  pull_request:
+    types: [closed]
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  k6:
+    name: K6 Load Test
+    runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request' || github.event.pull_request.merged == true
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Start Docker Compose stack
+        run: docker compose -f ./scripts/docker-compose.dev.yml up -d
+
+      - name: Wait for health check
+        run: bash ./scripts/perf-test/k6/wait-for-health.sh 60
+
+      - name: Run K6 load tests
+        run: |
+          set -o pipefail
+          K6_DIR="./scripts/perf-test/k6"
+          overall_exit=0
+          for script in "$K6_DIR"/*.js; do
+            script_name=$(basename "$script" .js)
+            echo "=== $script_name ===" | tee -a "$K6_DIR/k6-output.txt"
+            docker run --rm \
+              --network host \
+              --user $(id -u):$(id -g) \
+              -v "${{ github.workspace }}/scripts/perf-test/k6:/scripts" \
+              -e BASE_URL=http://localhost:18080 \
+              grafana/k6:0.57.0 \
+              run --no-color --out "json=/scripts/results-${script_name}.json" \
+              "/scripts/${script_name}.js" 2>&1 | tee -a "$K6_DIR/k6-output.txt" \
+              || overall_exit=1
+          done
+          exit "$overall_exit"
+
+      - name: Post summary
+        if: always()
+        run: |
+          echo "## K6 Load Test Results" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          cat ./scripts/perf-test/k6/k6-output.txt >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+
+      - name: Upload K6 results
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: k6-results
+          path: |
+            scripts/perf-test/k6/results-*.json
+            scripts/perf-test/k6/k6-output.txt
+          retention-days: 30

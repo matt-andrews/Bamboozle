@@ -1,6 +1,7 @@
-name: Update Badges
+name: Update Status Badges
 
 on:
+  workflow_dispatch:
   pull_request:
     types: [closed]
     branches: [main]
@@ -10,9 +11,9 @@ permissions:
   actions: read
 
 jobs:
-  update-badges:
+  update-status-badges:
     runs-on: ubuntu-latest
-    if: github.event.pull_request.merged == true
+    if: github.event_name != 'pull_request' || github.event.pull_request.merged == true
 
     steps:
       - uses: actions/checkout@v6
@@ -48,13 +49,11 @@ jobs:
 
           echo "Collecting artifacts for $HEAD_SHA ..."
           download_artifact startup-time.yml startup-results startup
-          download_artifact startup-time.yml docker-size     docker-size
 
       - name: Generate badge JSON files
         env:
           BADGE_OUTPUT_DIR: /tmp/badges
           MAX_STARTUP_AVG_MS: ${{ vars.MAX_STARTUP_AVG_MS }}
-          MAX_DOCKER_SIZE_MB: ${{ vars.MAX_DOCKER_SIZE_MB }}
         run: python3 .github/scripts/generate-badges.py
 
       - name: Publish to badges branch
@@ -73,10 +72,9 @@ jobs:
             git rm -rf . 2>/dev/null || true
           fi
 
-          cp /tmp/badges/badge-startup.json      .
-          cp /tmp/badges/badge-docker-size.json  .
+          cp /tmp/badges/badge-startup.json .
 
-          git add badge-startup.json badge-docker-size.json
+          git add badge-startup.json
 
           if ! git diff --staged --quiet; then
             git commit -m "chore: update badges (PR #$PR_NUMBER / ${HEAD_SHA:0:7})"

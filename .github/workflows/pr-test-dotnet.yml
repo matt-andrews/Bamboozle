@@ -1,11 +1,13 @@
-name: DOTNET CI
+name: PR - dotnet unit tests
 
 on:
+  workflow_dispatch:
+  workflow_call:
   pull_request:
-    types: [opened, synchronize]
+    branches: [main]
     paths:
       - "sdks/dotnet/**"
-  workflow_call:
+      - ".github/workflows/pr-test-dotnet.yml"
 
 env:
   DOTNET_VERSION: "10.x"

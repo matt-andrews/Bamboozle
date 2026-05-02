@@ -1,0 +1,28 @@
+name: Example - Azure KeyVault tests
+
+on:
+  workflow_dispatch:
+  workflow_call:
+  pull_request:
+    types: [closed]
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  azure-keyvault-example:
+    name: Azure KeyVault Example
+    runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request' || github.event.pull_request.merged == true
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: "10.x"
+
+      - name: Run azure-keyvault example
+        run: bash examples/azure-keyvault/runme.sh

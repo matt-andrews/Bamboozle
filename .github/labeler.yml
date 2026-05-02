@@ -1,19 +1,34 @@
-app:
+## publishable areas
+"area: core":
   - changed-files:
       - any-glob-to-any-file: "bamboozle/**"
 
-github_actions:
-  - changed-files:
-      - any-glob-to-any-file: ".github/**"
-
-sdks:
-  - changed-files:
-      - any-glob-to-any-file: "sdks/**"
-
-dotnet:
+"area: sdks/dotnet":
   - changed-files:
       - any-glob-to-any-file: "sdks/dotnet/**"
 
-npm:
+"area: sdks/npm":
   - changed-files:
       - any-glob-to-any-file: "sdks/npm/**"
+
+## non-publishable areas
+"area: docs":
+  - changed-files:
+      - any-glob-to-any-file:
+          - "docs/**"
+          - "assets/**"
+          - "README.md"
+          - "DOCKER_HUB_README.md"
+          - "llm.md"
+          - "LICENSE.md"
+
+"area: ci":
+  - changed-files:
+      - any-glob-to-any-file:
+          - ".github/**"
+          - "playwright/**"
+          - "scripts/**"
+
+"area: examples":
+  - changed-files:
+      - any-glob-to-any-file: "examples/**"
