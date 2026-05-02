@@ -1,17 +1,43 @@
-name: Release
+name: Publish - App
 
 on:
   push:
     tags:
       - "app/v*"
 
-jobs:
-  ci:
-    uses: ./.github/workflows/ci.yml
+permissions:
+  contents: read
 
-  docker:
-    name: Build and push Docker image
-    needs: ci
+jobs:
+  unit-test:
+    permissions:
+      contents: read
+    uses: ./.github/workflows/pr-test-unit.yml
+  playwright-test:
+    permissions:
+      contents: read
+    uses: ./.github/workflows/pr-test-playwright.yml
+  load-tests:
+    permissions:
+      contents: read
+    uses: ./.github/workflows/main-test-k6.yml
+  fault-tolerance-example:
+    permissions:
+      contents: read
+    uses: ./.github/workflows/main-test-example-fault-tolerance.yml
+  keyvault-example:
+    permissions:
+      contents: read
+    uses: ./.github/workflows/main-test-example-keyvault.yml
+
+  publish-app:
+    needs:
+      - unit-test
+      - playwright-test
+      - load-tests
+      - fault-tolerance-example
+      - keyvault-example
+
     runs-on: ubuntu-latest
     permissions:
       contents: write

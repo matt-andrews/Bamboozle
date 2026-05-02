@@ -1,12 +1,19 @@
-name: NPM Release
+name: Publish - npm
 
 on:
   push:
     tags:
       - "sdks/npm/v*"
 
+permissions:
+  contents: read
+
 jobs:
-  publish:
+  playwright-tests:
+    uses: ./.github/workflows/pr-test-playwright.yml
+
+  publish-npm:
+    needs: playwright-tests
     runs-on: ubuntu-latest
     permissions:
       id-token: write
@@ -19,7 +26,7 @@ jobs:
         uses: actions/setup-node@v6
         with:
           node-version: "20.x"
-          registry-url: 'https://registry.npmjs.org'
+          registry-url: "https://registry.npmjs.org"
 
       - name: Extract Version
         id: extract_version

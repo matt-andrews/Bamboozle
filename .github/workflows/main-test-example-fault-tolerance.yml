@@ -1,0 +1,27 @@
+name: Example - Fault Demo
+
+on:
+  workflow_dispatch:
+  workflow_call:
+  pull_request:
+    types: [closed]
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  fault-demo-example:
+    name: Fault Demo Example
+    runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request' || github.event.pull_request.merged == true
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "20"
+
+      - name: Run fault demo
+        run: bash examples/fault-demo/runme.sh
