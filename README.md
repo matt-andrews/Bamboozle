@@ -32,14 +32,7 @@ Bamboozle is a fast, lightweight out-of-process HTTP mock server designed for re
 docker run -p 8080:8080 -p 9090:9090 mattisthegreatest/bamboozle
 ```
 
-Bamboozle runs two servers. Your system under test calls `:8080` (the mock surface). Your test code talks to `:9090` (the control API) to configure routes and assert behaviour.
-
-Wait for the log line:
-
-```log
-INFO bamboozle: mock listening on 0.0.0.0:8080
-INFO bamboozle: control listening on 0.0.0.0:9090
-```
+Bamboozle runs two servers. Your system under test calls `:8080` (the mock surface). Your test code talks to `:9090` (the control API) to configure routes and assert behavior.
 
 ---
 
@@ -61,6 +54,9 @@ Content-Type: application/json
   }
 }
 ```
+
+> [!NOTE]
+> Slashes in the `match.pattern` are automatically trimmed from the ends when setting the route to simplify matching and assertions.
 
 The route is active immediately.
 
@@ -94,6 +90,9 @@ Content-Type: application/json
 
 {}
 ```
+
+> [!NOTE]
+> Your route pattern must be url encoded.
 
 In this case there are two expected results:
 
@@ -144,9 +143,9 @@ All routes and call history are cleared.
 
 ## Disclaimers
 
-Bamboozle is currently in an `alpha` state for as long as the major version is `0`. We are making best effort to ensure the major functionality and API's remain consistent, but are leaving us room to make major refactors if absolutely necessary before `1.0`.
+Bamboozle is currently in an `alpha` state for as long as the major version is `0`. We are making a best effort to ensure the major functionality and APIs remain consistent, while leaving room for major refactors if absolutely necessary before `1.0`.
 
-Bamboozle was **not** intended to be used in any uncontrolled environment such as production or an environment that needs to be secure in any way. This was only intended to be used for testing purposes.
+Bamboozle was **not** intended to be used in any uncontrolled environment such as production, or in any environment that needs to be secure in any way. It is intended for testing purposes only.
 
 ## Try it in your project
 
