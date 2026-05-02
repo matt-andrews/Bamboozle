@@ -32,7 +32,7 @@ utoipa = { version = "5", features = ["axum_extras"] }
 form_urlencoded = "1"
 evalexpr = "13"
 rand = "0.9"
-rand_distr = "0.5"
+rand_distr = "0.6"
 futures = "0.3"
 tokio-util = { version = "0.7", features = ["io"] }
 axum-server = { version = "0.8", features = ["tls-rustls"], optional = true }
