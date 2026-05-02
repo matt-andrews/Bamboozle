@@ -10,14 +10,24 @@ permissions:
 
 jobs:
   unit-test:
+    permissions:
+      contents: read
     uses: ./.github/workflows/pr-test-unit.yml
   playwright-test:
+    permissions:
+      contents: read
     uses: ./.github/workflows/pr-test-playwright.yml
   load-tests:
+    permissions:
+      contents: read
     uses: ./.github/workflows/main-test-k6.yml
   fault-tolerance-example:
+    permissions:
+      contents: read
     uses: ./.github/workflows/main-test-example-fault-tolerance.yml
   keyvault-example:
+    permissions:
+      contents: read
     uses: ./.github/workflows/main-test-example-keyvault.yml
 
   publish-app:
