@@ -1,19 +1,22 @@
 # Bamboozle
 
-> Container-native HTTP mock server for integration testing.
+> Fast, lightweight out-of-process HTTP mock server for integration testing in CI and local development.
 
-Bamboozle runs as a self-contained Docker image. Your system under test talks to it over real HTTP, so you exercise your full client stack — serialization, auth headers, retries, circuit breakers — exactly as they would hit a real service. Your test code controls the mock via a separate control API.
+Bamboozle runs as a self-contained Docker container. Your system under test talks to it over real HTTP, so you exercise your full client stack — serialization, auth headers, retries, circuit breakers — exactly as they would hit a real service. Your test code controls the mock via a separate control API.
 
 ## Why it exists
 
-In-process mocking libraries cannot catch bugs that live in your HTTP client configuration, middleware stack, or retry logic. Bamboozle fills that gap by accepting and responding to real TCP connections, making it suitable for any language or runtime without per-language library support.
+- **Sub-second cold start.** Minimal overhead in CI pipelines; no waiting for mocks to warm up.
+- **Tiny image.** ~5 MB vs hundreds of MB for alternatives.
+- **Language-agnostic.** Driven via HTTP from any language or runtime; no per-language library required.
+- **Real HTTP boundaries — not in-process fakes.** Catches bugs that in-process mocking can't: connection handling, timeouts, TLS, request serialization.
 
 ## Who it is for
 
-- Integration test engineers testing apps that depend on external HTTP services
+- Engineers writing integration tests against external HTTP APIs
+- Teams running CI pipelines where startup time matters
+- Developers who want realistic HTTP behavior (timeouts, TLS, retries)
 - Distributed systems / microservices teams that need fault injection and resilience testing
-- Cloud-native teams working in Docker / Kubernetes environments
-- Any team that needs to exercise real HTTP traffic rather than in-process stubs
 
 ## Quick start
 
