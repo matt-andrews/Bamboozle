@@ -1,0 +1,150 @@
+name: Reusable - Create GitHub Release
+
+on:
+  workflow_call:
+    inputs:
+      tag:
+        description: "Release tag name (e.g. app/v1.2.3, app/nightly)"
+        required: true
+        type: string
+      area_labels:
+        description: 'Comma-separated area labels to filter PRs (e.g. "area: core,area: ci")'
+        required: true
+        type: string
+      release_name:
+        description: "Override release title; defaults to the tag value"
+        required: false
+        type: string
+        default: ""
+      make_latest:
+        description: "Mark this release as the latest"
+        required: false
+        type: boolean
+        default: false
+      prerelease:
+        description: "Mark this as a pre-release"
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  create-release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: read
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Determine PR date range
+        id: date-range
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="${{ inputs.tag }}"
+
+          # Strip trailing version numbers to get the tag prefix (e.g. "app/v1.2.3" → "app/v")
+          TAG_PREFIX=$(echo "$TAG" | sed 's/[0-9][0-9.]*$//')
+
+          if [ "$TAG_PREFIX" != "$TAG" ]; then
+            # Versioned tag: find the previous tag with the same prefix
+            PREV_TAG=$(git tag --list "${TAG_PREFIX}*" --sort=-version:refname \
+              | grep -v "^${TAG}$" \
+              | head -1)
+
+            if [ -n "$PREV_TAG" ]; then
+              SINCE_DATE=$(git log -1 --format=%aI "$PREV_TAG")
+              echo "Using previous tag $PREV_TAG (date: $SINCE_DATE)"
+            else
+              SINCE_DATE="1970-01-01T00:00:00Z"
+              echo "No previous tag found — including all history"
+            fi
+          else
+            # Non-versioned tag (e.g. nightly): use the existing release's creation date
+            SINCE_DATE=$(gh release view "$TAG" --json createdAt -q '.createdAt' 2>/dev/null || echo "")
+            if [ -n "$SINCE_DATE" ]; then
+              echo "Using existing release date: $SINCE_DATE"
+            else
+              SINCE_DATE=$(date -u -d '25 hours ago' +%Y-%m-%dT%H:%M:%SZ)
+              echo "No existing release — falling back to 25 hours ago: $SINCE_DATE"
+            fi
+          fi
+
+          echo "since_date=$SINCE_DATE" >> "$GITHUB_OUTPUT"
+
+      - name: Collect and format release notes
+        id: notes
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          SINCE_DATE="${{ steps.date-range.outputs.since_date }}"
+          LABELS="${{ inputs.area_labels }}"
+
+          ALL_PRS="[]"
+
+          IFS=',' read -ra LABEL_ARRAY <<< "$LABELS"
+          for LABEL in "${LABEL_ARRAY[@]}"; do
+            LABEL=$(echo "$LABEL" | xargs)  # trim whitespace
+            echo "Querying PRs with label \"$LABEL\" merged after $SINCE_DATE"
+
+            BATCH=$(gh pr list \
+              --search "is:merged merged:>${SINCE_DATE} label:\"${LABEL}\"" \
+              --json number,title,url,author \
+              --limit 200 \
+              2>/dev/null || echo "[]")
+
+            ALL_PRS=$(echo "$ALL_PRS $BATCH" \
+              | jq -s 'add | unique_by(.number) | sort_by(.number) | reverse')
+          done
+
+          PR_COUNT=$(echo "$ALL_PRS" | jq 'length')
+          echo "Total unique PRs found: $PR_COUNT"
+
+          {
+            echo "## What's Changed"
+            echo ""
+            if [ "$PR_COUNT" -eq 0 ]; then
+              echo "No changes found for the specified areas."
+            else
+              echo "$ALL_PRS" | jq -r '.[] | "- \(.title) ([#\(.number)](\(.url))) by @\(.author.login)"'
+            fi
+          } > release_notes.md
+
+          cat release_notes.md
+
+      - name: Create or update GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="${{ inputs.tag }}"
+          RELEASE_NAME="${{ inputs.release_name }}"
+          if [ -z "$RELEASE_NAME" ]; then
+            RELEASE_NAME="$TAG"
+          fi
+
+          LATEST_FLAG="--latest=false"
+          if [ "${{ inputs.make_latest }}" = "true" ]; then
+            LATEST_FLAG="--latest"
+          fi
+
+          PRERELEASE_FLAG=""
+          if [ "${{ inputs.prerelease }}" = "true" ]; then
+            PRERELEASE_FLAG="--prerelease"
+          fi
+
+          if gh release view "$TAG" &>/dev/null; then
+            gh release edit "$TAG" \
+              --title "$RELEASE_NAME" \
+              --notes-file release_notes.md \
+              $PRERELEASE_FLAG \
+              $LATEST_FLAG
+          else
+            gh release create "$TAG" \
+              --title "$RELEASE_NAME" \
+              --notes-file release_notes.md \
+              $PRERELEASE_FLAG \
+              $LATEST_FLAG
+          fi

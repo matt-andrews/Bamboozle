@@ -50,3 +50,15 @@ jobs:
           dotnet nuget push ./sdks/dotnet/Bamboozle/Bamboozle.Core/bin/Release/*.nupkg \
             --source https://api.nuget.org/v3/index.json \
             --api-key ${{ steps.nuget-login.outputs.NUGET_API_KEY }}
+
+  create-release:
+    needs: [dotnet-publish]
+    permissions:
+      contents: write
+      pull-requests: read
+    uses: ./.github/workflows/reusable-create-release.yml
+    with:
+      tag: ${{ github.ref_name }}
+      area_labels: "area: sdks/dotnet"
+      make_latest: false
+      prerelease: false
