@@ -53,3 +53,15 @@ jobs:
         run: npm publish --provenance --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  create-release:
+    needs: [publish-npm]
+    permissions:
+      contents: write
+      pull-requests: read
+    uses: ./.github/workflows/reusable-create-release.yml
+    with:
+      tag: ${{ github.ref_name }}
+      area_labels: "area: sdks/npm"
+      make_latest: false
+      prerelease: false

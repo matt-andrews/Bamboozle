@@ -21,7 +21,7 @@ jobs:
         run: |
           # Find the most recent relevant tag (version release or nightly marker)
           NIGHTLY_TAG=$(git tag -l 'app/nightly' 2>/dev/null | head -1)
-          VERSION_TAG=$(git tag -l 'app/v*' --sort=-creatordate 2>/dev/null | tail -1)
+          VERSION_TAG=$(git tag -l 'app/v*' --sort=-creatordate 2>/dev/null | head -1)
 
           if [ -n "$NIGHTLY_TAG" ] && [ -n "$VERSION_TAG" ]; then
             NIGHTLY_TS=$(git log -1 --format="%ct" "app/nightly" 2>/dev/null || echo 0)
@@ -65,6 +65,8 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+    outputs:
+      release_title: ${{ steps.tag.outputs.release_title }}
 
     steps:
       - uses: actions/checkout@v6
@@ -94,11 +96,13 @@ jobs:
           cache-to: type=gha,mode=max
 
       - name: Update nightly git tag
+        id: tag
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git tag -f app/nightly HEAD
           git push origin -f app/nightly
+          echo "release_title=App Nightly ($(date +'%Y-%m-%d'))" >> "$GITHUB_OUTPUT"
 
       - name: Update Docker Hub description
         uses: peter-evans/dockerhub-description@v5
@@ -108,21 +112,16 @@ jobs:
           repository: ${{ secrets.DOCKERHUB_USERNAME }}/bamboozle
           readme-filepath: ./DOCKER_HUB_README.md
 
-      - name: Update nightly GitHub Release
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          NOTES="Automated nightly build from $(git rev-parse --short HEAD) on $(date +'%Y-%m-%d')."
-          if gh release view app/nightly &>/dev/null; then
-            gh release edit app/nightly \
-              --title "App Nightly ($(date +'%Y-%m-%d'))" \
-              --notes "$NOTES" \
-              --prerelease \
-              --tag app/nightly
-          else
-            gh release create app/nightly \
-              --title "App Nightly ($(date +'%Y-%m-%d'))" \
-              --notes "$NOTES" \
-              --prerelease \
-              --target "$GITHUB_SHA"
-          fi
+  create-release:
+    needs: [check-changes, publish-nightly]
+    if: needs.check-changes.outputs.has_changes == 'true'
+    permissions:
+      contents: write
+      pull-requests: read
+    uses: ./.github/workflows/reusable-create-release.yml
+    with:
+      tag: "app/nightly"
+      release_name: ${{ needs.publish-nightly.outputs.release_title }}
+      area_labels: "area: core"
+      make_latest: false
+      prerelease: true

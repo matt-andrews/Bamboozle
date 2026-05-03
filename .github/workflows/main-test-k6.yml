@@ -3,8 +3,7 @@ name: Test - K6 Load Tests
 on:
   workflow_dispatch:
   workflow_call:
-  pull_request:
-    types: [closed]
+  push:
     branches: [main]
 
 permissions:
@@ -14,7 +13,6 @@ jobs:
   k6:
     name: K6 Load Test
     runs-on: ubuntu-latest
-    if: github.event_name != 'pull_request' || github.event.pull_request.merged == true
     steps:
       - uses: actions/checkout@v6
 

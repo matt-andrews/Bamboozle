@@ -1,0 +1,24 @@
+name: PR - shell script tests
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/scripts/release-wf/**"
+      - ".github/workflows/publish-cron-nightly.yml"
+      - ".github/workflows/pr-test-scripts.yml"
+
+jobs:
+  script-tests:
+    name: Release workflow script tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Nightly tag selection
+        run: bash .github/scripts/release-wf/tests/test-nightly-tag-selection.sh
+
+      - name: collect-prs.sh API failure handling
+        run: bash .github/scripts/release-wf/tests/test-collect-prs.sh

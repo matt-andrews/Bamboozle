@@ -80,3 +80,15 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
           repository: ${{ secrets.DOCKERHUB_USERNAME }}/bamboozle
           readme-filepath: ./DOCKER_HUB_README.md
+
+  create-release:
+    needs: [publish-app]
+    permissions:
+      contents: write
+      pull-requests: read
+    uses: ./.github/workflows/reusable-create-release.yml
+    with:
+      tag: ${{ github.ref_name }}
+      area_labels: "area: core"
+      make_latest: true
+      prerelease: false
