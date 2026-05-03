@@ -22,15 +22,16 @@ GITHUB_API_BASE_URL="${GITHUB_API_BASE_URL:-https://api.github.com}"
 # Strip trailing version numbers to get the tag family prefix.
 # e.g. "app/v1.2.3" → "app/v",  "app/nightly" → "app/nightly"
 TAG_PREFIX=$(echo "$TAG" | sed 's/[0-9][0-9.]*$//')
+ENCODED_TAG=$(jq -rn --arg t "$TAG" '$t|@uri')
 
 if [ "$TAG_PREFIX" != "$TAG" ]; then
   # Versioned tag — find the previous tag in the same family.
   PREV_TAG=$(git tag --list "${TAG_PREFIX}*" --sort=-version:refname \
-    | grep -v "^${TAG}$" \
-    | head -1)
+    | grep -vFx "${TAG}" \
+    | head -1 || true)
 
   if [ -n "$PREV_TAG" ]; then
-    SINCE_DATE=$(git log -1 --format=%aI "$PREV_TAG")
+    SINCE_DATE=$(git log -1 --format=%cI "$PREV_TAG")
     echo "Since date from previous tag ${PREV_TAG}: ${SINCE_DATE}" >&2
   else
     SINCE_DATE="1970-01-01T00:00:00Z"
@@ -41,7 +42,7 @@ else
   RESPONSE=$(curl -sf \
     -H "Authorization: Bearer ${GITHUB_TOKEN}" \
     -H "Accept: application/vnd.github.v3+json" \
-    "${GITHUB_API_BASE_URL}/repos/${GITHUB_REPOSITORY}/releases/tags/${TAG}" \
+    "${GITHUB_API_BASE_URL}/repos/${GITHUB_REPOSITORY}/releases/tags/${ENCODED_TAG}" \
     2>/dev/null || echo "")
 
   SINCE_DATE=$(echo "$RESPONSE" | jq -r '.created_at // empty' 2>/dev/null || echo "")

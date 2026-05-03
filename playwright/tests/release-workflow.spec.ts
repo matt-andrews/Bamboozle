@@ -130,7 +130,7 @@ test.describe('determine-since-date', () => {
   });
 
   test('non-versioned tag — returns created_at from existing GitHub Release', async () => {
-    const key: MatchKey = { verb: 'GET', pattern: `repos/${REPO}/releases/tags/app/nightly` };
+    const key: MatchKey = { verb: 'GET', pattern: `repos/${REPO}/releases/tags/app%2Fnightly` };
     keys.push(key);
     await bamboozle.upsertRoute({
       match: key,
@@ -149,7 +149,7 @@ test.describe('determine-since-date', () => {
   });
 
   test('non-versioned tag — falls back to ~25h ago when no release exists', async () => {
-    const key: MatchKey = { verb: 'GET', pattern: `repos/${REPO}/releases/tags/app/nightly` };
+    const key: MatchKey = { verb: 'GET', pattern: `repos/${REPO}/releases/tags/app%2Fnightly` };
     keys.push(key);
     await bamboozle.upsertRoute({
       match: key,
@@ -353,8 +353,8 @@ test.describe('create-or-update-release', () => {
   let tmpDirs: string[] = [];
 
   // Shared mock routes reused across most tests.
-  const NEW_RELEASE_TAG_KEY: MatchKey   = { verb: 'GET',   pattern: `repos/${REPO}/releases/tags/test/new` };
-  const EXIST_RELEASE_TAG_KEY: MatchKey = { verb: 'GET',   pattern: `repos/${REPO}/releases/tags/test/existing` };
+  const NEW_RELEASE_TAG_KEY: MatchKey   = { verb: 'GET',   pattern: `repos/${REPO}/releases/tags/test%2Fnew` };
+  const EXIST_RELEASE_TAG_KEY: MatchKey = { verb: 'GET',   pattern: `repos/${REPO}/releases/tags/test%2Fexisting` };
   const CREATE_KEY: MatchKey            = { verb: 'POST',  pattern: `repos/${REPO}/releases` };
   const EDIT_KEY: MatchKey              = { verb: 'PATCH', pattern: `repos/${REPO}/releases/99999` };
 

@@ -31,19 +31,42 @@ for LABEL in "${LABEL_ARRAY[@]}"; do
 
   echo "Querying: label=\"${LABEL}\" merged after ${SINCE_DATE}" >&2
 
-  BATCH=$(curl -sf \
-    -H "Authorization: Bearer ${GITHUB_TOKEN}" \
-    -H "Accept: application/vnd.github.v3+json" \
-    -G \
+  NEXT_URL="${GITHUB_API_BASE_URL}/search/issues"
+  QUERY_ARGS=(-G \
     --data-urlencode "q=is:pr is:merged merged:>${SINCE_DATE} label:\"${LABEL}\" repo:${GITHUB_REPOSITORY}" \
-    --data-urlencode "per_page=100" \
-    "${GITHUB_API_BASE_URL}/search/issues" \
-    2>/dev/null \
-    | jq '[.items[] | {number: .number, title: .title, url: .html_url, author: {login: .user.login}}]' \
-    || echo "[]")
+    --data-urlencode "per_page=100")
+  PAGE=1
 
-  ALL_PRS=$(printf '%s\n%s\n' "$ALL_PRS" "$BATCH" \
-    | jq -s 'add | unique_by(.number) | sort_by(.number) | reverse')
+  while [ -n "$NEXT_URL" ]; do
+    RESPONSE=$(curl -sf --include \
+      -H "Authorization: Bearer ${GITHUB_TOKEN}" \
+      -H "Accept: application/vnd.github.v3+json" \
+      "${QUERY_ARGS[@]}" \
+      "$NEXT_URL" 2>/dev/null || echo "")
+
+    # Split headers from body (headers end at the first blank line).
+    HEADERS=$(echo "$RESPONSE" | sed '/^[[:space:]]*$/q')
+    BODY=$(echo "$RESPONSE" | sed '1,/^[[:space:]]*$/d')
+
+    BATCH=$(echo "$BODY" \
+      | jq '[.items[] | {number: .number, title: .title, url: .html_url, author: {login: .user.login}}]' \
+      || echo "[]")
+
+    ALL_PRS=$(printf '%s\n%s\n' "$ALL_PRS" "$BATCH" \
+      | jq -s 'add | unique_by(.number) | sort_by(.number) | reverse')
+
+    # Extract the next-page URL from the Link header, if present.
+    NEXT_URL=$(echo "$HEADERS" \
+      | grep -i '^link:' \
+      | grep -o '<[^>]*>; rel="next"' \
+      | sed 's/<\([^>]*\)>; rel="next"/\1/' \
+      || true)
+
+    # Only the first request needs the query-string args; subsequent pages use the full URL from Link.
+    QUERY_ARGS=()
+    PAGE=$((PAGE + 1))
+    [ -n "$NEXT_URL" ] && echo "  Fetching page ${PAGE} for label \"${LABEL}\"..." >&2
+  done
 done
 
 PR_COUNT=$(echo "$ALL_PRS" | jq 'length')

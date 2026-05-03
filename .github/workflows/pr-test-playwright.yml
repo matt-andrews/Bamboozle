@@ -70,7 +70,7 @@ jobs:
         with:
           report-path: ./playwright/ctrf/ctrf-report.json
           pull-request-report: "true"
-          update-comment: "true"
+          overwrite-comment: "true"
           title: "Playwright E2E"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

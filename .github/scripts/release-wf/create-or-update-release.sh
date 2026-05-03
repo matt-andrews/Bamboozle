@@ -26,6 +26,8 @@ MAKE_LATEST="${MAKE_LATEST:-false}"
 PRERELEASE="${PRERELEASE:-false}"
 GITHUB_API_BASE_URL="${GITHUB_API_BASE_URL:-https://api.github.com}"
 
+ENCODED_TAG=$(jq -rn --arg t "$TAG" '$t|@uri')
+
 PRERELEASE_BOOL="false"
 [ "$PRERELEASE" = "true" ] && PRERELEASE_BOOL="true"
 
@@ -45,7 +47,7 @@ REQUEST_BODY=$(jq -n \
 EXISTING_JSON=$(curl -sf \
   -H "Authorization: Bearer ${GITHUB_TOKEN}" \
   -H "Accept: application/vnd.github.v3+json" \
-  "${GITHUB_API_BASE_URL}/repos/${GITHUB_REPOSITORY}/releases/tags/${TAG}" \
+  "${GITHUB_API_BASE_URL}/repos/${GITHUB_REPOSITORY}/releases/tags/${ENCODED_TAG}" \
   2>/dev/null || echo "")
 
 RELEASE_ID=$(echo "$EXISTING_JSON" | jq -r '.id // empty' 2>/dev/null || echo "")
@@ -58,7 +60,7 @@ if [ -n "$RELEASE_ID" ]; then
     -H "Accept: application/vnd.github.v3+json" \
     -d "$REQUEST_BODY" \
     "${GITHUB_API_BASE_URL}/repos/${GITHUB_REPOSITORY}/releases/${RELEASE_ID}" \
-    > /dev/null
+    > /dev/null || { echo "Failed to edit release ${RELEASE_ID} for tag ${TAG}" >&2; exit 1; }
 else
   echo "Creating release for tag ${TAG}" >&2
   curl -sf -X POST \
@@ -67,5 +69,5 @@ else
     -H "Accept: application/vnd.github.v3+json" \
     -d "$REQUEST_BODY" \
     "${GITHUB_API_BASE_URL}/repos/${GITHUB_REPOSITORY}/releases" \
-    > /dev/null
+    > /dev/null || { echo "Failed to create release for tag ${TAG}" >&2; exit 1; }
 fi
