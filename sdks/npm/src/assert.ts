@@ -4,8 +4,8 @@ export interface IBamboozleAssertBuilder {
 }
 
 export interface AssertionBuilder {
-    equals(value: string | number | boolean): IAssertion;
-    notEquals(value: string | number | boolean): IAssertion;
+    equals(value: string | number): IAssertion;
+    notEquals(value: string | number): IAssertion;
     greaterThan(value: number): IAssertion;
     greaterThanOrEqual(value: number): IAssertion;
     lessThan(value: number): IAssertion;
@@ -54,7 +54,7 @@ export class BamboozleAssertBuilder implements IBamboozleAssertBuilder {
 
             if (assert.op == Operator.Contains || assert.op == Operator.StartsWith || assert.op == Operator.EndsWith) {
                 result += ` ${assert.op}(${this.getKeyFromType(assert)}, "${assert.value}") `
-            } else if (typeof assert.value === 'number' || typeof assert.value === 'boolean') {
+            } else if (typeof assert.value === 'number') {
                 result += ` ${this.getKeyFromType(assert)} ${assert.op} ${assert.value} `
             } else {
                 result += ` ${this.getKeyFromType(assert)} ${assert.op} "${assert.value}" `
@@ -93,15 +93,15 @@ export interface IAssertion {
     type: AssertionType;
     key: string;
     op: Operator;
-    value: string | number | boolean;
+    value: string | number;
 }
 
 export class QueryAssertion implements IAssertion {
     public type: AssertionType = AssertionType.Query;
     public key: string;
     public op: Operator;
-    public value: string | number | boolean;
-    constructor(key: string, op: Operator, value: string | number | boolean) {
+    public value: string | number;
+    constructor(key: string, op: Operator, value: string | number) {
         this.key = key;
         this.op = op;
         this.value = value;
@@ -120,8 +120,8 @@ export class ContextAssertion implements IAssertion {
     public type: AssertionType = AssertionType.Context;
     public key: string;
     public op: Operator;
-    public value: string | number | boolean;
-    constructor(key: string, op: Operator, value: string | number | boolean) {
+    public value: string | number;
+    constructor(key: string, op: Operator, value: string | number) {
         this.key = key;
         this.op = op;
         this.value = value;
@@ -132,8 +132,8 @@ export class BodyAssertion implements IAssertion {
     public type: AssertionType = AssertionType.Body;
     public key: string;
     public op: Operator;
-    public value: string | number | boolean;
-    constructor(key: string, op: Operator, value: string | number | boolean) {
+    public value: string | number;
+    constructor(key: string, op: Operator, value: string | number) {
         this.key = key;
         this.op = op;
         this.value = value;
@@ -181,8 +181,8 @@ function makeProxy(ctor: new (key: string, op: Operator, value: string | number)
         get(_, key: string | symbol): AssertionBuilder {
             const k = String(key);
             return {
-                equals: (v: string | number | boolean) => new ctor(k, Operator.Equals, v),
-                notEquals: (v: string | number | boolean) => new ctor(k, Operator.NotEquals, v),
+                equals: (v) => new ctor(k, Operator.Equals, v),
+                notEquals: (v) => new ctor(k, Operator.NotEquals, v),
                 greaterThan: (v) => new ctor(k, Operator.GreaterThan, v),
                 greaterThanOrEqual: (v) => new ctor(k, Operator.GreaterThanOrEqual, v),
                 lessThan: (v) => new ctor(k, Operator.LessThan, v),
