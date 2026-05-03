@@ -71,7 +71,7 @@ jobs:
         with:
           report-path: ./bamboozle/ctrf-report.json
           pull-request-report: "true"
-          update-comment: "true"
+          overwrite-comment: "true"
           title: "Rust Unit Tests"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

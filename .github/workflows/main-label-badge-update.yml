@@ -2,64 +2,43 @@ name: Update Status Badges
 
 on:
   workflow_dispatch:
-  pull_request:
-    types: [closed]
+  push:
     branches: [main]
 
 permissions:
   contents: write
-  actions: read
 
 jobs:
   update-status-badges:
     runs-on: ubuntu-latest
-    if: github.event_name != 'pull_request' || github.event.pull_request.merged == true
 
     steps:
       - uses: actions/checkout@v6
 
-      - name: Download startup and docker-size artifacts
-        env:
-          GH_TOKEN: ${{ github.token }}
-          REPO: ${{ github.repository }}
-          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-        run: |
-          mkdir -p artifacts
+      - name: Build Docker image
+        uses: docker/build-push-action@v7
+        with:
+          context: ./bamboozle
+          load: true
+          tags: bamboozle:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
-          download_artifact() {
-            local workflow_file="$1" artifact_name="$2" dest_dir="$3"
-            local run_id
-            run_id=$(gh api "/repos/$REPO/actions/workflows/$workflow_file/runs?per_page=100" \
-              --jq ".workflow_runs[]
-                    | select(.head_sha == \"$HEAD_SHA\" and .status == \"completed\")
-                    | .id" \
-              | head -1)
-
-            if [ -n "$run_id" ]; then
-              gh run download "$run_id" \
-                --repo "$REPO" \
-                --name "$artifact_name" \
-                --dir "artifacts/$dest_dir" 2>/dev/null \
-                && echo "  ✓ $artifact_name" \
-                || echo "  ✗ $artifact_name (not found in run $run_id — badge will show unknown)"
-            else
-              echo "  ⏳ $artifact_name (no completed run for $HEAD_SHA — badge will show unknown)"
-            fi
-          }
-
-          echo "Collecting artifacts for $HEAD_SHA ..."
-          download_artifact startup-time.yml startup-results startup
+      - name: Run startup time test
+        run: bash scripts/perf-test/test-startup.sh bamboozle:ci 5
 
       - name: Generate badge JSON files
         env:
           BADGE_OUTPUT_DIR: /tmp/badges
           MAX_STARTUP_AVG_MS: ${{ vars.MAX_STARTUP_AVG_MS }}
-        run: python3 .github/scripts/generate-badges.py
+        run: |
+          mkdir -p artifacts/startup
+          cp startup-results.json artifacts/startup/
+          python3 .github/scripts/generate-badges.py
 
       - name: Publish to badges branch
         env:
-          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
+          HEAD_SHA: ${{ github.sha }}
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -77,7 +56,7 @@ jobs:
           git add badge-startup.json
 
           if ! git diff --staged --quiet; then
-            git commit -m "chore: update badges (PR #$PR_NUMBER / ${HEAD_SHA:0:7})"
+            git commit -m "chore: update badges (${HEAD_SHA:0:7})"
             git push origin badges
             echo "Badges updated on badges branch"
           else
