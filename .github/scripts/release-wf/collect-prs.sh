@@ -42,15 +42,14 @@ for LABEL in "${LABEL_ARRAY[@]}"; do
       -H "Authorization: Bearer ${GITHUB_TOKEN}" \
       -H "Accept: application/vnd.github.v3+json" \
       "${QUERY_ARGS[@]}" \
-      "$NEXT_URL" 2>/dev/null || echo "")
+      "$NEXT_URL")
 
     # Split headers from body (headers end at the first blank line).
     HEADERS=$(echo "$RESPONSE" | sed '/^[[:space:]]*$/q')
     BODY=$(echo "$RESPONSE" | sed '1,/^[[:space:]]*$/d')
 
     BATCH=$(echo "$BODY" \
-      | jq '[.items[] | {number: .number, title: .title, url: .html_url, author: {login: .user.login}}]' \
-      || echo "[]")
+      | jq '[.items[] | {number: .number, title: .title, url: .html_url, author: {login: .user.login}}]')
 
     ALL_PRS=$(printf '%s\n%s\n' "$ALL_PRS" "$BATCH" \
       | jq -s 'add | unique_by(.number) | sort_by(.number) | reverse')

@@ -21,7 +21,7 @@ jobs:
         run: |
           # Find the most recent relevant tag (version release or nightly marker)
           NIGHTLY_TAG=$(git tag -l 'app/nightly' 2>/dev/null | head -1)
-          VERSION_TAG=$(git tag -l 'app/v*' --sort=-creatordate 2>/dev/null | tail -1)
+          VERSION_TAG=$(git tag -l 'app/v*' --sort=-creatordate 2>/dev/null | head -1)
 
           if [ -n "$NIGHTLY_TAG" ] && [ -n "$VERSION_TAG" ]; then
             NIGHTLY_TS=$(git log -1 --format="%ct" "app/nightly" 2>/dev/null || echo 0)
