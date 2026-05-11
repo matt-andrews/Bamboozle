@@ -37,7 +37,7 @@ futures = "0.3"
 tokio-util = { version = "0.7", features = ["io"] }
 axum-server = { version = "0.8", features = ["tls-rustls"], optional = true }
 rustls = { version = "0.23", features = ["ring"], optional = true }
-rcgen = { version = "0.13", features = ["pem"], optional = true }
+rcgen = { version = "0.14", features = ["pem"], optional = true }
 time = { version = "0.3", optional = true }
 
 [dev-dependencies]
