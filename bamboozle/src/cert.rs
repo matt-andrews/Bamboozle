@@ -7,6 +7,7 @@ use std::fs;
 use std::net::IpAddr;
 use std::path::PathBuf;
 use time::{Duration, OffsetDateTime};
+use rcgen::Issuer;
 
 /// Generate self-signed TLS certificates for use with Bamboozle.
 ///
@@ -90,7 +91,8 @@ pub fn run(args: CertArgs) -> anyhow::Result<()> {
         OffsetDateTime::now_utc() + Duration::days(i64::from(args.days));
 
     let leaf_key = KeyPair::generate()?;
-    let leaf_cert = leaf_params.signed_by(&leaf_key, &ca_cert, &ca_key)?;
+    let issuer = Issuer::new(ca_params, ca_key);
+    let leaf_cert = leaf_params.signed_by(&leaf_key, &issuer)?;
 
     // ── Write files ──────────────────────────────────────────────────────
     let ca_path = args.out.join("ca.crt");

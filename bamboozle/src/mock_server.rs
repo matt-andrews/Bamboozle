@@ -103,11 +103,10 @@ async fn catch_all(
                 }
             }
 
-            if let Some(sim) = &route_def.simulation {
-                if let Some(fault_response) = apply_simulation(sim).await {
+            if let Some(sim) = &route_def.simulation
+                && let Some(fault_response) = apply_simulation(sim).await {
                     return fault_response;
                 }
-            }
 
             build_response(&route_def, &ctx, &state.renderer).await
         }
@@ -143,11 +142,10 @@ async fn apply_simulation(sim: &SimulationConfig) -> Option<Response> {
     if let Some(delay) = &sim.delay {
         tokio::time::sleep(Duration::from_millis(delay.sample_ms())).await;
     }
-    if let Some(fault) = &sim.fault {
-        if fault.should_trigger() {
+    if let Some(fault) = &sim.fault
+        && fault.should_trigger() {
             return Some(fault_response(&fault.kind));
         }
-    }
     None
 }
 
@@ -271,11 +269,10 @@ async fn build_response(
         .any(|k| k.eq_ignore_ascii_case("content-type"));
 
     let mut builder = Response::builder().status(status_code);
-    if !user_has_ct {
-        if let Some(ct) = inferred_ct {
+    if !user_has_ct
+        && let Some(ct) = inferred_ct {
             builder = builder.header("content-type", ct);
         }
-    }
     for (key, val_template) in &route_def.response.headers {
         let val = renderer.render_or_fallback(val_template, ctx, "");
         builder = builder.header(key.as_str(), val.as_str());

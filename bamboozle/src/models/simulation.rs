@@ -1,4 +1,4 @@
-use rand::Rng;
+use rand::{RngExt};
 use rand_distr::{Distribution, Normal};
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
