@@ -101,15 +101,14 @@ impl RouteStore {
             ));
         }
 
-        if let Some(content) = &def.response.content {
-            if content.len() > self.max_content_size {
+        if let Some(content) = &def.response.content
+            && content.len() > self.max_content_size {
                 return Err(AppError::BadRequest(format!(
                     "Content size {} bytes exceeds maximum allowed {} bytes",
                     content.len(),
                     self.max_content_size
                 )));
             }
-        }
 
         if def.max_calls == Some(0) {
             return Err(AppError::BadRequest(
