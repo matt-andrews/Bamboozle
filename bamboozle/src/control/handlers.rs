@@ -248,11 +248,10 @@ pub async fn assert_route(
         ("called_at_least", q.called_at_least),
         ("called_at_most", q.called_at_most),
     ] {
-        if let Some(n) = val {
-            if n < 0 {
+        if let Some(n) = val
+            && n < 0 {
                 return Err(AppError::BadRequest(format!("{name} must be >= 0")));
             }
-        }
     }
 
     let count = filtered.len() as i64;
@@ -265,21 +264,18 @@ pub async fn assert_route(
     if q.never_called && count != 0 {
         failing.push(format!("expected 0 calls (never_called), got {count}"));
     }
-    if let Some(n) = q.called_exactly {
-        if count != n {
+    if let Some(n) = q.called_exactly
+        && count != n {
             failing.push(format!("expected exactly {n}, got {count}"));
         }
-    }
-    if let Some(n) = q.called_at_least {
-        if count < n {
+    if let Some(n) = q.called_at_least
+        && count < n {
             failing.push(format!("expected at least {n}, got {count}"));
         }
-    }
-    if let Some(n) = q.called_at_most {
-        if count > n {
+    if let Some(n) = q.called_at_most
+        && count > n {
             failing.push(format!("expected at most {n}, got {count}"));
         }
-    }
 
     let passed = if any_qualifier {
         failing.is_empty()
