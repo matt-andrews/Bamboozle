@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Nightly tag selection
         run: bash .github/scripts/release-wf/tests/test-nightly-tag-selection.sh
