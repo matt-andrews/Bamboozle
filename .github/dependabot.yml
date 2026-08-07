@@ -4,7 +4,7 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
-      day: "monday"
+      day: "thursday"
     assignees:
       - "matt-andrews"
     commit-message:
@@ -19,7 +19,7 @@ updates:
     directory: "/bamboozle"
     schedule:
       interval: "weekly"
-      day: "monday"
+      day: "thursday"
     assignees:
       - "matt-andrews"
     commit-message:
@@ -30,29 +30,7 @@ updates:
     directory: "/bamboozle"
     schedule:
       interval: "weekly"
-      day: "monday"
-    assignees:
-      - "matt-andrews"
-    commit-message:
-      prefix: "chore"
-    labels: ["dependencies"]
-
-  - package-ecosystem: "npm"
-    directory: "/playwright"
-    schedule:
-      interval: "weekly"
-      day: "monday"
-    assignees:
-      - "matt-andrews"
-    commit-message:
-      prefix: "chore"
-    labels: ["dependencies"]
-
-  - package-ecosystem: "npm"
-    directory: "/sdks/npm"
-    schedule:
-      interval: "weekly"
-      day: "monday"
+      day: "thursday"
     assignees:
       - "matt-andrews"
     commit-message:

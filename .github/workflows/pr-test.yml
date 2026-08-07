@@ -1,19 +1,18 @@
-name: PR - unit tests
+name: PR - all tests
 
 on:
   workflow_dispatch:
   workflow_call:
   pull_request:
     branches: [main]
-    paths:
-      - "bamboozle/**"
-      - ".github/workflows/pr-test-unit.yml"
+
 
 jobs:
-  rust-test:
-    name: Rust Test
+  rust-checks:
+    name: Rust Test + Clippy
     runs-on: ubuntu-latest
     permissions:
+      contents: read
       pull-requests: write
     defaults:
       run:
@@ -24,28 +23,39 @@ jobs:
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
 
-      - name: Add Clippy
-        run: rustup component add clippy
+      - name: Clippy
+        run: cargo clippy --locked --all-targets --all-features -- -D warnings
 
-      - name: Cargo Check
-        run: cargo clippy --all-targets --all-features -- -D warnings
-
-      - name: Test
+      - name: Unit tests
         run: |
           set -o pipefail
-          cargo test 2>&1 | tee cargo-test-output.txt
+          cargo test --locked 2>&1 | tee cargo-test-output.txt
+          
           python3 - << 'EOF'
           import re, json
           passed = failed = ignored = 0
           with open("cargo-test-output.txt") as f:
               for line in f:
-                  m = re.search(r"(\d+) passed; (\d+) failed; (\d+) ignored", line)
-                  if m:
-                      passed += int(m.group(1)); failed += int(m.group(2)); ignored += int(m.group(3))
-          json.dump({"passed": passed, "failed": failed, "ignored": ignored}, open("unit-test-results.json", "w"))
+                  match = re.search(
+                      r"(\d+) passed; (\d+) failed; (\d+) ignored",
+                      line
+                  )
+                  if match:
+                      passed += int(match.group(1))
+                      failed += int(match.group(2))
+                      ignored += int(match.group(3))
+          
+          with open("unit-test-results.json", "w") as output:
+              json.dump({
+                  "passed": passed,
+                  "failed": failed,
+                  "ignored": ignored
+              }, output)
           EOF
-
+          
       - name: Generate CTRF report
         if: always()
         run: |
@@ -82,3 +92,15 @@ jobs:
           name: unit-test-results
           path: ./bamboozle/unit-test-results.json
           retention-days: 30
+
+      - name: Build integration binary
+        run: cargo build --locked
+
+      - name: Upload integration binary
+        uses: actions/upload-artifact@v7
+        with:
+          name: bamboozle-integration-binary
+          path: ./bamboozle/target/debug/bamboozle
+          retention-days: 1
+          compression-level: 0
+          if-no-files-found: error

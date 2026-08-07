@@ -1,0 +1,60 @@
+{
+  "reportFormat": "CTRF",
+  "specVersion": "0.0.0",
+  "reportId": "f47a295f-12b2-4361-ba12-2c22f978ddd8",
+  "timestamp": "2026-05-03T04:32:23.143Z",
+  "generatedBy": "playwright-ctrf-json-reporter",
+  "results": {
+    "tool": {
+      "name": "playwright"
+    },
+    "summary": {
+      "tests": 1,
+      "passed": 0,
+      "failed": 1,
+      "pending": 0,
+      "skipped": 0,
+      "other": 0,
+      "start": 1777782743702,
+      "stop": 1777782744542,
+      "suites": 0
+    },
+    "tests": [
+      {
+        "name": "prerelease=true — request body has prerelease: true",
+        "status": "failed",
+        "duration": 173,
+        "start": 1777782744,
+        "stop": 1777782744,
+        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeTruthy\u001b[2m()\u001b[22m\n\nReceived: \u001b[31mfalse\u001b[39m",
+        "trace": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeTruthy\u001b[2m()\u001b[22m\n\nReceived: \u001b[31mfalse\u001b[39m\n    at C:\\Users\\Matthew\\source\\repos\\Bamboozle\\playwright\\tests\\release-workflow.spec.ts:488:9",
+        "snippet": "\u001b[0m \u001b[90m 486 |\u001b[39m       expression\u001b[33m:\u001b[39m \u001b[36mnew\u001b[39m \u001b[33mBamboozleAssertBuilder\u001b[39m()\n \u001b[90m 487 |\u001b[39m         \u001b[33m.\u001b[39m\u001b[36mwith\u001b[39m(({ body }) \u001b[33m=>\u001b[39m body\u001b[33m.\u001b[39mprerelease\u001b[33m.\u001b[39mequals(\u001b[36mtrue\u001b[39m))\u001b[33m,\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 488 |\u001b[39m     }))\u001b[33m.\u001b[39mtoBeTruthy()\u001b[33m;\u001b[39m\n \u001b[90m     |\u001b[39m         \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 489 |\u001b[39m   })\u001b[33m;\u001b[39m\n \u001b[90m 490 |\u001b[39m\n \u001b[90m 491 |\u001b[39m   test(\u001b[32m'prerelease=false — request body has prerelease: false'\u001b[39m\u001b[33m,\u001b[39m \u001b[36masync\u001b[39m () \u001b[33m=>\u001b[39m {\u001b[0m",
+        "rawStatus": "failed",
+        "tags": [],
+        "type": "e2e",
+        "filePath": "C:\\Users\\Matthew\\source\\repos\\Bamboozle\\playwright\\tests\\release-workflow.spec.ts",
+        "retries": 0,
+        "flaky": false,
+        "steps": [],
+        "suite": "chromium > release-workflow.spec.ts > create-or-update-release",
+        "attachments": [
+          {
+            "name": "error-context",
+            "contentType": "text/markdown",
+            "path": "C:\\Users\\Matthew\\source\\repos\\Bamboozle\\playwright\\test-results\\release-workflow-create-or-2a833-st-body-has-prerelease-true-chromium\\error-context.md"
+          },
+          {
+            "name": "trace",
+            "contentType": "application/zip",
+            "path": "C:\\Users\\Matthew\\source\\repos\\Bamboozle\\playwright\\test-results\\release-workflow-create-or-2a833-st-body-has-prerelease-true-chromium\\trace.zip"
+          }
+        ],
+        "stdout": [],
+        "stderr": [],
+        "extra": {
+          "annotations": []
+        }
+      }
+    ]
+  }
+}

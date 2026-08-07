@@ -9,34 +9,15 @@ permissions:
   contents: read
 
 jobs:
-  unit-test:
+  pr-test:
     permissions:
       contents: read
-    uses: ./.github/workflows/pr-test-unit.yml
-  playwright-test:
-    permissions:
-      contents: read
-    uses: ./.github/workflows/pr-test-playwright.yml
-  load-tests:
-    permissions:
-      contents: read
-    uses: ./.github/workflows/main-test-k6.yml
-  fault-tolerance-example:
-    permissions:
-      contents: read
-    uses: ./.github/workflows/main-test-example-fault-tolerance.yml
-  keyvault-example:
-    permissions:
-      contents: read
-    uses: ./.github/workflows/main-test-example-keyvault.yml
+      pull-requests: write
+    uses: ./.github/workflows/pr-test.yml
 
   publish-app:
     needs:
-      - unit-test
-      - playwright-test
-      - load-tests
-      - fault-tolerance-example
-      - keyvault-example
+      - pr-test
 
     runs-on: ubuntu-latest
     permissions:
@@ -59,7 +40,11 @@ jobs:
 
       - name: Extract version from tag
         id: version
-        run: echo "version=${GITHUB_REF_NAME#app/}" >> "$GITHUB_OUTPUT"
+        run: |
+          version="${GITHUB_REF_NAME#app/v}"
+          echo "image_version=${version}" >> "$GITHUB_OUTPUT"
+          echo "major_version=${version%%.*}" >> "$GITHUB_OUTPUT"
+          echo "package_version=${version}" >> "$GITHUB_OUTPUT"
 
       - name: Build and push
         uses: docker/build-push-action@v7
@@ -67,8 +52,11 @@ jobs:
           context: ./bamboozle
           platforms: linux/amd64,linux/arm64
           push: true
+          build-args: |
+            PACKAGE_VERSION=${{ steps.version.outputs.package_version }}
           tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/bamboozle:${{ steps.version.outputs.version }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/bamboozle:${{ steps.version.outputs.image_version }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/bamboozle:${{ steps.version.outputs.major_version }}
             ${{ secrets.DOCKERHUB_USERNAME }}/bamboozle:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
@@ -79,7 +67,7 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
           repository: ${{ secrets.DOCKERHUB_USERNAME }}/bamboozle
-          readme-filepath: ./DOCKER_HUB_README.md
+          readme-filepath: ./README.md
 
   create-release:
     needs: [publish-app]

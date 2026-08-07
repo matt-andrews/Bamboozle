@@ -1,0 +1,3692 @@
+{
+  "config": {
+    "configFile": "C:\\Users\\Matthew\\source\\repos\\Bamboozle\\playwright\\playwright.config.ts",
+    "rootDir": "C:/Users/Matthew/source/repos/Bamboozle/playwright/tests",
+    "forbidOnly": false,
+    "fullyParallel": true,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 8
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "C:/Users/Matthew/source/repos/Bamboozle/playwright/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 8
+        },
+        "id": "chromium",
+        "name": "chromium",
+        "testDir": "C:/Users/Matthew/source/repos/Bamboozle/playwright/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "C:/Users/Matthew/source/repos/Bamboozle/playwright/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 8
+        },
+        "id": "firefox",
+        "name": "firefox",
+        "testDir": "C:/Users/Matthew/source/repos/Bamboozle/playwright/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "C:/Users/Matthew/source/repos/Bamboozle/playwright/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 8
+        },
+        "id": "webkit",
+        "name": "webkit",
+        "testDir": "C:/Users/Matthew/source/repos/Bamboozle/playwright/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "html",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": "playwright-results.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.59.1",
+    "workers": 8,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "assert.spec.ts",
+      "file": "assert.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "assert header query match",
+          "file": "assert.spec.ts",
+          "line": 8,
+          "column": 6,
+          "specs": [
+            {
+              "title": "GET",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 166,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 119,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-26T02:05:45.663Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\Users\\Matthew\\source\\repos\\Bamboozle\\playwright\\test-results\\assert-assert-header-query-match-GET-chromium\\trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "9080a16ae1447c2c107d-72d13dff0348a1d0cefd",
+              "file": "assert.spec.ts",
+              "line": 22,
+              "column": 9
+            },
+            {
+              "title": "PUT",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 167,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 113,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-26T02:05:45.658Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\Users\\Matthew\\source\\repos\\Bamboozle\\playwright\\test-results\\assert-assert-header-query-match-PUT-chromium\\trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "9080a16ae1447c2c107d-2f169bf0aaf2d911c495",
+              "file": "assert.spec.ts",
+              "line": 22,
+              "column": 9
+            },
+            {
+              "title": "POST",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 168,
+                      "parallelIndex": 2,
+                      "status": "passed",
+                      "duration": 112,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-26T02:05:45.657Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\Users\\Matthew\\source\\repos\\Bamboozle\\playwright\\test-results\\assert-assert-header-query-match-POST-chromium\\trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "9080a16ae1447c2c107d-9d2e04ece7aefea17513",
+              "file": "assert.spec.ts",
+              "line": 22,
+              "column": 9
+            },
+            {
+              "title": "PATCH",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 169,
+                      "parallelIndex": 3,
+                      "status": "passed",
+                      "duration": 126,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-26T02:05:45.662Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\Users\\Matthew\\source\\repos\\Bamboozle\\playwright\\test-results\\assert-assert-header-query-match-PATCH-chromium\\trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "9080a16ae1447c2c107d-70bc8d3cf4d34c6aa361",
+              "file": "assert.spec.ts",
+              "line": 22,
+              "column": 9
+            },
+            {
+              "title": "DELETE",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 170,
+                      "parallelIndex": 4,
+                      "status": "passed",
+                      "duration": 122,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-26T02:05:45.677Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\Users\\Matthew\\source\\repos\\Bamboozle\\playwright\\test-results\\assert-assert-header-query-match-DELETE-chromium\\trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "9080a16ae1447c2c107d-0ad4a4b97a94be304406",
+              "file": "assert.spec.ts",
+              "line": 22,
+              "column": 9
+            }
+          ]
+        },
+        {
+          "title": "assert header query nonmatch",
+          "file": "assert.spec.ts",
+          "line": 41,
+          "column": 6,
+          "specs": [
+            {
+              "title": "GET",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 171,
+                      "parallelIndex": 5,
+                      "status": "passed",
+                      "duration": 136,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-26T02:05:45.702Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\Users\\Matthew\\source\\repos\\Bamboozle\\playwright\\test-results\\assert-assert-header-query-nonmatch-GET-chromium\\trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "9080a16ae1447c2c107d-8bc43a4759003a884381",
+              "file": "assert.spec.ts",
+              "line": 55,
+              "column": 9
+            },
+            {
+              "title": "PUT",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 172,
+                      "parallelIndex": 6,
+                      "status": "passed",
+                      "duration": 125,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-26T02:05:45.681Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\Users\\Matthew\\source\\repos\\Bamboozle\\playwright\\test-results\\assert-assert-header-query-nonmatch-PUT-chromium\\trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "9080a16ae1447c2c107d-bf29663786f9af867b72",
+              "file": "assert.spec.ts",
+              "line": 55,
+              "column": 9
+            },
+            {
+              "title": "POST",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 173,
+                      "parallelIndex": 7,
+                      "status": "passed",
+                      "duration": 122,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-26T02:05:45.694Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\Users\\Matthew\\source\\repos\\Bamboozle\\playwright\\test-results\\assert-assert-header-query-nonmatch-POST-chromium\\trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "9080a16ae1447c2c107d-03e8884c4a47d618f90e",
+              "file": "assert.spec.ts",
+              "line": 55,
+              "column": 9
+            },
+            {
+              "title": "PATCH",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 168,
+                      "parallelIndex": 2,
+                      "status": "passed",
+                      "duration": 60,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-26T02:05:45.833Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\Users\\Matthew\\source\\repos\\Bamboozle\\playwright\\test-results\\assert-assert-header-query-nonmatch-PATCH-chromium\\trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "9080a16ae1447c2c107d-a9de94e33d7d2cbeb3f8",
+              "file": "assert.spec.ts",
+              "line": 55,
+              "column": 9
+            },
+            {
+              "title": "DELETE",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 167,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 52,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-26T02:05:45.841Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\Users\\Matthew\\source\\repos\\Bamboozle\\playwright\\test-results\\assert-assert-header-query-nonmatch-DELETE-chromium\\trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "9080a16ae1447c2c107d-8b30e3969455392b5529",
+              "file": "assert.spec.ts",
+              "line": 55,
+              "column": 9
+            }
+          ]
+        },
+        {
+          "title": "assert route match",
+          "file": "assert.spec.ts",
+          "line": 74,
+          "column": 6,
+          "specs": [
+            {
+              "title": "GET",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 166,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 154,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-26T02:05:45.848Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\Users\\Matthew\\source\\repos\\Bamboozle\\playwright\\test-results\\assert-assert-route-match-GET-chromium\\trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "9080a16ae1447c2c107d-a86006dc6e977692b17e",
+              "file": "assert.spec.ts",
+              "line": 88,
+              "column": 9
+            },
+            {
+              "title": "PUT",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 170,
+                      "parallelIndex": 4,
+                      "status": "passed",
+                      "duration": 59,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-26T02:05:45.866Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\Users\\Matthew\\source\\repos\\Bamboozle\\playwright\\test-results\\assert-assert-route-match-PUT-chromium\\trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "9080a16ae1447c2c107d-d1e396b278fd4dcfe5b4",
+              "file": "assert.spec.ts",
+              "line": 88,
+              "column": 9
+            },
+            {
+              "title": "POST",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 172,
+                      "parallelIndex": 6,
+                      "status": "passed",
+                      "duration": 53,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-26T02:05:45.881Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\Users\\Matthew\\source\\repos\\Bamboozle\\playwright\\test-results\\assert-assert-route-match-POST-chromium\\trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "9080a16ae1447c2c107d-1e0c1be731580adeecd4",
+              "file": "assert.spec.ts",
+              "line": 88,
+              "column": 9
+            },
+            {
+              "title": "PATCH",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 169,
+                      "parallelIndex": 3,
+                      "status": "passed",
+                      "duration": 87,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-26T02:05:45.910Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\Users\\Matthew\\source\\repos\\Bamboozle\\playwright\\test-results\\assert-assert-route-match-PATCH-chromium\\trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "9080a16ae1447c2c107d-379aae1a6233883b646d",
+              "file": "assert.spec.ts",
+              "line": 88,
+              "column": 9
+            },
+            {
+              "title": "DELETE",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 173,
+                      "parallelIndex": 7,
+                      "status": "passed",
+                      "duration": 117,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-26T02:05:45.920Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\Users\\Matthew\\source\\repos\\Bamboozle\\playwright\\test-results\\assert-assert-route-match-DELETE-chromium\\trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "9080a16ae1447c2c107d-b58e8761ba48e84d53a4",
+              "file": "assert.spec.ts",
+              "line": 88,
+              "column": 9
+            }
+          ]
+        },
+        {
+          "title": "assert route nonmatch",
+          "file": "assert.spec.ts",
+          "line": 106,
+          "column": 6,
+          "specs": [
+            {
+              "title": "GET",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 171,
+                      "parallelIndex": 5,
+                      "status": "passed",
+                      "duration": 57,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-26T02:05:45.926Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\Users\\Matthew\\source\\repos\\Bamboozle\\playwright\\test-results\\assert-assert-route-nonmatch-GET-chromium\\trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "9080a16ae1447c2c107d-e722edd60a8e1826ace3",
+              "file": "assert.spec.ts",
+              "line": 120,
+              "column": 9
+            },
+            {
+              "title": "PUT",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 168,
+                      "parallelIndex": 2,
+                      "status": "passed",
+                      "duration": 39,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-26T02:05:45.939Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\Users\\Matthew\\source\\repos\\Bamboozle\\playwright\\test-results\\assert-assert-route-nonmatch-PUT-chromium\\trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "9080a16ae1447c2c107d-fc012fdbb43a3f8e8e29",
+              "file": "assert.spec.ts",
+              "line": 120,
+              "column": 9
+            },
+            {
+              "title": "POST",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 167,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 42,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-26T02:05:45.947Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\Users\\Matthew\\source\\repos\\Bamboozle\\playwright\\test-results\\assert-assert-route-nonmatch-POST-chromium\\trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "9080a16ae1447c2c107d-a953777b35d578dcf23f",
+              "file": "assert.spec.ts",
+              "line": 120,
+              "column": 9
+            },
+            {
+              "title": "PATCH",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 170,
+                      "parallelIndex": 4,
+                      "status": "passed",
+                      "duration": 37,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-26T02:05:45.978Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\Users\\Matthew\\source\\repos\\Bamboozle\\playwright\\test-results\\assert-assert-route-nonmatch-PATCH-chromium\\trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "9080a16ae1447c2c107d-a6683cb2f60f9f216f6d",
+              "file": "assert.spec.ts",
+              "line": 120,
+              "column": 9
+            },
+            {
+              "title": "DELETE",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 172,
+                      "parallelIndex": 6,
+                      "status": "passed",
+                      "duration": 38,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-26T02:05:45.980Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\Users\\Matthew\\source\\repos\\Bamboozle\\playwright\\test-results\\assert-assert-route-nonmatch-DELETE-chromium\\trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "9080a16ae1447c2c107d-183a28c36aa2b773c2e4",
+              "file": "assert.spec.ts",
+              "line": 120,
+              "column": 9
+            }
+          ]
+        },
+        {
+          "title": "assert route header query match",
+          "file": "assert.spec.ts",
+          "line": 138,
+          "column": 6,
+          "specs": [
+            {
+              "title": "GET",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 168,
+                      "parallelIndex": 2,
+                      "status": "passed",
+                      "duration": 33,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-26T02:05:46.030Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\Users\\Matthew\\source\\repos\\Bamboozle\\playwright\\test-results\\assert-assert-route-header-query-match-GET-chromium\\trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "9080a16ae1447c2c107d-122d2993ff6e206b1ee5",
+              "file": "assert.spec.ts",
+              "line": 152,
+              "column": 9
+            },
+            {
+              "title": "PUT",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 171,
+                      "parallelIndex": 5,
+                      "status": "passed",
+                      "duration": 42,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-26T02:05:46.035Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\Users\\Matthew\\source\\repos\\Bamboozle\\playwright\\test-results\\assert-assert-route-header-query-match-PUT-chromium\\trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "9080a16ae1447c2c107d-c7d099011794ca9661bb",
+              "file": "assert.spec.ts",
+              "line": 152,
+              "column": 9
+            },
+            {
+              "title": "POST",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 167,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 36,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-26T02:05:46.037Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\Users\\Matthew\\source\\repos\\Bamboozle\\playwright\\test-results\\assert-assert-route-header-query-match-POST-chromium\\trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "9080a16ae1447c2c107d-52d5a385c1ddeca4076f",
+              "file": "assert.spec.ts",
+              "line": 152,
+              "column": 9
+            },
+            {
+              "title": "PATCH",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 170,
+                      "parallelIndex": 4,
+                      "status": "passed",
+                      "duration": 30,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-26T02:05:46.056Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\Users\\Matthew\\source\\repos\\Bamboozle\\playwright\\test-results\\assert-assert-route-header-query-match-PATCH-chromium\\trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "9080a16ae1447c2c107d-4f4b87a3b403e2938105",
+              "file": "assert.spec.ts",
+              "line": 152,
+              "column": 9
+            },
+            {
+              "title": "DELETE",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 169,
+                      "parallelIndex": 3,
+                      "status": "passed",
+                      "duration": 31,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-26T02:05:46.057Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\Users\\Matthew\\source\\repos\\Bamboozle\\playwright\\test-results\\assert-assert-route-header-query-match-DELETE-chromium\\trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "9080a16ae1447c2c107d-500d6ff82c8e40289b59",
+              "file": "assert.spec.ts",
+              "line": 152,
+              "column": 9
+            }
+          ]
+        },
+        {
+          "title": "assert match verb nonmatch pattern",
+          "file": "assert.spec.ts",
+          "line": 178,
+          "column": 6,
+          "specs": [
+            {
+              "title": "GET",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 172,
+                      "parallelIndex": 6,
+                      "status": "passed",
+                      "duration": 31,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-26T02:05:46.067Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\Users\\Matthew\\source\\repos\\Bamboozle\\playwright\\test-results\\assert-assert-match-verb-nonmatch-pattern-GET-chromium\\trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "9080a16ae1447c2c107d-5ce42011785409c70685",
+              "file": "assert.spec.ts",
+              "line": 192,
+              "column": 9
+            },
+            {
+              "title": "PUT",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 166,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 74,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-26T02:05:46.077Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\Users\\Matthew\\source\\repos\\Bamboozle\\playwright\\test-results\\assert-assert-match-verb-nonmatch-pattern-PUT-chromium\\trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "9080a16ae1447c2c107d-b135f48c22469d821c68",
+              "file": "assert.spec.ts",
+              "line": 192,
+              "column": 9
+            },
+            {
+              "title": "POST",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 168,
+                      "parallelIndex": 2,
+                      "status": "passed",
+                      "duration": 41,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-26T02:05:46.098Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\Users\\Matthew\\source\\repos\\Bamboozle\\playwright\\test-results\\assert-assert-match-verb-nonmatch-pattern-POST-chromium\\trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "9080a16ae1447c2c107d-ce65d3daa3c5859ad369",
+              "file": "assert.spec.ts",
+              "line": 192,
+              "column": 9
+            },
+            {
+              "title": "PATCH",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 173,
+                      "parallelIndex": 7,
+                      "status": "passed",
+                      "duration": 50,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-26T02:05:46.099Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\Users\\Matthew\\source\\repos\\Bamboozle\\playwright\\test-results\\assert-assert-match-verb-nonmatch-pattern-PATCH-chromium\\trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "9080a16ae1447c2c107d-912e175b3f60bdafd5f4",
+              "file": "assert.spec.ts",
+              "line": 192,
+              "column": 9
+            },
+            {
+              "title": "DELETE",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 167,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 32,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-26T02:05:46.106Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\Users\\Matthew\\source\\repos\\Bamboozle\\playwright\\test-results\\assert-assert-match-verb-nonmatch-pattern-DELETE-chromium\\trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "9080a16ae1447c2c107d-269972f1a865a464d3ae",
+              "file": "assert.spec.ts",
+              "line": 192,
+              "column": 9
+            }
+          ]
+        },
+        {
+          "title": "assert nonmatch verb match pattern",
+          "file": "assert.spec.ts",
+          "line": 211,
+          "column": 6,
+          "specs": [
+            {
+              "title": "GET",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 170,
+                      "parallelIndex": 4,
+                      "status": "passed",
+                      "duration": 34,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-26T02:05:46.121Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\Users\\Matthew\\source\\repos\\Bamboozle\\playwright\\test-results\\assert-assert-nonmatch-verb-match-pattern-GET-chromium\\trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "9080a16ae1447c2c107d-00545c8a899e89e22acb",
+              "file": "assert.spec.ts",
+              "line": 225,
+              "column": 9
+            },
+            {
+              "title": "PUT",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 169,
+                      "parallelIndex": 3,
+                      "status": "passed",
+                      "duration": 37,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-26T02:05:46.123Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\Users\\Matthew\\source\\repos\\Bamboozle\\playwright\\test-results\\assert-assert-nonmatch-verb-match-pattern-PUT-chromium\\trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "9080a16ae1447c2c107d-ca30101927beef25857d",
+              "file": "assert.spec.ts",
+              "line": 225,
+              "column": 9
+            },
+            {
+              "title": "POST",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 171,
+                      "parallelIndex": 5,
+                      "status": "passed",
+                      "duration": 36,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-26T02:05:46.129Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\Users\\Matthew\\source\\repos\\Bamboozle\\playwright\\test-results\\assert-assert-nonmatch-verb-match-pattern-POST-chromium\\trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "9080a16ae1447c2c107d-e1dcdd8b2544f17480c1",
+              "file": "assert.spec.ts",
+              "line": 225,
+              "column": 9
+            },
+            {
+              "title": "PATCH",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 172,
+                      "parallelIndex": 6,
+                      "status": "passed",
+                      "duration": 34,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-26T02:05:46.133Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\Users\\Matthew\\source\\repos\\Bamboozle\\playwright\\test-results\\assert-assert-nonmatch-verb-match-pattern-PATCH-chromium\\trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "9080a16ae1447c2c107d-4b6c3247a440031b2246",
+              "file": "assert.spec.ts",
+              "line": 225,
+              "column": 9
+            },
+            {
+              "title": "DELETE",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 168,
+                      "parallelIndex": 2,
+                      "status": "passed",
+                      "duration": 43,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-26T02:05:46.176Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\Users\\Matthew\\source\\repos\\Bamboozle\\playwright\\test-results\\assert-assert-nonmatch-verb-match-pattern-DELETE-chromium\\trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "9080a16ae1447c2c107d-62a5fb1ca6545edf5dcf",
+              "file": "assert.spec.ts",
+              "line": 225,
+              "column": 9
+            }
+          ]
+        },
+        {
+          "title": "assert match with no expression",
+          "file": "assert.spec.ts",
+          "line": 244,
+          "column": 6,
+          "specs": [
+            {
+              "title": "GET",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 167,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 45,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-26T02:05:46.177Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\Users\\Matthew\\source\\repos\\Bamboozle\\playwright\\test-results\\assert-assert-match-with-no-expression-GET-chromium\\trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "9080a16ae1447c2c107d-24778c476053fee6b10a",
+              "file": "assert.spec.ts",
+              "line": 258,
+              "column": 9
+            },
+            {
+              "title": "PUT",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 173,
+                      "parallelIndex": 7,
+                      "status": "passed",
+                      "duration": 41,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-26T02:05:46.191Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\Users\\Matthew\\source\\repos\\Bamboozle\\playwright\\test-results\\assert-assert-match-with-no-expression-PUT-chromium\\trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "9080a16ae1447c2c107d-fe7beea578076ba77647",
+              "file": "assert.spec.ts",
+              "line": 258,
+              "column": 9
+            },
+            {
+              "title": "POST",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 170,
+                      "parallelIndex": 4,
+                      "status": "passed",
+                      "duration": 111,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-26T02:05:46.194Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\Users\\Matthew\\source\\repos\\Bamboozle\\playwright\\test-results\\assert-assert-match-with-no-expression-POST-chromium\\trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "9080a16ae1447c2c107d-8196ca7a07fb2f2948fe",
+              "file": "assert.spec.ts",
+              "line": 258,
+              "column": 9
+            },
+            {
+              "title": "PATCH",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 169,
+                      "parallelIndex": 3,
+                      "status": "passed",
+                      "duration": 39,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-26T02:05:46.200Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\Users\\Matthew\\source\\repos\\Bamboozle\\playwright\\test-results\\assert-assert-match-with-no-expression-PATCH-chromium\\trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "9080a16ae1447c2c107d-09ccba1d898caaab6b69",
+              "file": "assert.spec.ts",
+              "line": 258,
+              "column": 9
+            },
+            {
+              "title": "DELETE",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 166,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 33,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-26T02:05:46.201Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\Users\\Matthew\\source\\repos\\Bamboozle\\playwright\\test-results\\assert-assert-match-with-no-expression-DELETE-chromium\\trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "9080a16ae1447c2c107d-e81ea051c3ddd750f3fb",
+              "file": "assert.spec.ts",
+              "line": 258,
+              "column": 9
+            }
+          ]
+        },
+        {
+          "title": "assert match complex body",
+          "file": "assert.spec.ts",
+          "line": 272,
+          "column": 6,
+          "specs": [
+            {
+              "title": "PUT",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 171,
+                      "parallelIndex": 5,
+                      "status": "passed",
+                      "duration": 37,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-26T02:05:46.204Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\Users\\Matthew\\source\\repos\\Bamboozle\\playwright\\test-results\\assert-assert-match-complex-body-PUT-chromium\\trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "9080a16ae1447c2c107d-d4e523b47bb3e25e2ac8",
+              "file": "assert.spec.ts",
+              "line": 286,
+              "column": 9
+            },
+            {
+              "title": "POST",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 172,
+                      "parallelIndex": 6,
+                      "status": "passed",
+                      "duration": 40,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-26T02:05:46.207Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\Users\\Matthew\\source\\repos\\Bamboozle\\playwright\\test-results\\assert-assert-match-complex-body-POST-chromium\\trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "9080a16ae1447c2c107d-36993af5bb7caf2daf17",
+              "file": "assert.spec.ts",
+              "line": 286,
+              "column": 9
+            },
+            {
+              "title": "PATCH",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 168,
+                      "parallelIndex": 2,
+                      "status": "passed",
+                      "duration": 37,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-26T02:05:46.255Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\Users\\Matthew\\source\\repos\\Bamboozle\\playwright\\test-results\\assert-assert-match-complex-body-PATCH-chromium\\trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "9080a16ae1447c2c107d-f3d63b032dd02aac61d9",
+              "file": "assert.spec.ts",
+              "line": 286,
+              "column": 9
+            }
+          ]
+        },
+        {
+          "title": "assert count qualifiers",
+          "file": "assert.spec.ts",
+          "line": 318,
+          "column": 6,
+          "specs": [
+            {
+              "title": "calledExactly=1 after 1 call passes",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 167,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 31,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-26T02:05:46.256Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\Users\\Matthew\\source\\repos\\Bamboozle\\playwright\\test-results\\assert-assert-count-qualif-4e6ff-actly-1-after-1-call-passes-chromium\\trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "9080a16ae1447c2c107d-de8ef1dd030bb5b42801",
+              "file": "assert.spec.ts",
+              "line": 331,
+              "column": 7
+            },
+            {
+              "title": "calledExactly=2 after 1 call fails",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 166,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 31,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-26T02:05:46.268Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\Users\\Matthew\\source\\repos\\Bamboozle\\playwright\\test-results\\assert-assert-count-qualif-4f247-xactly-2-after-1-call-fails-chromium\\trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "9080a16ae1447c2c107d-673ea6327cd3a9519eb7",
+              "file": "assert.spec.ts",
+              "line": 339,
+              "column": 7
+            },
+            {
+              "title": "calledAtLeast=1 after 1 call passes",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 173,
+                      "parallelIndex": 7,
+                      "status": "passed",
+                      "duration": 30,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-26T02:05:46.271Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\Users\\Matthew\\source\\repos\\Bamboozle\\playwright\\test-results\\assert-assert-count-qualif-65fab-Least-1-after-1-call-passes-chromium\\trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "9080a16ae1447c2c107d-2aa32607773e20489c54",
+              "file": "assert.spec.ts",
+              "line": 347,
+              "column": 7
+            },
+            {
+              "title": "calledAtLeast=2 after 1 call fails",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 169,
+                      "parallelIndex": 3,
+                      "status": "passed",
+                      "duration": 35,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-26T02:05:46.271Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\Users\\Matthew\\source\\repos\\Bamboozle\\playwright\\test-results\\assert-assert-count-qualif-c61a2-tLeast-2-after-1-call-fails-chromium\\trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "9080a16ae1447c2c107d-62b5ecbedb3ca3b3512b",
+              "file": "assert.spec.ts",
+              "line": 355,
+              "column": 7
+            },
+            {
+              "title": "calledAtMost=1 after 1 call passes",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 171,
+                      "parallelIndex": 5,
+                      "status": "passed",
+                      "duration": 33,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-26T02:05:46.277Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\Users\\Matthew\\source\\repos\\Bamboozle\\playwright\\test-results\\assert-assert-count-qualif-682f6-tMost-1-after-1-call-passes-chromium\\trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "9080a16ae1447c2c107d-2c78dc0369f1188535d1",
+              "file": "assert.spec.ts",
+              "line": 363,
+              "column": 7
+            },
+            {
+              "title": "calledAtMost=0 after 1 call fails",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 172,
+                      "parallelIndex": 6,
+                      "status": "passed",
+                      "duration": 30,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-26T02:05:46.299Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\Users\\Matthew\\source\\repos\\Bamboozle\\playwright\\test-results\\assert-assert-count-qualif-729cb-AtMost-0-after-1-call-fails-chromium\\trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "9080a16ae1447c2c107d-db447cd1d06853df369e",
+              "file": "assert.spec.ts",
+              "line": 371,
+              "column": 7
+            },
+            {
+              "title": "neverCalled passes when route has 0 calls",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 167,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 18,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-26T02:05:46.323Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\Users\\Matthew\\source\\repos\\Bamboozle\\playwright\\test-results\\assert-assert-count-qualif-94962-sses-when-route-has-0-calls-chromium\\trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "9080a16ae1447c2c107d-40428221dc6a59213fcf",
+              "file": "assert.spec.ts",
+              "line": 379,
+              "column": 7
+            },
+            {
+              "title": "neverCalled fails after 1 call",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 166,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 33,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-26T02:05:46.330Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\Users\\Matthew\\source\\repos\\Bamboozle\\playwright\\test-results\\assert-assert-count-qualif-07875-erCalled-fails-after-1-call-chromium\\trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "9080a16ae1447c2c107d-c461fe31c2df6d842339",
+              "file": "assert.spec.ts",
+              "line": 386,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "file-response.spec.ts",
+      "file": "file-response.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "contentFile serves Liquid-rendered file content",
+          "file": "file-response.spec.ts",
+          "line": 6,
+          "column": 6,
+          "specs": [
+            {
+              "title": "renders Liquid template from file with route values",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 168,
+                      "parallelIndex": 2,
+                      "status": "passed",
+                      "duration": 50,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-26T02:05:46.333Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\Users\\Matthew\\source\\repos\\Bamboozle\\playwright\\test-results\\file-response-contentFile--aa7d8-from-file-with-route-values-chromium\\trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "2835c46eb94cf101cfc2-937d45fc49398a93da66",
+              "file": "file-response.spec.ts",
+              "line": 18,
+              "column": 9
+            },
+            {
+              "title": "renders Liquid template from file with different route values",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 173,
+                      "parallelIndex": 7,
+                      "status": "passed",
+                      "duration": 35,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-26T02:05:46.351Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\Users\\Matthew\\source\\repos\\Bamboozle\\playwright\\test-results\\file-response-contentFile--84c21-with-different-route-values-chromium\\trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "2835c46eb94cf101cfc2-2b7c4c9dd990048328ca",
+              "file": "file-response.spec.ts",
+              "line": 36,
+              "column": 9
+            }
+          ]
+        },
+        {
+          "title": "binaryFile serves raw bytes",
+          "file": "file-response.spec.ts",
+          "line": 54,
+          "column": 6,
+          "specs": [
+            {
+              "title": "returns raw binary content unchanged",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 169,
+                      "parallelIndex": 3,
+                      "status": "passed",
+                      "duration": 37,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-26T02:05:46.350Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\Users\\Matthew\\source\\repos\\Bamboozle\\playwright\\test-results\\file-response-binaryFile-s-124b4-aw-binary-content-unchanged-chromium\\trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "2835c46eb94cf101cfc2-be5c35d6439b5f833032",
+              "file": "file-response.spec.ts",
+              "line": 66,
+              "column": 9
+            },
+            {
+              "title": "binary content is not processed as Liquid template",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 171,
+                      "parallelIndex": 5,
+                      "status": "passed",
+                      "duration": 31,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-26T02:05:46.356Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\Users\\Matthew\\source\\repos\\Bamboozle\\playwright\\test-results\\file-response-binaryFile-s-b5107-rocessed-as-Liquid-template-chromium\\trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "2835c46eb94cf101cfc2-3aa9a54c7ad8d54e3010",
+              "file": "file-response.spec.ts",
+              "line": 90,
+              "column": 9
+            }
+          ]
+        },
+        {
+          "title": "validation rejects multiple content options",
+          "file": "file-response.spec.ts",
+          "line": 110,
+          "column": 6,
+          "specs": [
+            {
+              "title": "content and contentFile together returns 400",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 172,
+                      "parallelIndex": 6,
+                      "status": "passed",
+                      "duration": 10,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-26T02:05:46.391Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\Users\\Matthew\\source\\repos\\Bamboozle\\playwright\\test-results\\file-response-validation-r-1f872-ntFile-together-returns-400-chromium\\trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "2835c46eb94cf101cfc2-6566776b550c00abbe38",
+              "file": "file-response.spec.ts",
+              "line": 111,
+              "column": 9
+            },
+            {
+              "title": "content and binaryFile together returns 400",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 170,
+                      "parallelIndex": 4,
+                      "status": "passed",
+                      "duration": 6,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-26T02:05:46.390Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\Users\\Matthew\\source\\repos\\Bamboozle\\playwright\\test-results\\file-response-validation-r-d3134-ryFile-together-returns-400-chromium\\trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "2835c46eb94cf101cfc2-5d0633a256d0fac7013a",
+              "file": "file-response.spec.ts",
+              "line": 129,
+              "column": 9
+            },
+            {
+              "title": "contentFile and binaryFile together returns 400",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 167,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 5,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-26T02:05:46.390Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\Users\\Matthew\\source\\repos\\Bamboozle\\playwright\\test-results\\file-response-validation-r-7e5de-ryFile-together-returns-400-chromium\\trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "2835c46eb94cf101cfc2-721e75912d203baf02f8",
+              "file": "file-response.spec.ts",
+              "line": 147,
+              "column": 9
+            },
+            {
+              "title": "loopback and content together returns 400",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 166,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 2,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-26T02:05:46.420Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\Users\\Matthew\\source\\repos\\Bamboozle\\playwright\\test-results\\file-response-validation-r-63b86-ontent-together-returns-400-chromium\\trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "2835c46eb94cf101cfc2-8bb314b9f8efe274caab",
+              "file": "file-response.spec.ts",
+              "line": 165,
+              "column": 9
+            },
+            {
+              "title": "loopback and contentFile together returns 400",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 172,
+                      "parallelIndex": 6,
+                      "status": "passed",
+                      "duration": 4,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-26T02:05:46.426Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\Users\\Matthew\\source\\repos\\Bamboozle\\playwright\\test-results\\file-response-validation-r-797a5-ntFile-together-returns-400-chromium\\trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "2835c46eb94cf101cfc2-c359b2f240d48f30ccb7",
+              "file": "file-response.spec.ts",
+              "line": 183,
+              "column": 9
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "previous-context.spec.ts",
+      "file": "previous-context.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "check for previous context",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 170,
+                  "parallelIndex": 4,
+                  "status": "passed",
+                  "duration": 40,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-04-26T02:05:46.428Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "C:\\Users\\Matthew\\source\\repos\\Bamboozle\\playwright\\test-results\\previous-context-check-for-previous-context-chromium\\trace.zip"
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "6d62e301efd4bb38d1a1-96ee4f3e2b6417ef0fc7",
+          "file": "previous-context.spec.ts",
+          "line": 18,
+          "column": 5
+        },
+        {
+          "title": "assert state on current req",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 167,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 30,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-04-26T02:05:46.428Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "C:\\Users\\Matthew\\source\\repos\\Bamboozle\\playwright\\test-results\\previous-context-assert-state-on-current-req-chromium\\trace.zip"
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "6d62e301efd4bb38d1a1-d237b13523d49f6cc45c",
+          "file": "previous-context.spec.ts",
+          "line": 35,
+          "column": 5
+        },
+        {
+          "title": "use previousContext to trigger 409",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 168,
+                  "parallelIndex": 2,
+                  "status": "passed",
+                  "duration": 50,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-04-26T02:05:46.443Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "C:\\Users\\Matthew\\source\\repos\\Bamboozle\\playwright\\test-results\\previous-context-use-previousContext-to-trigger-409-chromium\\trace.zip"
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "6d62e301efd4bb38d1a1-a617dc5a6278153222b3",
+          "file": "previous-context.spec.ts",
+          "line": 54,
+          "column": 5
+        },
+        {
+          "title": "check for no previous previous context",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 173,
+                  "parallelIndex": 7,
+                  "status": "passed",
+                  "duration": 49,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-04-26T02:05:46.445Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "C:\\Users\\Matthew\\source\\repos\\Bamboozle\\playwright\\test-results\\previous-context-check-for-no-previous-previous-context-chromium\\trace.zip"
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "6d62e301efd4bb38d1a1-f440e59c03d48735ba95",
+          "file": "previous-context.spec.ts",
+          "line": 73,
+          "column": 5
+        },
+        {
+          "title": "test for state carry forward",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 171,
+                  "parallelIndex": 5,
+                  "status": "passed",
+                  "duration": 53,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-04-26T02:05:46.447Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "C:\\Users\\Matthew\\source\\repos\\Bamboozle\\playwright\\test-results\\previous-context-test-for-state-carry-forward-chromium\\trace.zip"
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "6d62e301efd4bb38d1a1-d92bca706b71ed1cae6d",
+          "file": "previous-context.spec.ts",
+          "line": 98,
+          "column": 5
+        }
+      ]
+    },
+    {
+      "title": "response.spec.ts",
+      "file": "response.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "response json is real json",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 166,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 40,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-04-26T02:05:46.454Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "C:\\Users\\Matthew\\source\\repos\\Bamboozle\\playwright\\test-results\\response-response-json-is-real-json-chromium\\trace.zip"
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "f65de4eae4aac7dc1e4c-9268b07bd56095213203",
+          "file": "response.spec.ts",
+          "line": 6,
+          "column": 5
+        }
+      ],
+      "suites": [
+        {
+          "title": "request body can do complex json",
+          "file": "response.spec.ts",
+          "line": 13,
+          "column": 6,
+          "specs": [
+            {
+              "title": "PUT",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 172,
+                      "parallelIndex": 6,
+                      "status": "passed",
+                      "duration": 41,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-26T02:05:46.460Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\Users\\Matthew\\source\\repos\\Bamboozle\\playwright\\test-results\\response-request-body-can-do-complex-json-PUT-chromium\\trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "f65de4eae4aac7dc1e4c-e057518885d6d9082d16",
+              "file": "response.spec.ts",
+              "line": 27,
+              "column": 13
+            },
+            {
+              "title": "POST",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 169,
+                      "parallelIndex": 3,
+                      "status": "passed",
+                      "duration": 33,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-26T02:05:46.470Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\Users\\Matthew\\source\\repos\\Bamboozle\\playwright\\test-results\\response-request-body-can-do-complex-json-POST-chromium\\trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "f65de4eae4aac7dc1e4c-41df4c936dafaf458c8e",
+              "file": "response.spec.ts",
+              "line": 27,
+              "column": 13
+            },
+            {
+              "title": "patch",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 170,
+                      "parallelIndex": 4,
+                      "status": "passed",
+                      "duration": 28,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-26T02:05:46.526Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\Users\\Matthew\\source\\repos\\Bamboozle\\playwright\\test-results\\response-request-body-can-do-complex-json-patch-chromium\\trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "f65de4eae4aac7dc1e4c-dccd78dcf451f98d7595",
+              "file": "response.spec.ts",
+              "line": 27,
+              "column": 13
+            }
+          ]
+        },
+        {
+          "title": "request body loopback should match original",
+          "file": "response.spec.ts",
+          "line": 60,
+          "column": 6,
+          "specs": [
+            {
+              "title": "PUT",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 167,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 33,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-26T02:05:46.539Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\Users\\Matthew\\source\\repos\\Bamboozle\\playwright\\test-results\\response-request-body-loopback-should-match-original-PUT-chromium\\trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "f65de4eae4aac7dc1e4c-6bbbd04430e369273d28",
+              "file": "response.spec.ts",
+              "line": 74,
+              "column": 13
+            },
+            {
+              "title": "POST",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 166,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 34,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-26T02:05:46.540Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\Users\\Matthew\\source\\repos\\Bamboozle\\playwright\\test-results\\response-request-body-loopback-should-match-original-POST-chromium\\trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "f65de4eae4aac7dc1e4c-a30e562c7e65980d9946",
+              "file": "response.spec.ts",
+              "line": 74,
+              "column": 13
+            },
+            {
+              "title": "PATCH",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 168,
+                      "parallelIndex": 2,
+                      "status": "passed",
+                      "duration": 39,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-26T02:05:46.550Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\Users\\Matthew\\source\\repos\\Bamboozle\\playwright\\test-results\\response-request-body-loopback-should-match-original-PATCH-chromium\\trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "f65de4eae4aac7dc1e4c-feccaed6ea8f383e4b78",
+              "file": "response.spec.ts",
+              "line": 74,
+              "column": 13
+            }
+          ]
+        },
+        {
+          "title": "max calls returns 404",
+          "file": "response.spec.ts",
+          "line": 98,
+          "column": 6,
+          "specs": [
+            {
+              "title": "PUT",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 173,
+                      "parallelIndex": 7,
+                      "status": "passed",
+                      "duration": 36,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-26T02:05:46.555Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\Users\\Matthew\\source\\repos\\Bamboozle\\playwright\\test-results\\response-max-calls-returns-404-PUT-chromium\\trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "f65de4eae4aac7dc1e4c-36d04c145dc086a8745f",
+              "file": "response.spec.ts",
+              "line": 112,
+              "column": 13
+            },
+            {
+              "title": "POST",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 172,
+                      "parallelIndex": 6,
+                      "status": "passed",
+                      "duration": 31,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-26T02:05:46.583Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\Users\\Matthew\\source\\repos\\Bamboozle\\playwright\\test-results\\response-max-calls-returns-404-POST-chromium\\trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "f65de4eae4aac7dc1e4c-4f7e42db7f57069c3b48",
+              "file": "response.spec.ts",
+              "line": 112,
+              "column": 13
+            },
+            {
+              "title": "PATCH",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 171,
+                      "parallelIndex": 5,
+                      "status": "passed",
+                      "duration": 27,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-26T02:05:46.597Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\Users\\Matthew\\source\\repos\\Bamboozle\\playwright\\test-results\\response-max-calls-returns-404-PATCH-chromium\\trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "f65de4eae4aac7dc1e4c-f05665ec7c374dd9c2e6",
+              "file": "response.spec.ts",
+              "line": 112,
+              "column": 13
+            }
+          ]
+        },
+        {
+          "title": "route matching",
+          "file": "response.spec.ts",
+          "line": 143,
+          "column": 6,
+          "specs": [
+            {
+              "title": "route matching with strongly typed route params int with string val",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 169,
+                      "parallelIndex": 3,
+                      "status": "passed",
+                      "duration": 23,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-26T02:05:46.603Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\Users\\Matthew\\source\\repos\\Bamboozle\\playwright\\test-results\\response-route-matching-ro-37942--params-int-with-string-val-chromium\\trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "f65de4eae4aac7dc1e4c-9d42d50880dafc40b180",
+              "file": "response.spec.ts",
+              "line": 155,
+              "column": 9
+            },
+            {
+              "title": "route matching with strongly typed route params int vs string",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 170,
+                      "parallelIndex": 4,
+                      "status": "passed",
+                      "duration": 45,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-26T02:05:46.658Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\Users\\Matthew\\source\\repos\\Bamboozle\\playwright\\test-results\\response-route-matching-ro-f3f25--route-params-int-vs-string-chromium\\trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "f65de4eae4aac7dc1e4c-4027b5ae100e03adbd5f",
+              "file": "response.spec.ts",
+              "line": 174,
+              "column": 9
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "simulation.spec.ts",
+      "file": "simulation.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "fixed delay",
+          "file": "simulation.spec.ts",
+          "line": 17,
+          "column": 6,
+          "specs": [
+            {
+              "title": "response is delayed by at least the configured milliseconds",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 166,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 227,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-26T02:05:46.667Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\Users\\Matthew\\source\\repos\\Bamboozle\\playwright\\test-results\\simulation-fixed-delay-res-3a966-the-configured-milliseconds-chromium\\trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "8812daf840a2e145bc16-97dc19b94a589f313b09",
+              "file": "simulation.spec.ts",
+              "line": 21,
+              "column": 9
+            }
+          ]
+        },
+        {
+          "title": "random delay",
+          "file": "simulation.spec.ts",
+          "line": 40,
+          "column": 6,
+          "specs": [
+            {
+              "title": "response is delayed within the configured range",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 167,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 309,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-26T02:05:46.666Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\Users\\Matthew\\source\\repos\\Bamboozle\\playwright\\test-results\\simulation-random-delay-re-cf11c-within-the-configured-range-chromium\\trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "8812daf840a2e145bc16-fffb3897ec55548f6e91",
+              "file": "simulation.spec.ts",
+              "line": 44,
+              "column": 9
+            }
+          ]
+        },
+        {
+          "title": "emptyResponse fault",
+          "file": "simulation.spec.ts",
+          "line": 64,
+          "column": 6,
+          "specs": [
+            {
+              "title": "always returns 200 with empty body when probability is 1",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 168,
+                      "parallelIndex": 2,
+                      "status": "passed",
+                      "duration": 22,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-26T02:05:46.670Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\Users\\Matthew\\source\\repos\\Bamboozle\\playwright\\test-results\\simulation-emptyResponse-f-da78b--body-when-probability-is-1-chromium\\trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "8812daf840a2e145bc16-52b62c5b87bb6703c05a",
+              "file": "simulation.spec.ts",
+              "line": 68,
+              "column": 9
+            },
+            {
+              "title": "never triggers when probability is 0",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 173,
+                      "parallelIndex": 7,
+                      "status": "passed",
+                      "duration": 46,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-26T02:05:46.673Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\Users\\Matthew\\source\\repos\\Bamboozle\\playwright\\test-results\\simulation-emptyResponse-f-9ac00-ggers-when-probability-is-0-chromium\\trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "8812daf840a2e145bc16-b5c8b39a0bfe64c08b4a",
+              "file": "simulation.spec.ts",
+              "line": 83,
+              "column": 9
+            }
+          ]
+        },
+        {
+          "title": "connectionReset fault",
+          "file": "simulation.spec.ts",
+          "line": 100,
+          "column": 6,
+          "specs": [
+            {
+              "title": "aborts the connection — body is empty or request throws",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 169,
+                      "parallelIndex": 3,
+                      "status": "passed",
+                      "duration": 23,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-26T02:05:46.677Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\Users\\Matthew\\source\\repos\\Bamboozle\\playwright\\test-results\\simulation-connectionReset-565b0--is-empty-or-request-throws-chromium\\trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "8812daf840a2e145bc16-0958b3e647a2fa5becd3",
+              "file": "simulation.spec.ts",
+              "line": 104,
+              "column": 9
+            }
+          ]
+        },
+        {
+          "title": "delay combined with fault",
+          "file": "simulation.spec.ts",
+          "line": 126,
+          "column": 6,
+          "specs": [
+            {
+              "title": "delay applies before the fault triggers",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 172,
+                      "parallelIndex": 6,
+                      "status": "passed",
+                      "duration": 167,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-26T02:05:46.693Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\Users\\Matthew\\source\\repos\\Bamboozle\\playwright\\test-results\\simulation-delay-combined--84f27-s-before-the-fault-triggers-chromium\\trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "8812daf840a2e145bc16-ca4d8660a8f36e83259e",
+              "file": "simulation.spec.ts",
+              "line": 130,
+              "column": 9
+            }
+          ]
+        },
+        {
+          "title": "calls are recorded even when fault triggers",
+          "file": "simulation.spec.ts",
+          "line": 153,
+          "column": 6,
+          "specs": [
+            {
+              "title": "faulted requests appear in call history",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 171,
+                      "parallelIndex": 5,
+                      "status": "passed",
+                      "duration": 17,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-26T02:05:46.729Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\Users\\Matthew\\source\\repos\\Bamboozle\\playwright\\test-results\\simulation-calls-are-recor-8f5df-ests-appear-in-call-history-chromium\\trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "8812daf840a2e145bc16-24a3d923351a3ea7aaa3",
+              "file": "simulation.spec.ts",
+              "line": 157,
+              "column": 9
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-04-26T02:05:44.325Z",
+    "duration": 2700.402999997139,
+    "expected": 84,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}
