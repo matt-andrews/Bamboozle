@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="./assets/logo_full_19apr26.png" width=256 alt="Bamboozle Logo" >
+  <img src="https://raw.githubusercontent.com/matt-andrews/Bamboozle/main/.assets/logo_full_19apr26.png" width=256 alt="Bamboozle Logo" >
   <h1>Bamboozle</h1>
 
   [![Docker Image Size](https://img.shields.io/docker/image-size/mattisthegreatest/bamboozle?style=for-the-badge)](https://hub.docker.com/r/mattisthegreatest/bamboozle)
@@ -60,7 +60,7 @@ Content-Type: application/json
 
 The route is active immediately.
 
-Depending on your workflow, you may want to use [static route configuration files](docs/how-to/load-static-config.md).
+Depending on your workflow, you may want to use [static route configuration files](https://github.com/matt-andrews/Bamboozle/blob/main/docs/how-to/load-static-config.md).
 
 Routes use the [Liquid Template Engine](https://shopify.github.io/liquid/) for dynamic rendering for any string in the `response` section.
 
@@ -115,20 +115,20 @@ All routes and call history are cleared.
 
 | | |
 | --- | --- |
-| **[How-to guides](docs/how-to/)** | Task-focused recipes for common testing scenarios. |
-| **[Reference](docs/reference/)** | Route schema, API endpoints, expression syntax, environment variables. |
-| **[Explanation](docs/explanation/)** | How the two-server model works, state chaining, matching priority. |
+| **[How-to guides](https://github.com/matt-andrews/Bamboozle/tree/main/docs/how-to)** | Task-focused recipes for common testing scenarios. |
+| **[Reference](https://github.com/matt-andrews/Bamboozle/tree/main/docs/reference)** | Route schema, API endpoints, expression syntax, environment variables. |
+| **[Explanation](https://github.com/matt-andrews/Bamboozle/tree/main/docs/explanation)** | How the two-server model works, state chaining, matching priority. |
 
 ### How-to guides
 
-- [Manage routes](docs/how-to/manage-routes.md) — register, replace, list, delete
-- [Write responses](docs/how-to/write-responses.md) — inline content, file responses, Liquid templates, loopback
-- [Simulate faults](docs/how-to/simulate-faults.md) — latency injection, connection resets, transient failures
-- [Assert on calls](docs/how-to/assert-calls.md) — count assertions, expression filters, call history
-- [Load static config](docs/how-to/load-static-config.md) — JSON/YAML route files at startup
-- [Configure logging](docs/how-to/configure-logging.md) — log levels, formats, OpenTelemetry export
-- [Enable TLS](docs/how-to/enable-tls.md) — HTTPS on the mock server, certificate generation
-- [Fault Tolerance Example](examples/fault-demo/README.md) — Example: simulated faults including latency injection, connection resets, and transient failures
+- [Manage routes](https://github.com/matt-andrews/Bamboozle/blob/main/docs/how-to/manage-routes.md) — register, replace, list, delete
+- [Write responses](https://github.com/matt-andrews/Bamboozle/blob/main/docs/how-to/write-responses.md) — inline content, file responses, Liquid templates, loopback
+- [Simulate faults](https://github.com/matt-andrews/Bamboozle/blob/main/docs/how-to/simulate-faults.md) — latency injection, connection resets, transient failures
+- [Assert on calls](https://github.com/matt-andrews/Bamboozle/blob/main/docs/how-to/assert-calls.md) — count assertions, expression filters, call history
+- [Load static config](https://github.com/matt-andrews/Bamboozle/blob/main/docs/how-to/load-static-config.md) — JSON/YAML route files at startup
+- [Configure logging](https://github.com/matt-andrews/Bamboozle/blob/main/docs/how-to/configure-logging.md) — log levels, formats, OpenTelemetry export
+- [Enable TLS](https://github.com/matt-andrews/Bamboozle/blob/main/docs/how-to/enable-tls.md) — HTTPS on the mock server, certificate generation
+- [Fault Tolerance Example](https://github.com/matt-andrews/Bamboozle/blob/main/examples/fault-demo/README.md) — Example: simulated faults including latency injection, connection resets, and transient failures
 
 ---
 
@@ -136,8 +136,8 @@ All routes and call history are cleared.
 
 | Download | Code | Notes |
 | - | - | - |
-| `npm install @matt-andrews/bamboozle-sdk` | [`Node`](sdks/npm/README.md) | TypeScript/JavaScript client for the control API |
-| `dotnet add package Bamboozle.Core` | [`dotnet`](sdks/dotnet/Bamboozle/) | dotnet client for the control API |
+| `npm install @matt-andrews/bamboozle-sdk` | [`Node`](https://github.com/matt-andrews/Bamboozle/blob/main/sdks/npm/README.md) | TypeScript/JavaScript client for the control API |
+| `dotnet add package Bamboozle.Core` | [`dotnet`](https://github.com/matt-andrews/Bamboozle/tree/main/sdks/dotnet/Bamboozle) | dotnet client for the control API |
 
 ---
 
@@ -150,7 +150,7 @@ Bamboozle was **not** intended to be used in any uncontrolled environment such a
 ## Try it in your project
 
 - Run the example above in your local environment
-- Check out the [Fault Tolerance Example](examples/fault-demo/README.md) for advanced scenarios
-- See [docs/contributing/](docs/contributing/) for architecture, request lifecycle, and how to add a feature.
+- Check out the [Fault Tolerance Example](https://github.com/matt-andrews/Bamboozle/blob/main/examples/fault-demo/README.md) for advanced scenarios
+- See [docs/contributing/](https://github.com/matt-andrews/Bamboozle/tree/main/docs/contributing) for architecture, request lifecycle, and how to add a feature.
 
 If it clicks, ⭐ star the repo — it helps others find it.
