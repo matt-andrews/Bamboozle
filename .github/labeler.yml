@@ -19,7 +19,3 @@
       - any-glob-to-any-file:
           - ".github/**"
           - "scripts/**"
-
-"area: examples":
-  - changed-files:
-      - any-glob-to-any-file: "examples/**"

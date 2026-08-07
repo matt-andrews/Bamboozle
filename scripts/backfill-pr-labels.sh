@@ -44,31 +44,22 @@ while IFS= read -r pr_num; do
   fi
 
   has_core=false
-  has_dotnet=false
-  has_npm=false
   has_docs=false
   has_ci=false
-  has_examples=false
 
   while IFS= read -r file; do
     [[ "$file" == bamboozle/* ]]                  && has_core=true
-    [[ "$file" == sdks/dotnet/* ]]                && has_dotnet=true
-    [[ "$file" == sdks/npm/* ]]                   && has_npm=true
     [[ "$file" == docs/* || "$file" == assets/* || "$file" == README.md || \
        "$file" == DOCKER_HUB_README.md || "$file" == llm.md || "$file" == LICENSE.md ]] \
                                                   && has_docs=true
-    [[ "$file" == .github/* || "$file" == playwright/* || "$file" == scripts/* ]] \
+    [[ "$file" == .github/* || "$file" == scripts/* ]] \
                                                   && has_ci=true
-    [[ "$file" == examples/* ]]                   && has_examples=true
   done <<< "$files"
 
   labels=()
   $has_core     && labels+=("area: core")
-  $has_dotnet   && labels+=("area: sdks/dotnet")
-  $has_npm      && labels+=("area: sdks/npm")
   $has_docs     && labels+=("area: docs")
   $has_ci       && labels+=("area: ci")
-  $has_examples && labels+=("area: examples")
 
   if [ ${#labels[@]} -eq 0 ]; then
     echo "  (no matching labels)"

@@ -35,25 +35,3 @@ let response = router(state)
     .await
     .unwrap();
 ```
-
-## Playwright E2E tests
-
-End-to-end tests in `/playwright/` start a real container and drive it over HTTP.
-
-```bash
-cd playwright
-npm install
-npx playwright test
-```
-
-Tests are grouped by feature area:
-
-| File | Covers |
-|---|---|
-| `assert.spec.ts` | Assertion expressions and count qualifiers |
-| `file-response.spec.ts` | `contentFile`, `binaryFile` |
-| `previous-context.spec.ts` | `setState`, `previousContext` state chaining |
-| `response.spec.ts` | Liquid templating, loopback |
-| `simulation.spec.ts` | Delay distributions, fault injection |
-
-The tests use `@bamboozle/sdk` for the control API calls. See `playwright/tests/*.spec.ts` for patterns.

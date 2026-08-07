@@ -224,15 +224,6 @@ Files with `.json`, `.yaml`, or `.yml` extensions are loaded. The mock listener 
 | `OTEL_EXPORTER_OTLP_ENDPOINT` | unset | OTLP HTTP endpoint for trace export |
 | `OTEL_EXPORTER_OTLP_HEADERS` | unset | HTTP headers for OTLP requests |
 
-## SDKs
-
-| Package | Language | Install |
-|---|---|---|
-| `@matt-andrews/bamboozle-sdk` | TypeScript / JavaScript | `npm install @matt-andrews/bamboozle-sdk` |
-| `Bamboozle.Core` | .NET (C#) | `dotnet add package Bamboozle.Core` |
-
-Both SDKs wrap the control API. See `sdks/npm/README.md` and `sdks/dotnet/Bamboozle/` for usage.
-
 ## Implementation
 
 - Language: Rust (stable)
@@ -249,4 +240,3 @@ Both SDKs wrap the control API. See `sdks/npm/README.md` and `sdks/dotnet/Bamboo
 - `docs/how-to/` — task-focused recipes
 - `docs/reference/` — route schema, API endpoints, expression syntax, environment variables
 - `docs/explanation/` — two-server model, state chaining, matching priority
-- `examples/azure-keyvault/` — mocking Azure Key Vault over HTTPS with .NET

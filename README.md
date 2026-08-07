@@ -15,7 +15,7 @@ Bamboozle is a fast, lightweight out-of-process HTTP mock server designed for re
 
 - Fast startup. Sub-second cold start means CI runs that don't burn money waiting for mocks to warm up.
 - Tiny image. ~5MB vs hundreds of MB for alternatives.
-- Language-agnostic. Drive it via HTTP from any language. Optional Node and .NET SDKs included for control interactions if needed.
+- Language-agnostic. Drive it directly via HTTP from any language.
 - Test against real HTTP boundaries — not in-process fakes. Catches bugs that in-process mocking can't — connection handling, timeouts, TLS, request serialization.
 
 ### Who is this for?
@@ -128,16 +128,6 @@ All routes and call history are cleared.
 - [Load static config](https://github.com/matt-andrews/Bamboozle/blob/main/docs/how-to/load-static-config.md) — JSON/YAML route files at startup
 - [Configure logging](https://github.com/matt-andrews/Bamboozle/blob/main/docs/how-to/configure-logging.md) — log levels, formats, OpenTelemetry export
 - [Enable TLS](https://github.com/matt-andrews/Bamboozle/blob/main/docs/how-to/enable-tls.md) — HTTPS on the mock server, certificate generation
-- [Fault Tolerance Example](https://github.com/matt-andrews/Bamboozle/blob/main/examples/fault-demo/README.md) — Example: simulated faults including latency injection, connection resets, and transient failures
-
----
-
-### SDKs
-
-| Download | Code | Notes |
-| - | - | - |
-| `npm install @matt-andrews/bamboozle-sdk` | [`Node`](https://github.com/matt-andrews/Bamboozle/blob/main/sdks/npm/README.md) | TypeScript/JavaScript client for the control API |
-| `dotnet add package Bamboozle.Core` | [`dotnet`](https://github.com/matt-andrews/Bamboozle/tree/main/sdks/dotnet/Bamboozle) | dotnet client for the control API |
 
 ---
 
@@ -150,7 +140,6 @@ Bamboozle was **not** intended to be used in any uncontrolled environment such a
 ## Try it in your project
 
 - Run the example above in your local environment
-- Check out the [Fault Tolerance Example](https://github.com/matt-andrews/Bamboozle/blob/main/examples/fault-demo/README.md) for advanced scenarios
 - See [docs/contributing/](https://github.com/matt-andrews/Bamboozle/tree/main/docs/contributing) for architecture, request lifecycle, and how to add a feature.
 
 If it clicks, ⭐ star the repo — it helps others find it.
