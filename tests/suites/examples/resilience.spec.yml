@@ -1,0 +1,85 @@
+name: "Latency, fault, and state simulation"
+options:
+  base_uri: "{{ env.BAMBOOZLE_MOCK_URI }}"
+
+describe:
+  - name: "Fixed delay is observable"
+    test:
+      route: /resilience/slow
+      assert:
+        - status == 200u
+        - body == "delayed"
+        - duration >= 60u
+
+  - name: "Random delay still returns normally"
+    test:
+      route: /resilience/random-latency
+      assert:
+        - status == 200u
+        - body == "random delay completed"
+
+  - name: "Gaussian delay still returns normally"
+    test:
+      route: /resilience/gaussian-latency
+      assert:
+        - status == 200u
+        - body == "gaussian delay completed"
+
+  - name: "Empty-response fault overrides status and body"
+    test:
+      route: /resilience/empty
+      assert:
+        - status == 200u
+        - body == ""
+        - bytes.size() == 0
+
+  - name: "Zero-probability fault preserves normal response"
+    test:
+      route: /resilience/no-fault
+      assert:
+        - status == 200u
+        - body == "normal response"
+
+  - name: "Connection-reset stream produces no response bytes"
+    description: "Reqwest surfaces Bamboozle's intentionally broken stream as a transport failure"
+    test:
+      route: /resilience/connection-reset
+      assert:
+        - status == 504u
+        - status_message.contains("error sending request")
+        - bytes.size() == 0
+
+  - name: "maxCalls serves the configured number of requests"
+    describe:
+      - name: "First request is served"
+        test:
+          route: /resilience/one-shot
+          assert:
+            - status == 200u
+            - body == "available once"
+      - name: "Route is removed after the first request"
+        test:
+          route: /resilience/one-shot
+          assert:
+            - status == 404u
+
+  - name: "State chaining models idempotent behavior"
+    describe:
+      - name: "First attempt creates the resource"
+        test:
+          route: /resilience/idempotent
+          verb: POST
+          assert:
+            - status == 201u
+            - body.json().attempt == 1
+            - body.json().previousAttempt == 0
+            - headers["x-attempt"] == "1"
+      - name: "Second attempt conflicts and sees previous state"
+        test:
+          route: /resilience/idempotent
+          verb: POST
+          assert:
+            - status == 409u
+            - body.json().attempt == 2
+            - body.json().previousAttempt == 1
+            - headers["x-attempt"] == "2"

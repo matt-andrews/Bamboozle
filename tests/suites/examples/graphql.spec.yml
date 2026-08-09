@@ -1,0 +1,48 @@
+name: "GraphQL API"
+options:
+  base_uri: "{{ env.BAMBOOZLE_MOCK_URI }}"
+
+describe:
+  - name: "GetUser operation uses nested variables"
+    test:
+      route: /graphql
+      verb: POST
+      headers:
+        Content-Type: application/json
+      body: '{"operationName":"GetUser","variables":{"login":"octocat"},"query":"query GetUser { user(login: $login) { id login name } }"}'
+      assert:
+        - status == 200u
+        - body.json().data.user.login == "octocat"
+        - body.json().data.user.name == "The Octocat"
+
+  - name: "ListRepositories operation selects a different response"
+    test:
+      route: /graphql
+      verb: POST
+      headers:
+        Content-Type: application/json
+      body: '{"operationName":"ListRepositories","variables":{},"query":"query ListRepositories { repositories { name stars } }"}'
+      assert:
+        - status == 200u
+        - body.json().data.repositories.size() == 2
+        - body.json().data.repositories.all(repo, repo.stars > 0)
+
+  - name: "Unknown operations return GraphQL errors over HTTP 200"
+    test:
+      route: /graphql
+      verb: POST
+      headers:
+        Content-Type: application/json
+      body: '{"operationName":"MissingOperation","variables":{},"query":"query MissingOperation { missing }"}'
+      assert:
+        - status == 200u
+        - 'body.json().errors[0].message == "Unknown operation: MissingOperation"'
+
+  - name: "Schema endpoint serves text"
+    test:
+      route: /graphql/schema
+      assert:
+        - status == 200u
+        - headers["content-type"] == "text/plain"
+        - body.contains("type Query")
+        - body.contains("type Repository")

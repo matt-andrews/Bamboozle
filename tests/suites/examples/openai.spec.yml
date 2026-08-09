@@ -1,0 +1,66 @@
+name: "OpenAI-compatible API"
+options:
+  base_uri: "{{ env.BAMBOOZLE_MOCK_URI }}"
+
+describe:
+  - name: "List models"
+    test:
+      route: /v1/models
+      assert:
+        - status == 200u
+        - body.json().object == "list"
+        - body.json().data.size() == 2
+        - body.json().data.exists(model, model.id == "gpt-bamboozle")
+
+  - name: "Retrieve a model"
+    test:
+      route: /v1/models/gpt-bamboozle
+      assert:
+        - status == 200u
+        - body.json().id == "gpt-bamboozle"
+        - body.json().owned_by == "bamboozle"
+
+  - name: "Nested chat input drives the completion"
+    test:
+      route: /v1/chat/completions
+      verb: POST
+      headers:
+        Authorization: Bearer test-key
+        Content-Type: application/json
+      body: '{"model":"gpt-bamboozle","messages":[{"role":"user","content":"Say hello"}]}'
+      let:
+        completion: body.json()
+      assert:
+        - status == 200u
+        - let.completion.model == "gpt-bamboozle"
+        - let.completion.choices[0].message.role == "assistant"
+        - 'let.completion.choices[0].message.content == "Mock reply to: Say hello"'
+        - let.completion.usage.total_tokens == 10
+        - headers["x-request-id"] == "chatcmpl-request-001"
+
+  - name: "Embedding response preserves numeric arrays"
+    test:
+      route: /v1/embeddings
+      verb: POST
+      headers:
+        Content-Type: application/json
+      body: '{"model":"embedding-bamboozle","input":"hello world"}'
+      assert:
+        - status == 200u
+        - body.json().model == "embedding-bamboozle"
+        - body.json().data[0].embedding == [0.125, -0.25, 0.5]
+        - body.json().usage.total_tokens == 3
+
+  - name: "SSE-shaped content and headers"
+    test:
+      route: /v1/chat/completions/stream
+      verb: POST
+      headers:
+        Content-Type: application/json
+      body: '{"model":"gpt-bamboozle","stream":true,"messages":[]}'
+      assert:
+        - status == 200u
+        - headers["content-type"] == "text/event-stream"
+        - headers["cache-control"] == "no-cache"
+        - 'body.startsWith("data: ")'
+        - body.contains("[DONE]")

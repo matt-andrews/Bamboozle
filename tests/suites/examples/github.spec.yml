@@ -1,0 +1,76 @@
+name: "GitHub-like REST API"
+options:
+  base_uri: "{{ env.BAMBOOZLE_MOCK_URI }}"
+
+describe:
+  - name: "Repository lookup projects route values into a realistic document"
+    test:
+      route: /repos/octocat/Hello-World
+      headers:
+        Accept: application/vnd.github+json
+      let:
+        repo: body.json()
+      assert:
+        - status == 200u
+        - let.repo.name == "Hello-World"
+        - let.repo.full_name == "octocat/Hello-World"
+        - let.repo.owner.login == "octocat"
+        - let.repo.default_branch == "main"
+        - headers["x-ratelimit-limit"] == "5000"
+        - headers["x-ratelimit-remaining"] == "4999"
+
+  - name: "Typed issue IDs are returned as JSON numbers"
+    test:
+      route: /repos/octocat/Hello-World/issues/42
+      assert:
+        - status == 200u
+        - body.json().number == 42
+        - body.json().repository_url == "/repos/octocat/Hello-World"
+
+  - name: "A non-integer issue ID does not match"
+    test:
+      route: /repos/octocat/Hello-World/issues/not-a-number
+      assert:
+        - status == 404u
+        - body == ""
+
+  - name: "Issue creation renders request JSON"
+    test:
+      route: /repos/matt-andrews/Bamboozle/issues
+      verb: POST
+      headers:
+        Content-Type: application/json
+      body: '{"title":"Add regression suite","labels":["testing"]}'
+      assert:
+        - status == 201u
+        - body.json().number == 101
+        - body.json().title == "Add regression suite"
+        - body.json().labels == ["testing"]
+        - headers["location"] == "/repos/matt-andrews/Bamboozle/issues/101"
+
+  - name: "Authorized user lookup"
+    test:
+      route: /github/user
+      headers:
+        Authorization: Bearer demo-token
+      assert:
+        - status == 200u
+        - body.json().login == "octocat"
+
+  - name: "Unauthorized user lookup"
+    test:
+      route: /github/user
+      headers:
+        Authorization: Bearer wrong-token
+      assert:
+        - status == 401u
+        - body.json().message == "Bad credentials"
+        - headers["www-authenticate"] == "Bearer"
+
+  - name: "Nested rate-limit response"
+    test:
+      route: /rate_limit
+      assert:
+        - status == 200u
+        - body.json().resources.core.limit == 5000
+        - body.json().resources.core.remaining == 4999

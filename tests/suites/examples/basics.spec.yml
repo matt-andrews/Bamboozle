@@ -1,0 +1,89 @@
+name: "General HTTP examples"
+options:
+  base_uri: "{{ env.BAMBOOZLE_MOCK_URI }}"
+
+describe:
+  - name: "Route, header, and JSON response templating"
+    test:
+      route: /hello/Ada
+      headers:
+        x-request-id: demo-123
+      assert:
+        - status == 200u
+        - body.json().message == "Hello, Ada!"
+        - body.json().requestId == "demo-123"
+        - headers["x-example"] == "basics"
+        - headers["x-request-id"] == "demo-123"
+        - headers["content-type"].contains("application/json")
+
+  - name: "Query and optional route values"
+    test:
+      route: /search/books?q=rust&page=3
+      assert:
+        - status == 200u
+        - body.json().query == "rust"
+        - body.json().category == "books"
+        - body.json().page == 3
+
+  - name: "Missing optional route value uses a default"
+    test:
+      route: /search?q=testing&page=1
+      assert:
+        - status == 200u
+        - body.json().category == "all"
+        - body.json().page == 1
+
+  - name: "A template can select an error status"
+    test:
+      route: /search/books?q=&page=1
+      assert:
+        - status == 400u
+        - body.json().query == ""
+
+  - name: "Loopback preserves the request payload and content type"
+    test:
+      route: /echo
+      verb: POST
+      headers:
+        Content-Type: application/json
+      body: '{"nested":{"value":42},"active":true}'
+      assert:
+        - status == 200u
+        - body.json().nested.value == 42
+        - body.json().active == true
+        - headers["content-type"].contains("application/json")
+
+  - name: "Text files are rendered as Liquid templates"
+    test:
+      route: /files/welcome/Grace?from=Tempest
+      assert:
+        - status == 200u
+        - body.contains("Welcome, Grace!")
+        - body.contains("Your request came from Tempest.")
+        - headers["content-type"].contains("text/plain")
+
+  - name: "Binary files bypass Liquid rendering"
+    test:
+      route: /files/raw-template.svg
+      assert:
+        - status == 200u
+        - headers["content-type"].contains("image/svg+xml")
+        - bytes.toBase64() == "PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMjAiIGhlaWdodD0iMzIiPgogIDxyZWN0IHdpZHRoPSIxMjAiIGhlaWdodD0iMzIiIGZpbGw9IiMxZjZmNWYiLz4KICA8dGV4dCB4PSI4IiB5PSIyMSIgZmlsbD0id2hpdGUiPnt7IHJhdyBhc3NldCB9fTwvdGV4dD4KPC9zdmc+Cg=="
+        - body.contains("{{ raw asset }}")
+
+  - name: "One definition can register multiple verbs"
+    describe:
+      - name: "GET route"
+        test:
+          route: /multi-verb/ping
+          assert:
+            - status == 200u
+            - body == "pong"
+      - name: "POST route"
+        test:
+          route: /multi-verb/ping
+          verb: POST
+          body: ignored
+          assert:
+            - status == 200u
+            - body == "pong"

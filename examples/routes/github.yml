@@ -1,0 +1,54 @@
+routes:
+  - match:
+      verb: GET
+      pattern: /repos/{owner}/{repo}
+    response:
+      status: "200"
+      headers:
+        x-ratelimit-limit: "5000"
+        x-ratelimit-remaining: "4999"
+      content: |
+        {
+          "id": 1296269,
+          "name": "{{ routeValues.repo }}",
+          "full_name": "{{ routeValues.owner }}/{{ routeValues.repo }}",
+          "private": false,
+          "owner": {"login":"{{ routeValues.owner }}"},
+          "default_branch": "main"
+        }
+
+  - match:
+      verb: GET
+      pattern: /repos/{owner}/{repo}/issues/{number:int}
+    response:
+      status: "200"
+      content: |
+        {"number":{{ routeValues.number }},"title":"Example issue","state":"open","repository_url":"/repos/{{ routeValues.owner }}/{{ routeValues.repo }}"}
+
+  - match:
+      verb: POST
+      pattern: /repos/{owner}/{repo}/issues
+    response:
+      status: "201"
+      headers:
+        location: /repos/{{ routeValues.owner }}/{{ routeValues.repo }}/issues/101
+      content: |
+        {"number":101,"title":"{{ body.title }}","state":"open","labels":["{{ body.labels[0] }}"]}
+
+  - match:
+      verb: GET
+      pattern: /github/user
+    response:
+      status: '{% if headers.authorization == "Bearer demo-token" %}200{% else %}401{% endif %}'
+      headers:
+        www-authenticate: Bearer
+      content: |
+        {% if headers.authorization == "Bearer demo-token" %}{"login":"octocat","id":583231}{% else %}{"message":"Bad credentials"}{% endif %}
+
+  - match:
+      verb: GET
+      pattern: /rate_limit
+    response:
+      status: "200"
+      content: |
+        {"resources":{"core":{"limit":5000,"remaining":4999,"reset":1893456000}}}

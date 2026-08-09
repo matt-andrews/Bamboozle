@@ -1,0 +1,42 @@
+routes:
+  - match:
+      verb: POST
+      pattern: /v1/payment_intents
+    response:
+      status: "201"
+      headers:
+        request-id: req_bamboozle_001
+        idempotency-key: '{{ headers.idempotency-key }}'
+      content: |
+        {
+          "id":"pi_bamboozle_123",
+          "object":"payment_intent",
+          "amount":{{ body.amount }},
+          "currency":"{{ body.currency }}",
+          "status":"requires_confirmation",
+          "metadata":{"order_id":"{{ body.metadata.order_id }}"}
+        }
+
+  - match:
+      verb: GET
+      pattern: /v1/payment_intents/{id}
+    response:
+      status: "200"
+      content: |
+        {"id":"{{ routeValues.id }}","object":"payment_intent","amount":4200,"currency":"usd","status":"succeeded"}
+
+  - match:
+      verb: POST
+      pattern: /v1/refunds
+    response:
+      status: "201"
+      content: |
+        {"id":"re_bamboozle_123","object":"refund","payment_intent":"{{ body.payment_intent }}","amount":{{ body.amount }},"status":"succeeded"}
+
+  - match:
+      verb: GET
+      pattern: /v1/customers/{id}
+    response:
+      status: "200"
+      content: |
+        {"id":"{{ routeValues.id }}","object":"customer","email":"customer@example.test","livemode":false}

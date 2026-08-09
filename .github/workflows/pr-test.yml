@@ -1,0 +1,164 @@
+name: PR - all tests
+
+on:
+  workflow_dispatch:
+  workflow_call:
+  pull_request:
+    branches: [main]
+
+
+jobs:
+  rust-checks:
+    name: Rust Test + Clippy
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    defaults:
+      run:
+        working-directory: ./bamboozle
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+
+      - name: Clippy
+        run: cargo clippy --locked --all-targets --all-features -- -D warnings
+
+      - name: Unit tests
+        run: |
+          set -o pipefail
+          cargo test --locked 2>&1 | tee cargo-test-output.txt
+          
+          python3 - << 'EOF'
+          import re, json
+          passed = failed = ignored = 0
+          with open("cargo-test-output.txt") as f:
+              for line in f:
+                  match = re.search(
+                      r"(\d+) passed; (\d+) failed; (\d+) ignored",
+                      line
+                  )
+                  if match:
+                      passed += int(match.group(1))
+                      failed += int(match.group(2))
+                      ignored += int(match.group(3))
+          
+          with open("unit-test-results.json", "w") as output:
+              json.dump({
+                  "passed": passed,
+                  "failed": failed,
+                  "ignored": ignored
+              }, output)
+          EOF
+          
+      - name: Generate CTRF report
+        if: always()
+        run: |
+          python3 - << 'EOF'
+          import json
+          try:
+              data = json.load(open("unit-test-results.json"))
+              passed = data.get("passed", 0)
+              failed = data.get("failed", 0)
+              ignored = data.get("ignored", 0)
+          except (FileNotFoundError, json.JSONDecodeError):
+              passed, failed, ignored = 0, 1, 0
+          ctrf = {"results": {"tool": {"name": "cargo"}, "summary": {
+              "tests": passed + failed + ignored, "passed": passed,
+              "failed": failed, "pending": 0, "skipped": ignored,
+              "other": 0, "start": 0, "stop": 0}, "tests": []}}
+          json.dump(ctrf, open("ctrf-report.json", "w"))
+          EOF
+
+      - name: Publish test report
+        uses: ctrf-io/github-test-reporter@v1
+        if: always() && github.event_name == 'pull_request'
+        with:
+          report-path: ./bamboozle/ctrf-report.json
+          pull-request-report: "true"
+          overwrite-comment: "true"
+          title: "Rust Unit Tests"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: unit-test-results
+          path: ./bamboozle/unit-test-results.json
+          retention-days: 30
+
+      - name: Build integration binary
+        run: cargo build --locked
+
+      - name: Upload integration binary
+        uses: actions/upload-artifact@v7
+        with:
+          name: bamboozle-integration-binary
+          path: ./bamboozle/target/debug/bamboozle
+          retention-days: 1
+          compression-level: 0
+          if-no-files-found: error
+
+  integration-tests:
+    name: Tempest Integration + Regression
+    needs: rust-checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Download Bamboozle binary
+        uses: actions/download-artifact@v8
+        with:
+          name: bamboozle-integration-binary
+          path: ./bamboozle/target/debug
+
+      - name: Start Bamboozle with the example catalogue
+        env:
+          ROUTE_CONFIG_FOLDERS: '["examples/routes"]'
+          ROUTE_CONFIG_THROW_ON_ERROR: "true"
+          NO_COLOR: "1"
+        run: |
+          chmod +x ./bamboozle/target/debug/bamboozle
+          ./bamboozle/target/debug/bamboozle > bamboozle-integration.log 2>&1 &
+          echo "$!" > bamboozle-integration.pid
+
+          for attempt in $(seq 1 100); do
+            if curl --fail --silent http://localhost:9090/control/health > /dev/null; then
+              exit 0
+            fi
+            sleep 0.1
+          done
+
+          echo "Bamboozle did not become ready" >&2
+          exit 1
+
+      - name: Run Tempest suite
+        run: |
+          docker run --rm \
+            --network host \
+            --volume "$PWD/tests:/tests:ro" \
+            "mattisthegreatest/tempest:1" \
+            test --path /tests \
+            --env BAMBOOZLE_MOCK_URI=http://localhost:8080 \
+            --env BAMBOOZLE_CONTROL_URI=http://localhost:9090
+
+      - name: Show Bamboozle log
+        if: always()
+        run: cat bamboozle-integration.log || true
+
+      - name: Stop Bamboozle
+        if: always()
+        run: |
+          if test -f bamboozle-integration.pid; then
+            kill "$(cat bamboozle-integration.pid)" || true
+          fi

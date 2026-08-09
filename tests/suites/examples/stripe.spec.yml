@@ -1,0 +1,54 @@
+name: "Stripe-like payment API"
+options:
+  base_uri: "{{ env.BAMBOOZLE_MOCK_URI }}"
+
+describe:
+  - name: "Create a payment intent"
+    test:
+      route: /v1/payment_intents
+      verb: POST
+      headers:
+        Content-Type: application/json
+        idempotency-key: checkout-123
+      body: '{"amount":4200,"currency":"usd","metadata":{"order_id":"order-7"}}'
+      let:
+        intent: body.json()
+      assert:
+        - status == 201u
+        - let.intent.object == "payment_intent"
+        - let.intent.amount == 4200
+        - let.intent.currency == "usd"
+        - let.intent.metadata.order_id == "order-7"
+        - headers["idempotency-key"] == "checkout-123"
+        - headers["request-id"] == "req_bamboozle_001"
+      vars:
+        payment_intent_id: body.json().id
+
+  - name: "Retrieve the created intent using a saved variable"
+    test:
+      route: "/v1/payment_intents/{{ vars.payment_intent_id }}"
+      assert:
+        - status == 200u
+        - 'body.json().id == "{{ vars.payment_intent_id }}"'
+        - body.json().status == "succeeded"
+
+  - name: "Create a partial refund"
+    test:
+      route: /v1/refunds
+      verb: POST
+      headers:
+        Content-Type: application/json
+      body: '{"payment_intent":"{{ vars.payment_intent_id }}","amount":2100}'
+      assert:
+        - status == 201u
+        - 'body.json().payment_intent == "{{ vars.payment_intent_id }}"'
+        - body.json().amount == 2100
+        - body.json().status == "succeeded"
+
+  - name: "Retrieve a customer"
+    test:
+      route: /v1/customers/cus_123
+      assert:
+        - status == 200u
+        - body.json().id == "cus_123"
+        - body.json().livemode == false

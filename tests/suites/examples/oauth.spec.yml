@@ -1,0 +1,66 @@
+name: "OAuth and OpenID Connect API"
+options:
+  base_uri: "{{ env.BAMBOOZLE_MOCK_URI }}"
+
+describe:
+  - name: "OIDC discovery document"
+    test:
+      route: /.well-known/openid-configuration
+      assert:
+        - status == 200u
+        - body.json().grant_types_supported == ["client_credentials"]
+        - body.json().token_endpoint.endsWith("/oauth/token")
+
+  - name: "Form-encoded client credentials grant uses bodyRaw"
+    test:
+      route: /oauth/token
+      verb: POST
+      headers:
+        Content-Type: application/x-www-form-urlencoded
+        Authorization: Basic ZGVtbzpkZW1v
+      body: grant_type=client_credentials&scope=read%3Aexamples
+      assert:
+        - status == 200u
+        - body.json().access_token == "bamboozle-access-token"
+        - body.json().token_type == "Bearer"
+        - headers["cache-control"] == "no-store"
+      vars:
+        access_token: body.json().access_token
+
+  - name: "Unsupported grants return an OAuth error"
+    test:
+      route: /oauth/token
+      verb: POST
+      headers:
+        Content-Type: application/x-www-form-urlencoded
+      body: grant_type=password
+      assert:
+        - status == 400u
+        - body.json().error == "unsupported_grant_type"
+
+  - name: "Bearer token authorizes userinfo"
+    test:
+      route: /oauth/userinfo
+      headers:
+        Authorization: "Bearer {{ vars.access_token }}"
+      assert:
+        - status == 200u
+        - body.json().sub == "user-123"
+        - body.json().email == "user@example.test"
+
+  - name: "Missing bearer token is rejected"
+    test:
+      route: /oauth/userinfo
+      headers:
+        Authorization: Bearer wrong-token
+      assert:
+        - status == 401u
+        - body.json().error == "invalid_token"
+
+  - name: "JWKS document"
+    test:
+      route: /oauth/jwks
+      assert:
+        - status == 200u
+        - body.json().keys[0].kid == "bamboozle-key-1"
+        - body.json().keys[0].alg == "RS256"

@@ -1,0 +1,4 @@
+concurrent: false
+retries: 0
+reports:
+  - console

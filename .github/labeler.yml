@@ -3,32 +3,21 @@
   - changed-files:
       - any-glob-to-any-file: "bamboozle/**"
 
-"area: sdks/dotnet":
-  - changed-files:
-      - any-glob-to-any-file: "sdks/dotnet/**"
-
-"area: sdks/npm":
-  - changed-files:
-      - any-glob-to-any-file: "sdks/npm/**"
-
 ## non-publishable areas
 "area: docs":
   - changed-files:
       - any-glob-to-any-file:
           - "docs/**"
-          - "assets/**"
+          - ".assets/**"
           - "README.md"
-          - "DOCKER_HUB_README.md"
-          - "llm.md"
-          - "LICENSE.md"
+          - "llms.txt"
+          - "LICENSE-APACHE"
+          - "LICENSE-MIT"
 
 "area: ci":
   - changed-files:
       - any-glob-to-any-file:
           - ".github/**"
-          - "playwright/**"
           - "scripts/**"
-
-"area: examples":
-  - changed-files:
-      - any-glob-to-any-file: "examples/**"
+          - "tests/**"
+          - "examples/**"

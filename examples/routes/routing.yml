@@ -1,0 +1,52 @@
+routes:
+  - match: { verb: GET, pattern: "/routing/int/{value:int}" }
+    response: { status: "200", content: '{"constraint":"int","value":"{{ routeValues.value }}"}' }
+  - match: { verb: GET, pattern: "/routing/long/{value:long}" }
+    response: { status: "200", content: '{"constraint":"long","value":"{{ routeValues.value }}"}' }
+  - match: { verb: GET, pattern: "/routing/double/{value:double}" }
+    response: { status: "200", content: '{"constraint":"double","value":"{{ routeValues.value }}"}' }
+  - match: { verb: GET, pattern: "/routing/decimal/{value:decimal}" }
+    response: { status: "200", content: '{"constraint":"decimal","value":"{{ routeValues.value }}"}' }
+  - match: { verb: GET, pattern: "/routing/float/{value:float}" }
+    response: { status: "200", content: '{"constraint":"float","value":"{{ routeValues.value }}"}' }
+  - match: { verb: GET, pattern: "/routing/bool/{value:bool}" }
+    response: { status: "200", content: '{"constraint":"bool","value":"{{ routeValues.value }}"}' }
+  - match: { verb: GET, pattern: "/routing/guid/{value:guid}" }
+    response: { status: "200", content: '{"constraint":"guid","value":"{{ routeValues.value }}"}' }
+  - match: { verb: GET, pattern: "/routing/alpha/{value:alpha}" }
+    response: { status: "200", content: '{"constraint":"alpha","value":"{{ routeValues.value }}"}' }
+  - match: { verb: GET, pattern: "/routing/datetime/{value:datetime}" }
+    response: { status: "200", content: '{"constraint":"datetime","value":"{{ routeValues.value }}"}' }
+
+  - match:
+      verb: GET
+      pattern: /routing/blog/{slug?}
+    response:
+      status: "200"
+      content: '{"slug":"{{ routeValues.slug | default: "index" }}"}'
+
+  - match:
+      verb: GET
+      pattern: /routing/items/special
+    response:
+      status: "200"
+      content: '{"matched":"static"}'
+  - match:
+      verb: GET
+      pattern: /routing/items/{id}
+    response:
+      status: "200"
+      content: '{"matched":"generic","id":"{{ routeValues.id }}"}'
+
+  - match:
+      verb: GET
+      pattern: /routing/numbers/{value:int}
+    response:
+      status: "200"
+      content: '{"matched":"constrained","value":"{{ routeValues.value }}"}'
+  - match:
+      verb: GET
+      pattern: /routing/numbers/{value}
+    response:
+      status: "200"
+      content: '{"matched":"generic","value":"{{ routeValues.value }}"}'

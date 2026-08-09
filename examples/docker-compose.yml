@@ -1,0 +1,19 @@
+name: bamboozle-examples
+
+services:
+  bamboozle:
+    build:
+      context: ../bamboozle
+      dockerfile: Dockerfile
+    image: bamboozle:examples
+    working_dir: /workspace
+    ports:
+      - "${BAMBOOZLE_MOCK_PORT:-18080}:8080"
+      - "${BAMBOOZLE_CONTROL_PORT:-19090}:9090"
+    volumes:
+      - ../:/workspace:ro
+    environment:
+      ROUTE_CONFIG_FOLDERS: '["/workspace/examples/routes"]'
+      ROUTE_CONFIG_THROW_ON_ERROR: "true"
+      RUST_LOG: info
+      NO_COLOR: "1"

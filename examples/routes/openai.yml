@@ -1,0 +1,53 @@
+routes:
+  - match:
+      verb: GET
+      pattern: /v1/models
+    response:
+      status: "200"
+      content: |
+        {"object":"list","data":[{"id":"gpt-bamboozle","object":"model"},{"id":"embedding-bamboozle","object":"model"}]}
+
+  - match:
+      verb: GET
+      pattern: /v1/models/{model}
+    response:
+      status: "200"
+      content: |
+        {"id":"{{ routeValues.model }}","object":"model","owned_by":"bamboozle"}
+
+  - match:
+      verb: POST
+      pattern: /v1/chat/completions
+    response:
+      status: "200"
+      headers:
+        x-request-id: chatcmpl-request-001
+      content: |
+        {
+          "id":"chatcmpl-bamboozle",
+          "object":"chat.completion",
+          "model":"{{ body.model }}",
+          "choices":[{"index":0,"message":{"role":"assistant","content":"Mock reply to: {{ body.messages[0].content }}"},"finish_reason":"stop"}],
+          "usage":{"prompt_tokens":4,"completion_tokens":6,"total_tokens":10}
+        }
+
+  - match:
+      verb: POST
+      pattern: /v1/embeddings
+    response:
+      status: "200"
+      content: |
+        {"object":"list","model":"{{ body.model }}","data":[{"object":"embedding","index":0,"embedding":[0.125,-0.25,0.5]}],"usage":{"prompt_tokens":3,"total_tokens":3}}
+
+  - match:
+      verb: POST
+      pattern: /v1/chat/completions/stream
+    response:
+      status: "200"
+      headers:
+        Content-Type: text/event-stream
+        Cache-Control: no-cache
+      content: |
+        data: {"id":"chatcmpl-stream","choices":[{"delta":{"content":"Hello"}}]}
+
+        data: [DONE]

@@ -1,0 +1,32 @@
+name: bamboozle-integration
+
+services:
+  bamboozle:
+    build:
+      context: ../bamboozle
+      dockerfile: Dockerfile
+    image: bamboozle:integration
+    working_dir: /workspace
+    volumes:
+      - ../:/workspace:ro
+    environment:
+      ROUTE_CONFIG_FOLDERS: '["/workspace/examples/routes"]'
+      ROUTE_CONFIG_THROW_ON_ERROR: "true"
+      RUST_LOG: info
+      NO_COLOR: "1"
+
+  tempest:
+    image: mattisthegreatest/tempest:1
+    depends_on:
+      bamboozle:
+        condition: service_started
+    volumes:
+      - ./:/tests:ro
+    command:
+      - test
+      - --path
+      - /tests
+      - --env
+      - BAMBOOZLE_MOCK_URI=http://bamboozle:8080
+      - --env
+      - BAMBOOZLE_CONTROL_URI=http://bamboozle:9090

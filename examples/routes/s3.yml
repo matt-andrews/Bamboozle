@@ -1,0 +1,42 @@
+routes:
+  - match:
+      verb: GET
+      pattern: /s3/{bucket}
+    response:
+      status: "200"
+      headers:
+        Content-Type: application/xml
+      contentFile: examples/assets/object-list.xml.liquid
+
+  - match:
+      verb: GET
+      pattern: /s3/{bucket}/{key}
+    response:
+      status: "200"
+      headers:
+        Content-Type: text/plain
+        ETag: '"bamboozle-etag"'
+        x-amz-meta-bucket: '{{ routeValues.bucket }}'
+      content: object {{ routeValues.key }} from {{ routeValues.bucket }}
+
+  - match:
+      verb: PUT
+      pattern: /s3/{bucket}/{key}
+    response:
+      status: "200"
+      headers:
+        ETag: '"uploaded-etag"'
+      loopback: true
+
+  - match:
+      verb: DELETE
+      pattern: /s3/{bucket}/{key}
+    response:
+      status: "204"
+
+  - match:
+      verb: GET
+      pattern: /s3-assets/logo.svg
+    response:
+      status: "200"
+      binaryFile: examples/assets/raw-template.svg
