@@ -10,7 +10,7 @@ Run the Docker image, then open `http://localhost:9090/` for the generated inter
 
 - [Project overview and quick start](https://github.com/matt-andrews/Bamboozle/blob/main/README.md): Purpose, feature summary, and a minimal working example.
 - [Configuration](https://github.com/matt-andrews/Bamboozle/blob/main/docs/configuration.md): Static routes, limits, logging, telemetry, and TLS.
-- [Assertion expressions](https://github.com/matt-andrews/Bamboozle/blob/main/docs/expression-syntax.md): Values, functions, and operators for filtering recorded calls.
+- [CEL assertion expressions](https://github.com/matt-andrews/Bamboozle/blob/main/docs/expression-syntax.md): Variables, methods, macros, and operators for filtering recorded calls.
 
 ## Examples
 

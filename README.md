@@ -55,7 +55,7 @@ The response is `1.0.0`. Bamboozle records the call so your test can inspect or 
 - Open `http://localhost:9090/` while Bamboozle is running for the interactive API reference.
 - See [configuration](./docs/configuration.md) for static routes, logging, limits, and TLS.
 - Run the [executable examples](./examples) for realistic API shapes and advanced features.
-- See the compact [expression reference](./docs/expression-syntax.md) for filtering recorded calls.
+- See the compact [CEL expression reference](./docs/expression-syntax.md) for filtering recorded calls.
 
 ## Project status
 

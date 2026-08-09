@@ -57,5 +57,5 @@ call history, and reset are shared server state.
 |---|---|
 | `suites/00-startup.spec.yml` | Readiness, route loading, docs, and control metadata |
 | `suites/examples/` | Executable contracts for every example API |
-| `suites/control/` | Route lifecycle, validation, call history, and expression assertions |
+| `suites/control/` | Route lifecycle, validation, call history, and CEL assertions |
 | `suites/zz-destructive/` | Global reset checks that must run last |
