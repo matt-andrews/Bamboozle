@@ -1,19 +1,18 @@
 use axum::{
+    Json,
     extract::{Path, Query, State},
     http::StatusCode,
     response::IntoResponse,
-    Json,
 };
-use serde::Deserialize;
 use tracing::{debug, warn};
-use utoipa::ToSchema;
 
 use crate::{
     app_state::AppState,
     error::AppError,
-    expression,
     models::{context::ContextModel, match_key::MatchKey, route::RouteDefinition},
 };
+
+use super::assertions::{self, AssertQuery, AssertRequest};
 
 // ── POST /control/routes ────────────────────────────────────────────────────
 
@@ -167,27 +166,6 @@ pub async fn delete_route_calls(
 
 // ── POST /control/routes/:verb/:pattern/assert ────────────────────────────────
 
-#[derive(Deserialize, ToSchema)]
-pub struct AssertRequest {
-    /// Boolean expression evaluated against each recorded call.
-    ///
-    /// Variables: `verb`, `pattern`
-    /// Functions: `query("key")`, `header("key")`, `route("key")`,
-    ///   `contains(s, sub)`, `starts_with(s, prefix)`, `ends_with(s, suffix)`
-    ///
-    /// Example: `query("status") == "active" && verb == "POST"`
-    pub expression: Option<String>,
-}
-
-#[derive(Deserialize)]
-pub struct AssertQuery {
-    pub called_exactly: Option<i64>,
-    pub called_at_least: Option<i64>,
-    pub called_at_most: Option<i64>,
-    #[serde(default)]
-    pub never_called: bool,
-}
-
 #[utoipa::path(
     post,
     path = "/control/routes/{verb}/{pattern}/assert",
@@ -202,7 +180,7 @@ pub struct AssertQuery {
     request_body = AssertRequest,
     responses(
         (status = 200, description = "Assertion passed"),
-        (status = 400, description = "Invalid expression syntax"),
+        (status = 400, description = "Invalid CEL syntax, execution, result type, or count qualifier"),
         (status = 406, description = "Assertion failed — filtered call count did not match expect"),
     ),
     tag = "Calls"
@@ -215,86 +193,24 @@ pub async fn assert_route(
 ) -> Result<StatusCode, AppError> {
     let match_key = MatchKey::new(verb, pattern);
     let calls = state.tracker.get_calls_for_route(&match_key);
-    let expr = body
-        .expression
-        .as_deref()
-        .map(str::trim)
-        .filter(|s| !s.is_empty());
-    let filtered: Vec<_> = if let Some(expr) = expr {
-        let mut result = Vec::with_capacity(calls.len());
-        for ctx in &calls {
-            match expression::eval_expression(expr, ctx) {
-                Ok(true) => result.push(ctx),
-                Ok(false) => {}
-                Err(e) => {
-                    warn!(
-                        verb = %match_key.verb,
-                        pattern = %match_key.pattern,
-                        expression = expr,
-                        error = %e,
-                        "Expression error during assertion filtering"
-                    );
-                    return Err(AppError::BadRequest(format!("Invalid expression: {e}")));
-                }
-            }
-        }
-        result
-    } else {
-        calls.iter().collect()
-    };
+    let expression = assertions::normalize_expression(body.expression.as_deref());
+    let result = assertions::evaluate(&calls, expression, &q).map_err(|error| {
+        warn!(
+            verb = %match_key.verb,
+            pattern = %match_key.pattern,
+            expression = expression.unwrap_or("<none>"),
+            error = %error,
+            "Invalid assertion request"
+        );
+        AppError::BadRequest(error.to_string())
+    })?;
 
-    for (name, val) in [
-        ("called_exactly", q.called_exactly),
-        ("called_at_least", q.called_at_least),
-        ("called_at_most", q.called_at_most),
-    ] {
-        if let Some(n) = val
-            && n < 0 {
-                return Err(AppError::BadRequest(format!("{name} must be >= 0")));
-            }
-    }
-
-    let count = filtered.len() as i64;
-    let any_qualifier = q.never_called
-        || q.called_exactly.is_some()
-        || q.called_at_least.is_some()
-        || q.called_at_most.is_some();
-
-    let mut failing: Vec<String> = Vec::new();
-    if q.never_called && count != 0 {
-        failing.push(format!("expected 0 calls (never_called), got {count}"));
-    }
-    if let Some(n) = q.called_exactly
-        && count != n {
-            failing.push(format!("expected exactly {n}, got {count}"));
-        }
-    if let Some(n) = q.called_at_least
-        && count < n {
-            failing.push(format!("expected at least {n}, got {count}"));
-        }
-    if let Some(n) = q.called_at_most
-        && count > n {
-            failing.push(format!("expected at most {n}, got {count}"));
-        }
-
-    let passed = if any_qualifier {
-        failing.is_empty()
-    } else if expr.is_some() {
-        count >= 1
-    } else {
-        true
-    };
-    let condition = if !passed && !any_qualifier {
-        format!("expected >= 1 match for expression, got {count}")
-    } else {
-        failing.join("; ")
-    };
-    if passed {
+    if result.passed {
         debug!(
             verb = %match_key.verb,
             pattern = %match_key.pattern,
-            matched_count = count,
-            expression = expr.unwrap_or("<none>"),
+            matched_count = result.matched_count,
+            expression = expression.unwrap_or("<none>"),
             "Assertion passed"
         );
         Ok(StatusCode::OK)
@@ -302,10 +218,10 @@ pub async fn assert_route(
         warn!(
             verb = %match_key.verb,
             pattern = %match_key.pattern,
-            matched_count = count,
+            matched_count = result.matched_count,
             total_calls = calls.len(),
-            expression = expr.unwrap_or("<none>"),
-            condition = %condition,
+            expression = expression.unwrap_or("<none>"),
+            condition = %result.condition,
             "Assertion failed"
         );
         Ok(StatusCode::NOT_ACCEPTABLE)

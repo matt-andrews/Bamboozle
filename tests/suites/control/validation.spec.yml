@@ -86,7 +86,50 @@ describe:
       body: '{"expression":"this is not valid =="}'
       assert:
         - status == 400u
-        - body.contains("Invalid expression")
+        - body.contains("Invalid CEL expression")
+
+  - name: "Invalid CEL is rejected even when no calls were recorded"
+    test:
+      route: /control/routes/GET/regression%2Fnever-called/assert
+      verb: POST
+      headers:
+        Content-Type: application/json
+      body: '{"expression":"still not valid =="}'
+      assert:
+        - status == 400u
+        - body.contains("Invalid CEL expression")
+
+  - name: "CEL execution errors are rejected"
+    test:
+      route: /control/routes/GET/hello%2F%7Bname%3Aalpha%7D/assert
+      verb: POST
+      headers:
+        Content-Type: application/json
+      body: '{"expression":"query.missing == \"\""}'
+      assert:
+        - status == 400u
+        - body.contains("Invalid CEL expression")
+
+  - name: "CEL assertions must return booleans"
+    test:
+      route: /control/routes/GET/hello%2F%7Bname%3Aalpha%7D/assert
+      verb: POST
+      headers:
+        Content-Type: application/json
+      body: '{"expression":"body"}'
+      assert:
+        - status == 400u
+        - body.contains("must return a boolean")
+
+  - name: "A valid false CEL expression fails the assertion"
+    test:
+      route: /control/routes/GET/hello%2F%7Bname%3Aalpha%7D/assert
+      verb: POST
+      headers:
+        Content-Type: application/json
+      body: '{"expression":"verb == \"POST\""}'
+      assert:
+        - status == 406u
 
   - name: "An empty assertion body and no qualifiers is a no-op pass"
     test:

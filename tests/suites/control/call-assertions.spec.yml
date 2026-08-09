@@ -24,7 +24,7 @@ describe:
       verb: POST
       headers:
         Content-Type: application/json
-      body: '{"expression":"verb == \"POST\" && route(\"tenant\") == \"acme\" && route(\"topic\") == \"order.created\" && query(\"mode\") == \"sync\" && header(\"authorization\") == \"Bearer callback-secret\" && body(\"amount\") >= 100 && body(\"active\") == true && state == \"\" && contains(body_raw, \"order-42\") && starts_with(header(\"x-request-id\"), \"callback-\") && ends_with(route(\"topic\"), \".created\")"}'
+      body: '{"expression":"verb == \"POST\" && route.tenant == \"acme\" && route.topic == \"order.created\" && query.mode == \"sync\" && headers.authorization == \"Bearer callback-secret\" && body.json().amount >= 100 && body.json().active && state == \"\" && body.contains(\"order-42\") && headers[\"x-request-id\"].startsWith(\"callback-\") && route.topic.endsWith(\".created\")"}'
       assert:
         - status == 200u
 

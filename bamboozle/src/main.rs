@@ -1,11 +1,11 @@
 mod app_state;
+mod cel;
 #[cfg(feature = "tls")]
 mod cert;
 mod config;
 mod config_loader;
 mod control;
 mod error;
-mod expression;
 mod liquid_render;
 mod mock_server;
 mod models;
@@ -31,7 +31,7 @@ enum Commands {
 }
 
 fn init_tracing() {
-    use tracing_subscriber::{fmt, layer::SubscriberExt, util::SubscriberInitExt, EnvFilter};
+    use tracing_subscriber::{EnvFilter, fmt, layer::SubscriberExt, util::SubscriberInitExt};
 
     let filter = EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("info"));
 
