@@ -90,7 +90,7 @@ fn parse_json(content: &str) -> anyhow::Result<ConfigLoaderModel> {
 }
 
 fn parse_yaml(content: &str) -> anyhow::Result<ConfigLoaderModel> {
-    serde_yaml::from_str(content).map_err(Into::into)
+    noyalib::from_str(content).map_err(Into::into)
 }
 
 #[cfg(test)]
