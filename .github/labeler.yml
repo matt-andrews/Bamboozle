@@ -10,7 +10,7 @@
           - "docs/**"
           - ".assets/**"
           - "README.md"
-          - "llm.txt"
+          - "llms.txt"
           - "LICENSE-APACHE"
           - "LICENSE-MIT"
 
@@ -19,3 +19,5 @@
       - any-glob-to-any-file:
           - ".github/**"
           - "scripts/**"
+          - "tests/**"
+          - "examples/**"

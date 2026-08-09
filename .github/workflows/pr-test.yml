@@ -144,11 +144,10 @@ jobs:
 
       - name: Run Tempest suite
         run: |
-          TEMPEST_VERSION="$(tr -d '\r\n' < tests/tempest-version.txt)"
           docker run --rm \
             --network host \
             --volume "$PWD/tests:/tests:ro" \
-            "mattisthegreatest/tempest:${TEMPEST_VERSION}" \
+            "mattisthegreatest/tempest:1" \
             test --path /tests \
             --env BAMBOOZLE_MOCK_URI=http://localhost:8080 \
             --env BAMBOOZLE_CONTROL_URI=http://localhost:9090
