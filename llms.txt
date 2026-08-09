@@ -1,0 +1,27 @@
+# Bamboozle
+
+> Bamboozle is a fast, lightweight, language-agnostic HTTP mock server for integration tests and CI.
+
+Bamboozle runs separate mock (`:8080`) and control (`:9090`) HTTP surfaces. Routes can return dynamic responses, record calls, assert on requests, and simulate state, latency, or faults. The project is pre-1.0 and intended only for controlled testing environments.
+
+Run the Docker image, then open `http://localhost:9090/` for the generated interactive API reference.
+
+## Documentation
+
+- [Project overview and quick start](https://github.com/matt-andrews/Bamboozle/blob/main/README.md): Purpose, feature summary, and a minimal working example.
+- [Configuration](https://github.com/matt-andrews/Bamboozle/blob/main/docs/configuration.md): Static routes, limits, logging, telemetry, and TLS.
+- [Assertion expressions](https://github.com/matt-andrews/Bamboozle/blob/main/docs/expression-syntax.md): Values, functions, and operators for filtering recorded calls.
+
+## Examples
+
+- [Executable example catalogue](https://github.com/matt-andrews/Bamboozle/blob/main/examples/README.md): Run realistic mock APIs with Docker Compose.
+- [Example route configurations](https://github.com/matt-andrews/Bamboozle/tree/main/examples/routes): JSON and YAML demonstrations of supported features.
+
+## Development
+
+- [Contributing](https://github.com/matt-andrews/Bamboozle/blob/main/CONTRIBUTING.md): Build, test, and architecture overview.
+- [Integration tests](https://github.com/matt-andrews/Bamboozle/blob/main/tests/README.md): HTTP regression suite usage and layout.
+
+## Optional
+
+- [Docker Hub](https://hub.docker.com/r/mattisthegreatest/bamboozle): Published container images and versions.
