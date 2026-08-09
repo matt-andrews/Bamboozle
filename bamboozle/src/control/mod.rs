@@ -1,8 +1,8 @@
 use axum::{
+    Router,
     http::header,
     response::Html,
     routing::{delete, get, post},
-    Router,
 };
 use std::sync::OnceLock;
 use utoipa::OpenApi;
@@ -17,6 +17,7 @@ use crate::{
     },
 };
 
+pub mod assertions;
 pub mod handlers;
 
 #[derive(OpenApi)]
@@ -45,7 +46,7 @@ pub mod handlers;
             DelayConfig,
             FaultConfig,
             FaultKind,
-            handlers::AssertRequest,
+            assertions::AssertRequest,
         )
     ),
     tags(
