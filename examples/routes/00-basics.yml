@@ -1,0 +1,47 @@
+routes:
+  - match:
+      verb: GET
+      pattern: /hello/{name:alpha}
+    response:
+      status: "200"
+      headers:
+        x-example: basics
+        x-request-id: '{{ headers.x-request-id | default: "not-provided" }}'
+      content: |
+        {"message":"Hello, {{ routeValues.name }}!","requestId":"{{ headers.x-request-id | default: "not-provided" }}"}
+
+  - match:
+      verb: GET
+      pattern: /search/{category?}
+    response:
+      status: '{% if queryParams.q == blank %}400{% else %}200{% endif %}'
+      content: |
+        {"query":"{{ queryParams.q }}","category":"{{ routeValues.category | default: "all" }}","page":{{ queryParams.page | default: 1 }}}
+
+  - match:
+      verb: POST
+      pattern: /echo
+    response:
+      status: "200"
+      loopback: true
+
+  - match:
+      verb: GET
+      pattern: /files/welcome/{name:alpha}
+    response:
+      status: "200"
+      contentFile: examples/assets/welcome.txt
+
+  - match:
+      verb: GET
+      pattern: /files/raw-template.svg
+    response:
+      status: "200"
+      binaryFile: examples/assets/raw-template.svg
+
+  - match:
+      verb: GET,POST
+      pattern: /multi-verb/ping
+    response:
+      status: "200"
+      content: pong

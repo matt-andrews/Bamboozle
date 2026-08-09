@@ -1,0 +1,50 @@
+name: "Webhook receiver APIs"
+options:
+  base_uri: "{{ env.BAMBOOZLE_MOCK_URI }}"
+
+describe:
+  - name: "GitHub webhook loopback"
+    test:
+      route: /webhooks/github
+      verb: POST
+      headers:
+        Content-Type: application/json
+        x-github-event: push
+        x-hub-signature-256: sha256=demo
+      body: '{"ref":"refs/heads/main","repository":{"full_name":"matt-andrews/Bamboozle"}}'
+      assert:
+        - status == 202u
+        - body.json().ref == "refs/heads/main"
+        - body.json().repository.full_name == "matt-andrews/Bamboozle"
+        - headers["x-webhook-provider"] == "github"
+
+  - name: "Stripe event acknowledgement"
+    test:
+      route: /webhooks/stripe
+      verb: POST
+      headers:
+        Content-Type: application/json
+        stripe-signature: t=123,v1=demo
+      body: '{"id":"evt_123","type":"payment_intent.succeeded"}'
+      assert:
+        - status == 200u
+        - body.json().received == true
+        - body.json().eventId == "evt_123"
+        - body.json().eventType == "payment_intent.succeeded"
+
+  - name: "Multi-tenant callback acknowledgement"
+    test:
+      route: /callbacks/acme/order.created?mode=sync
+      verb: POST
+      headers:
+        Content-Type: application/json
+        Authorization: Bearer callback-secret
+        x-request-id: callback-42
+      body: '{"orderId":"order-42","amount":125,"active":true}'
+      assert:
+        - status == 202u
+        - body.json().accepted == true
+        - body.json().tenant == "acme"
+        - body.json().topic == "order.created"
+        - body.json().requestId == "callback-42"
+        - headers["x-callback-tenant"] == "acme"

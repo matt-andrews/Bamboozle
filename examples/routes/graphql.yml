@@ -1,0 +1,24 @@
+routes:
+  - match:
+      verb: POST
+      pattern: /graphql
+    response:
+      status: "200"
+      content: |
+        {% case body.operationName %}
+        {% when "GetUser" %}{"data":{"user":{"id":"user-1","login":"{{ body.variables.login }}","name":"The Octocat"}}}
+        {% when "ListRepositories" %}{"data":{"repositories":[{"name":"Bamboozle","stars":42},{"name":"Tempest","stars":17}]}}
+        {% else %}{"errors":[{"message":"Unknown operation: {{ body.operationName }}"}]}
+        {% endcase %}
+
+  - match:
+      verb: GET
+      pattern: /graphql/schema
+    response:
+      status: "200"
+      headers:
+        Content-Type: text/plain
+      content: |
+        type Query { user(login: String!): User repositories: [Repository!]! }
+        type User { id: ID! login: String! name: String! }
+        type Repository { name: String! stars: Int! }

@@ -1,0 +1,123 @@
+name: "Call history and expression assertions"
+description: "Exercises every assertion token, count qualifier, and history operation"
+
+describe:
+  - name: "Record a rich callback request"
+    options:
+      base_uri: "{{ env.BAMBOOZLE_MOCK_URI }}"
+    test:
+      route: /callbacks/acme/order.created?mode=sync
+      verb: POST
+      headers:
+        Content-Type: application/json
+        Authorization: Bearer callback-secret
+        x-request-id: callback-assert-42
+      body: '{"orderId":"order-42","amount":125,"active":true}'
+      assert:
+        - status == 202u
+
+  - name: "Expression combines route, query, header, body, state, and string functions"
+    options:
+      base_uri: "{{ env.BAMBOOZLE_CONTROL_URI }}"
+    test:
+      route: /control/routes/POST/callbacks%2F%7Btenant%7D%2F%7Btopic%7D/assert?called_exactly=1
+      verb: POST
+      headers:
+        Content-Type: application/json
+      body: '{"expression":"verb == \"POST\" && route(\"tenant\") == \"acme\" && route(\"topic\") == \"order.created\" && query(\"mode\") == \"sync\" && header(\"authorization\") == \"Bearer callback-secret\" && body(\"amount\") >= 100 && body(\"active\") == true && state == \"\" && contains(body_raw, \"order-42\") && starts_with(header(\"x-request-id\"), \"callback-\") && ends_with(route(\"topic\"), \".created\")"}'
+      assert:
+        - status == 200u
+
+  - name: "Multiple compatible count qualifiers pass"
+    options:
+      base_uri: "{{ env.BAMBOOZLE_CONTROL_URI }}"
+    test:
+      route: /control/routes/POST/callbacks%2F%7Btenant%7D%2F%7Btopic%7D/assert?called_at_least=1&called_at_most=1
+      verb: POST
+      headers:
+        Content-Type: application/json
+      body: '{}'
+      assert:
+        - status == 200u
+
+  - name: "A failed count assertion returns 406"
+    options:
+      base_uri: "{{ env.BAMBOOZLE_CONTROL_URI }}"
+    test:
+      route: /control/routes/POST/callbacks%2F%7Btenant%7D%2F%7Btopic%7D/assert?called_exactly=2
+      verb: POST
+      headers:
+        Content-Type: application/json
+      body: '{}'
+      assert:
+        - status == 406u
+
+  - name: "Recorded context contains the complete request snapshot"
+    options:
+      base_uri: "{{ env.BAMBOOZLE_CONTROL_URI }}"
+    test:
+      route: /control/routes/POST/callbacks%2F%7Btenant%7D%2F%7Btopic%7D/calls
+      let:
+        calls: body.json()
+        call: let.calls[0]
+      assert:
+        - status == 200u
+        - let.calls.size() == 1
+        - let.call.queryParams.mode == "sync"
+        - let.call.headers.authorization == "Bearer callback-secret"
+        - let.call.routeValues.tenant == "acme"
+        - let.call.routeValues.topic == "order.created"
+        - let.call.body.orderId == "order-42"
+        - let.call.body.amount == 125
+        - let.call.bodyRaw.contains("order-42")
+        - 'let.call.routeModel["match"].pattern == "callbacks/{tenant}/{topic}"'
+
+  - name: "Clear one route's call history"
+    options:
+      base_uri: "{{ env.BAMBOOZLE_CONTROL_URI }}"
+    test:
+      route: /control/routes/POST/callbacks%2F%7Btenant%7D%2F%7Btopic%7D/calls
+      verb: DELETE
+      assert:
+        - status == 204u
+
+  - name: "never_called passes after history is cleared"
+    options:
+      base_uri: "{{ env.BAMBOOZLE_CONTROL_URI }}"
+    test:
+      route: /control/routes/POST/callbacks%2F%7Btenant%7D%2F%7Btopic%7D/assert?never_called=true
+      verb: POST
+      headers:
+        Content-Type: application/json
+      body: '{}'
+      assert:
+        - status == 200u
+
+  - name: "never_called works for a route that was never used"
+    options:
+      base_uri: "{{ env.BAMBOOZLE_CONTROL_URI }}"
+    test:
+      route: /control/routes/POST/webhooks%2Fnever-called/assert?never_called=true
+      verb: POST
+      headers:
+        Content-Type: application/json
+      body: '{}'
+      assert:
+        - status == 200u
+
+  - name: "An unmatched request is recorded"
+    options:
+      base_uri: "{{ env.BAMBOOZLE_MOCK_URI }}"
+    test:
+      route: /regression/definitely-not-registered
+      assert:
+        - status == 404u
+
+  - name: "Unmatched history identifies verb and normalized path"
+    options:
+      base_uri: "{{ env.BAMBOOZLE_CONTROL_URI }}"
+    test:
+      route: /control/unmatched
+      assert:
+        - status == 200u
+        - 'body.json().exists(call, call.verb == "GET" && call.pattern == "regression/definitely-not-registered")'

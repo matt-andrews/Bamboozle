@@ -1,0 +1,53 @@
+name: "S3-like object storage API"
+options:
+  base_uri: "{{ env.BAMBOOZLE_MOCK_URI }}"
+
+describe:
+  - name: "Bucket listing renders an XML content file"
+    test:
+      route: /s3/demo-bucket?prefix=documents/
+      assert:
+        - status == 200u
+        - headers["content-type"] == "application/xml"
+        - body.xpath("string(/ListBucketResult/Name)") == "demo-bucket"
+        - body.xpath("string(/ListBucketResult/Prefix)") == "documents/"
+        - body.xpath("count(/ListBucketResult/Contents)") == 2.0
+        - body.xpath("/ListBucketResult/Contents/Key") == ["documents/roadmap.txt", "images/logo.svg"]
+
+  - name: "Get an object"
+    test:
+      route: /s3/demo-bucket/readme.txt
+      assert:
+        - status == 200u
+        - body == "object readme.txt from demo-bucket"
+        - headers["etag"] == '"bamboozle-etag"'
+        - headers["x-amz-meta-bucket"] == "demo-bucket"
+
+  - name: "Upload loopback preserves raw bytes"
+    test:
+      route: /s3/demo-bucket/upload.txt
+      verb: PUT
+      headers:
+        Content-Type: text/plain
+      body: uploaded by Tempest
+      assert:
+        - status == 200u
+        - body == "uploaded by Tempest"
+        - headers["etag"] == '"uploaded-etag"'
+        - headers["content-type"].contains("text/plain")
+
+  - name: "Delete an object"
+    test:
+      route: /s3/demo-bucket/old.txt
+      verb: DELETE
+      assert:
+        - status == 204u
+        - body == ""
+
+  - name: "Serve an unrendered asset"
+    test:
+      route: /s3-assets/logo.svg
+      assert:
+        - status == 200u
+        - headers["content-type"] == "image/svg+xml"
+        - bytes.toBase64() == "PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMjAiIGhlaWdodD0iMzIiPgogIDxyZWN0IHdpZHRoPSIxMjAiIGhlaWdodD0iMzIiIGZpbGw9IiMxZjZmNWYiLz4KICA8dGV4dCB4PSI4IiB5PSIyMSIgZmlsbD0id2hpdGUiPnt7IHJhdyBhc3NldCB9fTwvdGV4dD4KPC9zdmc+Cg=="

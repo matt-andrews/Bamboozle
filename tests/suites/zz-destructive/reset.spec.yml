@@ -1,0 +1,41 @@
+name: "Global reset"
+description: "Destructive contract kept in the lexically last suite directory"
+options:
+  base_uri: "{{ env.BAMBOOZLE_CONTROL_URI }}"
+
+describe:
+  - name: "The suite starts with routes and history"
+    test:
+      route: /control/routes
+      assert:
+        - status == 200u
+        - body.json().size() > 0
+
+  - name: "Reset succeeds"
+    test:
+      route: /control/reset
+      verb: POST
+      assert:
+        - status == 204u
+
+  - name: "Reset removes every route"
+    test:
+      route: /control/routes
+      assert:
+        - status == 200u
+        - body.json() == []
+
+  - name: "Reset removes unmatched history"
+    test:
+      route: /control/unmatched
+      assert:
+        - status == 200u
+        - body.json() == []
+
+  - name: "Former example routes now return 404"
+    options:
+      base_uri: "{{ env.BAMBOOZLE_MOCK_URI }}"
+    test:
+      route: /hello/Ada
+      assert:
+        - status == 404u

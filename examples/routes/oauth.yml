@@ -1,0 +1,36 @@
+routes:
+  - match:
+      verb: GET
+      pattern: /.well-known/openid-configuration
+    response:
+      status: "200"
+      content: |
+        {"issuer":"http://localhost:8080","token_endpoint":"http://localhost:8080/oauth/token","userinfo_endpoint":"http://localhost:8080/oauth/userinfo","jwks_uri":"http://localhost:8080/oauth/jwks","grant_types_supported":["client_credentials"]}
+
+  - match:
+      verb: POST
+      pattern: /oauth/token
+    response:
+      status: '{% if bodyRaw contains "grant_type=client_credentials" %}200{% else %}400{% endif %}'
+      headers:
+        Cache-Control: no-store
+      content: |
+        {% if bodyRaw contains "grant_type=client_credentials" %}{"access_token":"bamboozle-access-token","token_type":"Bearer","expires_in":3600,"scope":"read:examples"}{% else %}{"error":"unsupported_grant_type"}{% endif %}
+
+  - match:
+      verb: GET
+      pattern: /oauth/userinfo
+    response:
+      status: '{% if headers.authorization == "Bearer bamboozle-access-token" %}200{% else %}401{% endif %}'
+      headers:
+        www-authenticate: Bearer
+      content: |
+        {% if headers.authorization == "Bearer bamboozle-access-token" %}{"sub":"user-123","name":"Bamboozle User","email":"user@example.test"}{% else %}{"error":"invalid_token"}{% endif %}
+
+  - match:
+      verb: GET
+      pattern: /oauth/jwks
+    response:
+      status: "200"
+      content: |
+        {"keys":[{"kty":"RSA","kid":"bamboozle-key-1","use":"sig","alg":"RS256","n":"mock-modulus","e":"AQAB"}]}

@@ -1,0 +1,96 @@
+name: "Typed and prioritized routing"
+options:
+  base_uri: "{{ env.BAMBOOZLE_MOCK_URI }}"
+
+describe:
+  - name: "{{ profile.constraint }} accepts {{ profile.value }}"
+    profiles:
+      - constraint: int
+        value: -42
+      - constraint: long
+        value: 922337203685477580
+      - constraint: double
+        value: -12.5
+      - constraint: decimal
+        value: 19.95
+      - constraint: float
+        value: 0.125
+      - constraint: bool
+        value: true
+      - constraint: guid
+        value: 123e4567-e89b-12d3-a456-426614174000
+      - constraint: alpha
+        value: Bamboozle
+      - constraint: datetime
+        value: "2026-08-07T13:45:00"
+    test:
+      route: "/routing/{{ profile.constraint }}/{{ profile.value }}"
+      assert:
+        - status == 200u
+        - 'body.json().constraint == "{{ profile.constraint }}"'
+        - 'body.json().value == "{{ profile.value }}"'
+
+  - name: "Typed constraints reject malformed values"
+    profiles:
+      - constraint: int
+        value: nope
+      - constraint: bool
+        value: yes
+      - constraint: guid
+        value: not-a-guid
+      - constraint: alpha
+        value: alpha123
+    test:
+      route: "/routing/{{ profile.constraint }}/{{ profile.value }}"
+      assert:
+        - status == 404u
+
+  - name: "Optional segment can be absent"
+    test:
+      route: /routing/blog
+      assert:
+        - status == 200u
+        - body.json().slug == "index"
+
+  - name: "Optional segment can be present"
+    test:
+      route: /routing/blog/refactor-notes
+      assert:
+        - status == 200u
+        - body.json().slug == "refactor-notes"
+
+  - name: "Static routes win over parameter routes"
+    test:
+      route: /routing/items/special
+      assert:
+        - status == 200u
+        - body.json().matched == "static"
+
+  - name: "Generic route handles other values"
+    test:
+      route: /routing/items/ordinary
+      assert:
+        - status == 200u
+        - body.json().matched == "generic"
+        - body.json().id == "ordinary"
+
+  - name: "Constrained routes win over catch-all routes"
+    test:
+      route: /routing/numbers/123
+      assert:
+        - status == 200u
+        - body.json().matched == "constrained"
+
+  - name: "Catch-all route remains available"
+    test:
+      route: /routing/numbers/abc
+      assert:
+        - status == 200u
+        - body.json().matched == "generic"
+
+  - name: "Literal route matching is case-insensitive"
+    test:
+      route: /ROUTING/ITEMS/SPECIAL
+      assert:
+        - status == 200u
+        - body.json().matched == "static"

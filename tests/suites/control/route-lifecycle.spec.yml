@@ -1,0 +1,153 @@
+name: "Runtime route lifecycle"
+description: "Creates, conflicts, replaces, lists, fans out, and deletes routes through the control API"
+
+describe:
+  - name: "Create a runtime route"
+    options:
+      base_uri: "{{ env.BAMBOOZLE_CONTROL_URI }}"
+    test:
+      route: /control/routes
+      verb: POST
+      headers:
+        Content-Type: application/json
+      body: '{"match":{"verb":"GET","pattern":"/regression/runtime"},"response":{"status":"202","headers":{"x-runtime-version":"one"},"content":"runtime one"}}'
+      assert:
+        - status == 201u
+        - body.json().size() == 1
+        - 'body.json()[0]["match"].verb == "GET"'
+        - 'body.json()[0]["match"].pattern == "regression/runtime"'
+
+  - name: "The runtime route is active immediately"
+    options:
+      base_uri: "{{ env.BAMBOOZLE_MOCK_URI }}"
+    test:
+      route: /regression/runtime
+      assert:
+        - status == 202u
+        - body == "runtime one"
+        - headers["x-runtime-version"] == "one"
+
+  - name: "POST rejects a duplicate route"
+    options:
+      base_uri: "{{ env.BAMBOOZLE_CONTROL_URI }}"
+    test:
+      route: /control/routes
+      verb: POST
+      headers:
+        Content-Type: application/json
+      body: '{"match":{"verb":"GET","pattern":"/regression/runtime"},"response":{"status":"200","content":"duplicate"}}'
+      assert:
+        - status == 409u
+
+  - name: "PUT replaces a route and clears its history"
+    options:
+      base_uri: "{{ env.BAMBOOZLE_CONTROL_URI }}"
+    test:
+      route: /control/routes
+      verb: PUT
+      headers:
+        Content-Type: application/json
+      body: '{"match":{"verb":"GET","pattern":"/regression/runtime"},"response":{"status":"200","headers":{"x-runtime-version":"two"},"content":"runtime two"}}'
+      assert:
+        - status == 200u
+        - body.json()[0].response.content == "runtime two"
+
+  - name: "Replaced route has no calls"
+    options:
+      base_uri: "{{ env.BAMBOOZLE_CONTROL_URI }}"
+    test:
+      route: /control/routes/GET/regression%2Fruntime/calls
+      assert:
+        - status == 200u
+        - body.json() == []
+
+  - name: "Replacement response is active"
+    options:
+      base_uri: "{{ env.BAMBOOZLE_MOCK_URI }}"
+    test:
+      route: /regression/runtime
+      assert:
+        - status == 200u
+        - body == "runtime two"
+        - headers["x-runtime-version"] == "two"
+
+  - name: "Route listing includes the replacement"
+    options:
+      base_uri: "{{ env.BAMBOOZLE_CONTROL_URI }}"
+    test:
+      route: /control/routes
+      assert:
+        - status == 200u
+        - 'body.json().exists(route, route["match"].verb == "GET" && route["match"].pattern == "regression/runtime" && route.response.content == "runtime two")'
+
+  - name: "A comma-separated verb list fans out atomically"
+    options:
+      base_uri: "{{ env.BAMBOOZLE_CONTROL_URI }}"
+    test:
+      route: /control/routes
+      verb: POST
+      headers:
+        Content-Type: application/json
+      body: '{"match":{"verb":"GET,POST","pattern":"/regression/multi"},"response":{"status":"200","content":"multi"}}'
+      assert:
+        - status == 201u
+        - body.json().size() == 2
+        - 'body.json().exists(route, route["match"].verb == "GET")'
+        - 'body.json().exists(route, route["match"].verb == "POST")'
+
+  - name: "GET half of the multi-verb route"
+    options:
+      base_uri: "{{ env.BAMBOOZLE_MOCK_URI }}"
+    test:
+      route: /regression/multi
+      assert:
+        - status == 200u
+        - body == "multi"
+
+  - name: "POST half of the multi-verb route"
+    options:
+      base_uri: "{{ env.BAMBOOZLE_MOCK_URI }}"
+    test:
+      route: /regression/multi
+      verb: POST
+      assert:
+        - status == 200u
+        - body == "multi"
+
+  - name: "Delete the primary runtime route"
+    options:
+      base_uri: "{{ env.BAMBOOZLE_CONTROL_URI }}"
+    test:
+      route: /control/routes/GET/regression%2Fruntime
+      verb: DELETE
+      assert:
+        - status == 204u
+
+  - name: "Deleted route no longer matches"
+    options:
+      base_uri: "{{ env.BAMBOOZLE_MOCK_URI }}"
+    test:
+      route: /regression/runtime
+      assert:
+        - status == 404u
+
+  - name: "Delete each expanded verb"
+    profiles:
+      - verb: GET
+      - verb: POST
+    options:
+      base_uri: "{{ env.BAMBOOZLE_CONTROL_URI }}"
+    test:
+      route: "/control/routes/{{ profile.verb }}/regression%2Fmulti"
+      verb: DELETE
+      assert:
+        - status == 204u
+
+  - name: "Deleting a missing route returns 404"
+    options:
+      base_uri: "{{ env.BAMBOOZLE_CONTROL_URI }}"
+    test:
+      route: /control/routes/GET/regression%2Fruntime
+      verb: DELETE
+      assert:
+        - status == 404u

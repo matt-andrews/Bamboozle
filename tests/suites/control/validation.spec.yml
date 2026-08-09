@@ -1,0 +1,99 @@
+name: "Control API validation and error contracts"
+options:
+  base_uri: "{{ env.BAMBOOZLE_CONTROL_URI }}"
+
+describe:
+  - name: "Body response strategies are mutually exclusive"
+    test:
+      route: /control/routes
+      verb: POST
+      headers:
+        Content-Type: application/json
+      body: '{"match":{"verb":"GET","pattern":"/regression/invalid/body-strategy"},"response":{"content":"inline","contentFile":"example.txt"}}'
+      assert:
+        - status == 400u
+        - body.contains("Only one of")
+
+  - name: "maxCalls must be positive"
+    test:
+      route: /control/routes
+      verb: POST
+      headers:
+        Content-Type: application/json
+      body: '{"match":{"verb":"GET","pattern":"/regression/invalid/max-calls"},"maxCalls":0,"response":{"content":"never"}}'
+      assert:
+        - status == 400u
+        - body.contains("maxCalls")
+
+  - name: "Unsupported HTTP verbs are rejected"
+    test:
+      route: /control/routes
+      verb: POST
+      headers:
+        Content-Type: application/json
+      body: '{"match":{"verb":"FETCH","pattern":"/regression/invalid/verb"},"response":{"content":"never"}}'
+      assert:
+        - status == 400u
+
+  - name: "Patterns that cannot compile are rejected"
+    test:
+      route: /control/routes
+      verb: POST
+      headers:
+        Content-Type: application/json
+      body: '{"match":{"verb":"GET","pattern":"/regression/{id}/{id}"},"response":{"content":"never"}}'
+      assert:
+        - status == 400u
+        - body.contains("Invalid pattern")
+
+  - name: "Malformed JSON uses Axum's extraction error"
+    test:
+      route: /control/routes
+      verb: POST
+      headers:
+        Content-Type: application/json
+      body: '{ definitely not json'
+      assert:
+        - status == 400u
+
+  - name: "Negative assertion counts are rejected"
+    test:
+      route: /control/routes/GET/hello%2F%7Bname%3Aalpha%7D/assert?called_exactly=-1
+      verb: POST
+      headers:
+        Content-Type: application/json
+      body: '{}'
+      assert:
+        - status == 400u
+        - body.contains("called_exactly must be >= 0")
+
+  - name: "Record a call for expression parse validation"
+    options:
+      base_uri: "{{ env.BAMBOOZLE_MOCK_URI }}"
+    test:
+      route: /hello/Parser
+      headers:
+        x-request-id: expression-parser
+      assert:
+        - status == 200u
+
+  - name: "Invalid expressions are rejected"
+    test:
+      route: /control/routes/GET/hello%2F%7Bname%3Aalpha%7D/assert
+      verb: POST
+      headers:
+        Content-Type: application/json
+      body: '{"expression":"this is not valid =="}'
+      assert:
+        - status == 400u
+        - body.contains("Invalid expression")
+
+  - name: "An empty assertion body and no qualifiers is a no-op pass"
+    test:
+      route: /control/routes/GET/hello%2F%7Bname%3Aalpha%7D/assert
+      verb: POST
+      headers:
+        Content-Type: application/json
+      body: '{}'
+      assert:
+        - status == 200u

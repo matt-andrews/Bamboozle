@@ -129,6 +129,36 @@ All routes and call history are cleared.
 - [Configure logging](https://github.com/matt-andrews/Bamboozle/blob/main/docs/how-to/configure-logging.md) — log levels, formats, OpenTelemetry export
 - [Enable TLS](https://github.com/matt-andrews/Bamboozle/blob/main/docs/how-to/enable-tls.md) — HTTPS on the mock server, certificate generation
 
+## Executable examples
+
+The [`examples/`](./examples) directory contains a catalogue of realistic API
+mocks: GitHub-like REST, Stripe-like payments, OpenAI-compatible endpoints,
+GraphQL, OAuth/OIDC, S3/XML, webhooks, typed routing, and resilience scenarios.
+Run the complete catalogue locally with:
+
+```bash
+docker compose -f examples/docker-compose.yml up --build
+```
+
+The mock APIs listen on `http://localhost:18080` and the control API listens on
+`http://localhost:19090`.
+
+## Integration and regression tests
+
+The [`tests/`](./tests) suite uses
+[Tempest](https://github.com/matt-andrews/Tempest) to exercise Bamboozle over its
+real HTTP boundaries. It validates the example APIs as well as route lifecycle,
+call history, expressions, validation errors, state, faults, files, OpenAPI,
+and reset behavior.
+
+```powershell
+./tests/run.ps1
+```
+
+```bash
+bash tests/run.sh
+```
+
 ---
 
 ## Disclaimers

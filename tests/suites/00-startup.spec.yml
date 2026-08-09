@@ -1,0 +1,60 @@
+name: "Startup and published surfaces"
+description: "Proves the server is ready and every example configuration was loaded"
+options:
+  base_uri: "{{ env.BAMBOOZLE_CONTROL_URI }}"
+
+describe:
+  - name: "Wait for a cold container"
+    description: "Only this readiness probe retries, avoiding accidental duplicate API calls elsewhere"
+    options:
+      retries: 100
+    test:
+      route: /control/health
+      assert:
+        - status == 200u
+
+  - name: "Static examples are registered"
+    test:
+      route: /control/routes
+      let:
+        routes: body.json()
+      assert:
+        - status == 200u
+        - let.routes.size() >= 55
+        - 'let.routes.exists(route, route["match"].pattern == "v1/chat/completions")'
+        - 'let.routes.exists(route, route["match"].pattern == "routing/guid/{value:guid}")'
+        - 'let.routes.exists(route, route["match"].verb == "POST" && route["match"].pattern == "graphql")'
+
+  - name: "Version is exposed"
+    test:
+      route: /control/version
+      assert:
+        - status == 200u
+        - body.size() > 0
+        - headers["content-type"].contains("text/plain")
+
+  - name: "OpenAPI document describes both planes"
+    test:
+      route: /api-docs/openapi.json
+      let:
+        spec: body.json()
+      assert:
+        - status == 200u
+        - let.spec.info.title == "Bamboozle Control API"
+        - 'let.spec.paths["/control/routes"] != null'
+        - 'let.spec.paths["/control/reset"] != null'
+
+  - name: "Scalar documentation shell renders"
+    test:
+      route: /
+      assert:
+        - status == 200u
+        - body.css("title").exists(element, element.text == "Bamboozle Control API")
+        - body.contains("/api-docs/openapi.json")
+
+  - name: "Route management UI renders"
+    test:
+      route: /ui
+      assert:
+        - status == 200u
+        - body.css("h1").exists(element, element.text == "Bamboozle Routes")

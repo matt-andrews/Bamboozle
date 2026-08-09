@@ -35,3 +35,22 @@ let response = router(state)
     .await
     .unwrap();
 ```
+
+## Integration and regression tests
+
+The repository-level [`tests/`](../../tests) project uses
+[Tempest](https://github.com/matt-andrews/Tempest) to exercise a real Bamboozle
+process over HTTP. The current source is built into a container, all static
+routes under [`examples/routes`](../../examples/routes) are loaded, and the
+control and mock surfaces are tested together.
+
+Bash:
+
+```bash
+bash tests/run.sh
+```
+
+The suite runs serially because call history, route state, and reset are shared
+within a Bamboozle process. Put global-state-destructive specs under
+`tests/suites/zz-destructive` so Tempest executes them after the ordinary
+control and example specs.

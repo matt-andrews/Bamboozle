@@ -1,0 +1,33 @@
+routes:
+  - match:
+      verb: POST
+      pattern: /webhooks/github
+    response:
+      status: "202"
+      headers:
+        x-webhook-provider: github
+      loopback: true
+
+  - match:
+      verb: POST
+      pattern: /webhooks/stripe
+    response:
+      status: "200"
+      content: |
+        {"received":true,"eventId":"{{ body.id }}","eventType":"{{ body.type }}"}
+
+  - match:
+      verb: POST
+      pattern: /callbacks/{tenant}/{topic}
+    response:
+      status: "202"
+      headers:
+        x-callback-tenant: '{{ routeValues.tenant }}'
+      content: |
+        {"accepted":true,"tenant":"{{ routeValues.tenant }}","topic":"{{ routeValues.topic }}","requestId":"{{ headers.x-request-id }}"}
+
+  - match:
+      verb: POST
+      pattern: /webhooks/never-called
+    response:
+      status: "204"

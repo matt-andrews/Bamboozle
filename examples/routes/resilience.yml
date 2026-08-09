@@ -1,0 +1,87 @@
+routes:
+  - match:
+      verb: GET
+      pattern: /resilience/slow
+    response:
+      status: "200"
+      content: delayed
+    simulation:
+      delay:
+        type: fixed
+        ms: 75
+
+  - match:
+      verb: GET
+      pattern: /resilience/random-latency
+    response:
+      status: "200"
+      content: random delay completed
+    simulation:
+      delay:
+        type: random
+        minMs: 5
+        maxMs: 25
+
+  - match:
+      verb: GET
+      pattern: /resilience/gaussian-latency
+    response:
+      status: "200"
+      content: gaussian delay completed
+    simulation:
+      delay:
+        type: gaussian
+        meanMs: 15
+        stdDevMs: 3
+
+  - match:
+      verb: GET
+      pattern: /resilience/empty
+    response:
+      status: "503"
+      content: this body is replaced by the fault
+    simulation:
+      fault:
+        type: emptyResponse
+        probability: 1.0
+
+  - match:
+      verb: GET
+      pattern: /resilience/no-fault
+    response:
+      status: "200"
+      content: normal response
+    simulation:
+      fault:
+        type: emptyResponse
+        probability: 0.0
+
+  - match:
+      verb: GET
+      pattern: /resilience/connection-reset
+    response:
+      status: "200"
+      content: unreachable
+    simulation:
+      fault:
+        type: connectionReset
+        probability: 1.0
+
+  - match:
+      verb: GET
+      pattern: /resilience/one-shot
+    maxCalls: 1
+    response:
+      status: "200"
+      content: available once
+
+  - match:
+      verb: POST
+      pattern: /resilience/idempotent
+    setState: '{% if previousContext == nil %}1{% else %}{{ previousContext.state | plus: 1 }}{% endif %}'
+    response:
+      status: '{% if previousContext == nil %}201{% else %}409{% endif %}'
+      headers:
+        x-attempt: '{{ state }}'
+      content: |
+        {"attempt":{{ state }},"previousAttempt":{% if previousContext == nil %}0{% else %}{{ previousContext.state }}{% endif %}}
